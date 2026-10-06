@@ -29,6 +29,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
+          # Caminho ABSOLUTO relativo à raiz do repo
           path: './caixa-ccb/dist'
 
   deploy:
