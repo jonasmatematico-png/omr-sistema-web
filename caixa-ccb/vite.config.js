@@ -3,5 +3,5 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react()],
-  base: 'https://jonasmatematico.com.br/caixa-ccb/',
+    base: '/caixa-ccb/',
 })
