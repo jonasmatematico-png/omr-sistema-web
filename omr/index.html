@@ -160,10 +160,11 @@
       <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" onclick="imprimirFolhaProva()">📄 Gerar folha de QRs desta prova</button>
       <button class="btn btn-secondary" style="width: 100%; margin-top: 8px;" onclick="imprimirCartoes()">🪪 Gerar cartões reutilizáveis da turma</button>
     </div>
+    
     <!-- NOVO BOTÃO: ACESSO AOS GABARITOS PERSONALIZADOS -->
-      <button class="btn btn-ia" style="width: 100%; margin-top: 8px; background: #4A148C;" onclick="window.open('https://omr-sistema-api.onrender.com/baixar_gabaritos', '_blank')">
-        ️ Gerar Gabaritos Personalizados (OMR)
-      </button>
+    <button class="btn btn-ia" style="width: 100%; margin-top: 8px; background: #4A148C;" onclick="window.open('https://omr-sistema-api.onrender.com/baixar_gabaritos', '_blank')">
+      📝 Gerar Gabaritos Personalizados (OMR)
+    </button>
 
     <div class="card" style="margin-top: 24px;">
       <div class="section-title">Provas cadastradas</div>
@@ -225,7 +226,6 @@
   <div class="modal-content">
     <div class="modal-header"><h3>🤖 Assistente Pedagógico IA</h3><button class="btn btn-sm" onclick="fecharModal('modalIA')">✕</button></div>
     
-    <!-- ABAS LIMPAS E SEM DUPLICATA -->
     <div class="ia-tabs">
       <div class="ia-tab active" onclick="mudarAbaIA('gerar')" id="tabGerar">✨ Gerar Questões</div>
       <div class="ia-tab" onclick="mudarAbaIA('identificar')" id="tabIdentificar">🔍 Identificar</div>
@@ -238,23 +238,35 @@
         <div class="form-group"><label>Fonte</label><select id="iaFonte"><option value="CP">Currículo Paulista</option><option value="SAEB">SAEB</option></select></div>
         <div class="form-group"><label>Ano</label>
           <select id="iaAno">
-            <option value="1">1º Ano</option>
-            <option value="2">2º Ano</option>
-            <option value="3">3º Ano</option>
-            <option value="4">4º Ano</option>
-            <option value="5">5º Ano</option>
-            <option value="6">6º Ano</option>
-            <option value="7">7º Ano</option>
-            <option value="8">8º Ano</option>
-            <option value="9">9º Ano</option>
+            <option value="1">1º Ano</option><option value="2">2º Ano</option><option value="3">3º Ano</option>
+            <option value="4">4º Ano</option><option value="5">5º Ano</option><option value="6">6º Ano</option>
+            <option value="7">7º Ano</option><option value="8">8º Ano</option><option value="9">9º Ano</option>
           </select>
         </div>
         <div class="form-group"><label>Quantidade</label><select id="iaQtd"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
       </div>
+      
+      <!-- CORREÇÃO DE LAYOUT AQUI -->
       <div class="form-row">
         <div class="form-group"><label>Dificuldade</label><select id="iaDificuldade"><option value="fácil">Fácil</option><option value="média" selected>Média</option><option value="difícil">Difícil</option></select></div>
-        <div class="form-group" style="grid-column: span 2;"><label>Contexto (opcional)</label><input type="text" id="iaContexto" placeholder="Ex: feira livre, mesada..."></div>
+        <div class="form-group">
+          <label>Tipo de Questão</label>
+          <select id="iaTipoQuestao" onchange="toggleAlternativas()">
+            <option value="aberta">✍️ Dissertativa (Aberta)</option>
+            <option value="objetiva">🔘 Múltipla Escolha (Objetiva)</option>
+          </select>
+        </div>
+        <div class="form-group" id="grupoNumAlternativas" style="display: none;">
+          <label>Qtd. de Alternativas</label>
+          <select id="iaNumAlternativas">
+            <option value="3">3 (A, B, C)</option>
+            <option value="4" selected>4 (A, B, C, D)</option>
+            <option value="5">5 (A, B, C, D, E)</option>
+          </select>
+        </div>
       </div>
+      <div class="form-group"><label>Contexto (opcional)</label><input type="text" id="iaContexto" placeholder="Ex: feira livre, mesada..."></div>
+      
       <button class="btn btn-primary btn-sm" style="width: 100%; margin-bottom: 12px;" onclick="carregarMatrizIA()">🔄 Carregar Habilidades Disponíveis</button>
       <div class="form-group"><label>Selecione as habilidades/descritores:</label>
         <div id="iaListaHabilidades" style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px; padding: 8px; background: #fafafa;">
@@ -483,8 +495,8 @@
 
   async function carregarMatrizIA() {
     var fonte = document.getElementById('iaFonte').value;
-    var ano = document.getElementById('iaAno').value; // <-- CORRIGIDO: Agora busca pelo ID correto
-    var disciplina = document.getElementById('disciplina').value; // <-- ADICIONADO: Filtra pela matéria selecionada
+    var ano = document.getElementById('iaAno').value;
+    var disciplina = document.getElementById('disciplina').value;
     var container = document.getElementById('iaListaHabilidades');
     container.innerHTML = '<p style="text-align:center; color:#666;">Carregando...</p>';
     try {
@@ -511,17 +523,39 @@
     var btn = document.getElementById('btnGerarIA');
     btn.textContent = '⏳ Gerando...'; btn.disabled = true;
     try {
-      var payload = { codigos: codigos, fonte: document.getElementById('iaFonte').value, componente: document.getElementById('disciplina').value, ano: parseInt(document.getElementById('iaAno').value), quantidade: parseInt(document.getElementById('iaQtd').value), dificuldade: document.getElementById('iaDificuldade').value, contexto: document.getElementById('iaContexto').value, valor_padrao: 2.0 };
+      var payload = { 
+        codigos: codigos, 
+        fonte: document.getElementById('iaFonte').value, 
+        componente: document.getElementById('disciplina').value, 
+        ano: parseInt(document.getElementById('iaAno').value), 
+        quantidade: parseInt(document.getElementById('iaQtd').value), 
+        dificuldade: document.getElementById('iaDificuldade').value, 
+        contexto: document.getElementById('iaContexto').value, 
+        valor_padrao: 2.0,
+        tipo: document.getElementById('iaTipoQuestao').value,
+        num_alternativas: parseInt(document.getElementById('iaNumAlternativas').value)
+      };
       var r = await fetch(API_URL + '/api/gerar_questoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       var j = await r.json();
       if (j.sucesso && j.questoes) {
         var html = '<h4 style="margin-bottom:8px;">Questões Geradas:</h4>';
         j.questoes.forEach(function(q, idx) {
-          html += '<div class="ia-preview-card"><strong>' + q.codigo + '</strong> (Questão ' + (idx+1) + ')<br>' +
-            '<p style="font-size:13px; margin: 6px 0;"><strong>Enunciado:</strong> ' + q.enunciado + '</p>' +
-            '<p style="font-size:13px; margin: 6px 0;"><strong>Resposta:</strong> ' + q.resposta_esperada + '</p>' +
-            '<p style="font-size:13px; margin: 6px 0;"><strong>Valor:</strong> ' + q.valor + '</p>' +
-            '<button class="btn btn-primary btn-sm" onclick="adicionarQuestaoGerada(' + idx + ')">➕ Adicionar à Prova</button></div>';
+          html += '<div class="ia-preview-card"><strong>' + q.codigo + '</strong> (Questão ' + (idx+1) + ')<br>';
+          html += '<p style="font-size:13px; margin: 6px 0;"><strong>Enunciado:</strong> ' + q.enunciado + '</p>';
+          
+          if (q.alternativas) {
+            html += '<div style="margin-left: 10px; font-size: 13px;">';
+            for (var letra in q.alternativas) {
+              var cor = letra === q.gabarito ? 'color: green; font-weight: bold;' : 'color: #333;';
+              html += '<p style="margin: 2px 0; ' + cor + '"><strong>' + letra + ')</strong> ' + q.alternativas[letra] + '</p>';
+            }
+            html += '</div>';
+          } else {
+            html += '<p style="font-size:13px; margin: 6px 0;"><strong>Resposta Esperada:</strong> ' + q.resposta_esperada + '</p>';
+          }
+          
+          html += '<p style="font-size:13px; margin: 6px 0;"><strong>Valor:</strong> ' + q.valor + '</p>';
+          html += '<button class="btn btn-primary btn-sm" onclick="adicionarQuestaoGerada(' + idx + ')"> Adicionar à Prova</button></div>';
         });
         window.questoesGeradasTemp = j.questoes;
         document.getElementById('iaResultadoGerar').innerHTML = html;
@@ -534,7 +568,15 @@
   function adicionarQuestaoGerada(idx) {
     if (!window.questoesGeradasTemp || !window.questoesGeradasTemp[idx]) return;
     var q = window.questoesGeradasTemp[idx];
-    questoes.push({ enunciado: q.enunciado || '', resposta: q.resposta_esperada || '', valor: String(q.valor || 2), imagemUrl: null, file: null });
+    
+    // MELHORIA: Se for objetiva, monta um texto bonito com o gabarito e as alternativas
+    var textoResposta = q.resposta_esperada || '';
+    if (q.alternativas && q.gabarito) {
+      textoResposta = "GABARITO: " + q.gabarito + "\n\nAlternativas:\n" + 
+        Object.keys(q.alternativas).map(letra => letra + ") " + q.alternativas[letra]).join('\n');
+    }
+
+    questoes.push({ enunciado: q.enunciado || '', resposta: textoResposta, valor: String(q.valor || 2), imagemUrl: null, file: null });
     renderizarQuestoes(); toast('Questão adicionada!', 'success');
   }
 
@@ -1190,6 +1232,16 @@
     finally { 
       btn.textContent = '🚀 GERAR PLANO DE AULA'; 
       btn.disabled = false; 
+    }
+  }
+
+  function toggleAlternativas() {
+    var tipo = document.getElementById('iaTipoQuestao').value;
+    var grupo = document.getElementById('grupoNumAlternativas');
+    if (tipo === 'objetiva') {
+      grupo.style.display = 'block';
+    } else {
+      grupo.style.display = 'none';
     }
   }
 </script>
