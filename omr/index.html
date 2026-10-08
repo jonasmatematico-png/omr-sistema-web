@@ -162,6 +162,17 @@
     </div>
 
     <div class="card" style="margin-top: 24px;">
+      <div class="section-title">🔲 QR dos alunos (para imprimir)</div>
+      <div class="form-row" style="grid-template-columns: 1fr 1fr;">
+        <div class="form-group"><label>Turma</label><select id="selTurmaQR" onchange="carregarAlunosQR()"></select></div>
+        <div class="form-group"><label>Prova</label><select id="selProvaQR"></select></div>
+      </div>
+      <div id="alunosQRLista"></div>
+      <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" onclick="imprimirFolhaProva()">📄 Gerar folha de QRs desta prova</button>
+      <button class="btn btn-secondary" style="width: 100%; margin-top: 8px;" onclick="imprimirCartoes()">🪪 Gerar cartões reutilizáveis da turma</button>
+    </div>
+
+    <div class="card" style="margin-top: 24px;">
       <div class="section-title">Provas cadastradas</div>
       <div id="provasLista"><div class="loading">Carregando...</div></div>
     </div>
