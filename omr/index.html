@@ -293,11 +293,31 @@
           <div class="card" style="border-left: 5px solid #FF6F00; background: #FFF8E1;">
             <div class="section-title" style="color: #FF6F00; border-bottom: 1px solid #FFE0B2;">📈 Diagnóstico da Turma</div>
             <p style="font-size: 13px; color: #666; margin-bottom: 12px;">Descubra quais habilidades a turma mais errou e foque sua recuperação onde realmente importa!</p>
-            <div class="form-row" style="grid-template-columns: 1fr 1fr; margin-top: 12px;">
-              <div class="form-group" style="margin-bottom: 0;"><label>Selecione a Prova:</label><select id="selProvaDiagnostico" onchange="carregarDiagnostico()"><option value="">Carregando provas...</option></select></div>
-              <div class="form-group" style="margin-bottom: 0;"><label>Analisar por:</label><select id="tipoAnalise" onchange="carregarDiagnostico()"><option value="descritor">Descritor (SAEB)</option><option value="habilidade">Habilidade (BNCC)</option></select></div>
+            
+            <!-- NOVO LAYOUT COM 3 COLUNAS -->
+            <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr; margin-top: 12px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>1. Selecione a Turma:</label>
+                <select id="selTurmaDiagnostico" onchange="carregarProvasPorTurma()">
+                  <option value="">Carregando turmas...</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>2. Selecione a Prova:</label>
+                <select id="selProvaDiagnostico" onchange="carregarDiagnostico()" disabled>
+                  <option value="">Selecione a turma primeiro</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label>3. Analisar por:</label>
+                <select id="tipoAnalise" onchange="carregarDiagnostico()">
+                  <option value="descritor">Descritor (SAEB)</option>
+                  <option value="habilidade">Habilidade (BNCC)</option>
+                </select>
+              </div>
             </div>
-            <div id="areaGraficoDiagnostico" style="margin-top: 16px;"><p style="text-align: center; color: #999; font-style: italic;">Selecione uma prova para ver o diagnóstico.</p></div>
+            
+            <div id="areaGraficoDiagnostico" style="margin-top: 16px;"><p style="text-align: center; color: #999; font-style: italic;">Selecione a turma e a prova para ver o diagnóstico.</p></div>
           </div>
         </div>
 
@@ -908,56 +928,111 @@
   // ========================================================================
   // 📊 FUNÇÕES DO DIAGNÓSTICO DA TURMA
   // ========================================================================
-  async function carregarProvasDiagnostico() {
-    var sel = document.getElementById('selProvaDiagnostico');
+  // NOVA FUNÇÃO: Carrega as turmas ao entrar na tela
+  async function carregarTurmasDiagnostico() {
+    var sel = document.getElementById('selTurmaDiagnostico');
     if (sel.options.length > 1) return;
     try {
-      var r = await sbFetch('GET', '/rest/v1/avaliacoes?select=id,nome,numero_questoes&order=id.desc');
-      var provas = await r.json();
-      sel.innerHTML = '<option value="">Selecione uma prova...</option>' + provas.map(function(p) { return '<option value="' + p.id + '" data-nome="' + p.nome + '">' + p.nome + '</option>'; }).join('');
+      var r = await sbFetch('GET', '/rest/v1/turmas?select=id,nome&order=nome.asc');
+      var turmas = await r.json();
+      sel.innerHTML = '<option value="">Selecione a turma...</option>' + turmas.map(function(t) { 
+        return '<option value="' + t.id + '">' + t.nome + '</option>'; 
+      }).join('');
     } catch(e) { sel.innerHTML = '<option value="">Erro ao carregar</option>'; }
   }
 
-  async function carregarDiagnostico() {
-    var sel = document.getElementById('selProvaDiagnostico');
-    var idProva = sel.value;
-    var area = document.getElementById('areaGraficoDiagnostico');
-    if (!idProva) { area.innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">Selecione uma prova para ver o diagnóstico.</p>'; return; }
-    area.innerHTML = '<p style="text-align: center; color: #666;">⏳ Calculando diagnóstico...</p>';
+  // NOVA FUNÇÃO: Carrega as provas apenas quando a turma é selecionada
+  async function carregarProvasPorTurma() {
+    var selProva = document.getElementById('selProvaDiagnostico');
+    var idTurma = document.getElementById('selTurmaDiagnostico').value;
+    
+    // Reseta a prova e o gráfico
+    selProva.innerHTML = '<option value="">Carregando provas...</option>';
+    selProva.disabled = true;
+    document.getElementById('areaGraficoDiagnostico').innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">Selecione a prova para ver o diagnóstico.</p>';
+
+    if (!idTurma) {
+      selProva.innerHTML = '<option value="">Selecione a turma primeiro</option>';
+      return;
+    }
+
     try {
+      var r = await sbFetch('GET', '/rest/v1/avaliacoes?select=id,nome,numero_questoes&order=id.desc');
+      var provas = await r.json();
+      selProva.innerHTML = '<option value="">Selecione a prova...</option>' + provas.map(function(p) { 
+        return '<option value="' + p.id + '">' + p.nome + '</option>'; 
+      }).join('');
+      selProva.disabled = false; // Libera o campo de prova
+    } catch(e) { selProva.innerHTML = '<option value="">Erro ao carregar</option>'; }
+  }
+
+  // FUNÇÃO ATUALIZADA: Calcula o diagnóstico filtrando apenas os alunos da turma escolhida
+  async function carregarDiagnostico() {
+    var selTurma = document.getElementById('selTurmaDiagnostico');
+    var selProva = document.getElementById('selProvaDiagnostico');
+    var idTurma = selTurma.value;
+    var idProva = selProva.value;
+    var area = document.getElementById('areaGraficoDiagnostico');
+
+    if (!idTurma || !idProva) { 
+      area.innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">Selecione a turma e a prova.</p>'; 
+      return; 
+    }
+
+    area.innerHTML = '<p style="text-align: center; color: #666;">⏳ Calculando diagnóstico da turma...</p>';
+
+    try {
+      // 1. Busca os IDs dos alunos desta turma específica
+      var rAlunos = await sbFetch('GET', '/rest/v1/alunos?id_turma=eq.' + idTurma + '&select=id');
+      var alunos = await rAlunos.json();
+      if (!alunos || alunos.length === 0) {
+        area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Nenhum aluno encontrado nesta turma.</p>';
+        return;
+      }
+      var idsAlunos = alunos.map(function(a) { return a.id; }).join(',');
+
+      // 2. Busca as questões da prova
       var rQuestoes = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade');
-      if (!rQuestoes.ok) { var erroQ = await rQuestoes.json(); throw new Error("Erro no banco: " + (erroQ.message || erroQ.hint || rQuestoes.status)); }
       var questoes = await rQuestoes.json();
-      if (!Array.isArray(questoes)) { throw new Error("Formato de dados inválido."); }
-      var rRespostas = await sbFetch('GET', '/rest/v1/respostas?id_avaliacao=eq.' + idProva + '&select=id_questao,correta');
-      if (!rRespostas.ok) { var erroR = await rRespostas.json(); throw new Error("Erro ao buscar respostas: " + (erroR.message || erroR.hint || rRespostas.status)); }
+      if (!Array.isArray(questoes) || questoes.length === 0) { 
+        area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Esta prova não possui questões registradas com descritor/habilidade.</p>'; 
+        return; 
+      }
+
+      // 3. Busca as respostas APENAS dos alunos desta turma
+      var rRespostas = await sbFetch('GET', '/rest/v1/respostas?id_avaliacao=eq.' + idProva + '&id_aluno=in.(' + idsAlunos + ')&select=id_questao,correta');
       var respostas = await rRespostas.json();
-      if (!Array.isArray(respostas)) { respostas = []; }
-      if (questoes.length === 0) { area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Esta prova não possui questões registradas com descritor/habilidade.</p>'; return; }
-      if (respostas.length === 0) { area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Nenhum aluno corrigiu esta prova ainda no sistema.</p>'; return; }
+      if (!Array.isArray(respostas) || respostas.length === 0) { 
+        area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Nenhum aluno desta turma corrigiu esta prova ainda.</p>'; 
+        return; 
+      }
       
       var tipoEscolhido = document.getElementById('tipoAnalise').value; 
       var tituloEixo = tipoEscolhido === 'habilidade' ? 'Habilidade (BNCC)' : 'Descritor (SAEB)';
+      
+      // 4. Agrupa e calcula as porcentagens
       var mapaAgrupado = {};
       questoes.forEach(function(q) {
         var chave = q[tipoEscolhido] || 'Não classificado';
         if (!mapaAgrupado[chave]) mapaAgrupado[chave] = { total: 0, acertos: 0 };
       });
       respostas.forEach(function(r) {
-        var questao = questoes.find(function(q) { return String(q.numero) === String(r.id_questao); });
+        var questao = questoes.find(function(q) { return String(q.id) === String(r.id_questao); });
         if (questao) {
           var chave = questao[tipoEscolhido] || 'Não classificado';
           mapaAgrupado[chave].total++;
           if (r.correta) mapaAgrupado[chave].acertos++;
         }
       });
+
       var resultados = Object.keys(mapaAgrupado).map(function(chave) {
         var dados = mapaAgrupado[chave];
         var percentual = dados.total > 0 ? (dados.acertos / dados.total * 100) : 0;
         return { chave: chave, total: dados.total, acertos: dados.acertos, percentual: percentual.toFixed(1) };
       }).sort(function(a, b) { return a.percentual - b.percentual; });
       
-      var html = '<h4 style="margin-bottom: 12px; color: #333;">📊 Desempenho por ' + tituloEixo + ' (do pior para o melhor):</h4>';
+      // 5. Desenha o gráfico (HTML)
+      var html = '<h4 style="margin-bottom: 12px; color: #333;">📊 Desempenho da Turma por ' + tituloEixo + ' (do pior para o melhor):</h4>';
       resultados.forEach(function(item) {
         var cor = item.percentual < 50 ? '#dc3545' : (item.percentual < 70 ? '#ffc107' : '#28a745');
         var emoji = item.percentual < 50 ? '🔴' : (item.percentual < 70 ? '🟡' : '🟢');
@@ -969,16 +1044,17 @@
       
       var itensRuins = resultados.filter(function(item) { return item.percentual < 50; });
       window.itensRuinsAtual = itensRuins; window.tipoAnaliseAtual = tipoEscolhido;
+      
       if (itensRuins.length > 0) {
         html += '<div style="margin-top: 20px; padding: 16px; background: #FFE0B2; border-radius: 8px; border-left: 4px solid #FF6F00;">' +
-          '<h4 style="color: #E65100; margin-bottom: 8px;">🎯 Foco da Recuperação:</h4><p style="font-size: 13px; color: #333;">Os itens abaixo precisam de atenção urgente:</p><ul style="margin: 8px 0; padding-left: 20px;">';
+          '<h4 style="color: #E65100; margin-bottom: 8px;"> Foco da Recuperação:</h4><p style="font-size: 13px; color: #333;">Os itens abaixo precisam de atenção urgente:</p><ul style="margin: 8px 0; padding-left: 20px;">';
         itensRuins.forEach(function(item) { html += '<li><strong>' + item.chave + '</strong> (' + item.percentual + '% de acerto)</li>'; });
         html += '</ul><button class="btn btn-ia" style="width: 100%; margin-top: 8px;" onclick="gerarPlanoRecuperacao(' + idProva + ')">✨ Gerar Plano de Recuperação com IA</button></div>';
       }
       area.innerHTML = html;
     } catch(e) {
       console.error(e);
-      area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px; background: #ffe6e6; border-radius: 8px;">❌ <strong>Erro:</strong> ' + e.message + '<br><small>Verifique se a prova é do tipo "Objetiva" (tabela questoes) e se as colunas descritor/habilidade estão preenchidas.</small></p>';
+      area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px; background: #ffe6e6; border-radius: 8px;">❌ <strong>Erro:</strong> ' + e.message + '</p>';
     }
   }
 
