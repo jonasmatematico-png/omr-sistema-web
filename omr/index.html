@@ -152,6 +152,7 @@
     <nav class="sidebar" id="sidebar">
       <div class="sidebar-menu">
         <button class="menu-item active" onclick="navegarPara('view-provas', this)">📝 Provas Abertas</button>
+        <button class="menu-item" onclick="navegarPara('view-objetivas', this)">🎯 Provas Objetivas</button>
         <button class="menu-item" onclick="navegarPara('view-qrcodes', this)">🔲 QR Codes</button>
         <button class="menu-item" onclick="navegarPara('view-corretor', this)">✏️ Corretor Manual</button>
         <button class="menu-item" onclick="navegarPara('view-diagnostico', this)">📊 Diagnóstico</button>
@@ -165,6 +166,54 @@
         
         <!-- VIEW: PROVAS ABERTAS -->
         <div id="view-provas" class="view active">
+          <!-- VIEW: PROVAS OBJETIVAS (MÚLTIPLA ESCOLHA) -->
+<div id="view-objetivas" class="view">
+  <div id="bannerEdicaoObj" class="banner-edit hidden">
+    <span id="bannerTextoObj" style="font-weight:600;color:#856404;">️ Editando prova objetiva</span>
+    <button class="btn btn-sm" style="background:#856404;color:white;" onclick="cancelarEdicaoObj()">Cancelar edição</button>
+  </div>
+  
+  <div class="card">
+    <div class="section-title">Dados da Prova Objetiva</div>
+    <div class="form-group"><label>Nome da prova</label><input type="text" id="nomeProvaObj" placeholder="Ex: Prova SAEB - 9º Ano"></div>
+    <div class="form-group"><label>Matéria</label>
+      <select id="disciplinaObj">
+        <option value="Matemática">Matemática</option>
+        <option value="Língua Portuguesa">Língua Portuguesa</option>
+        <option value="Ciências">Ciências</option>
+        <option value="História">História</option>
+        <option value="Geografia">Geografia</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Bimestre</label>
+        <select id="bimestreObj"><option value="1">1º</option><option value="2">2º</option><option value="3" selected>3º</option><option value="4">4º</option></select>
+      </div>
+      <div class="form-group"><label>Peso na média</label><input type="number" id="pesoObj" value="1" step="0.1"></div>
+      <div class="form-group"><label>Qtd. de Alternativas</label>
+        <select id="qtdAlternativasObj" onchange="atualizarAlternativasUI()">
+          <option value="4" selected>4 (A, B, C, D)</option>
+          <option value="5">5 (A, B, C, D, E)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <div class="section-title" style="margin: 0; border: none; padding: 0;">Gabarito (<span id="totalQuestoesObj">0</span> questões)</div>
+      <button class="btn btn-primary btn-sm" onclick="adicionarQuestaoObj()">+ Adicionar Questão</button>
+    </div>
+    <div id="questoesObjContainer"></div>
+  </div>
+  
+  <button id="btnSalvarObj" class="btn btn-primary" style="width: 100%; padding: 14px; background: #006666;" onclick="salvarProvaObjetiva()">💾 SALVAR PROVA OBJETIVA</button>
+
+  <div class="card" style="margin-top: 24px;">
+    <div class="section-title">Provas Objetivas Cadastradas</div>
+    <div id="provasObjLista"><div class="loading">Carregando...</div></div>
+  </div>
+</div>
           <div id="bannerEdicao" class="banner-edit hidden">
             <span id="bannerTexto" style="font-weight:600;color:#856404;">✏️ Editando prova</span>
             <button class="btn btn-sm" style="background:#856404;color:white;" onclick="cancelarEdicao()">Cancelar edição</button>
@@ -474,6 +523,7 @@
     carregarProvasDiagnostico();
     carregarSelectsPlanilha();
     carregarSelectsCorretor();
+    carregarProvasObj();
   }
 
   function novaQuestao() { return { enunciado: '', resposta: '', valor: '2', imagemUrl: null, file: null }; }
@@ -1157,6 +1207,161 @@
     var grupo = document.getElementById('grupoNumAlternativas');
     grupo.style.display = (tipo === 'objetiva') ? 'block' : 'none';
   }
+
+  // --- LÓGICA DE PROVAS OBJETIVAS ---
+var questoesObj = [];
+var editandoIdObj = null;
+
+function novaQuestaoObj() { 
+  return { enunciado: '', alt_a: '', alt_b: '', alt_c: '', alt_d: '', alt_e: '', gabarito: 'A', valor: '1', descritor: '' }; 
+}
+
+function novoFormObj() {
+  editandoIdObj = null;
+  document.getElementById('nomeProvaObj').value = '';
+  document.getElementById('bimestreObj').value = '3';
+  document.getElementById('disciplinaObj').value = 'Matemática';
+  document.getElementById('pesoObj').value = '1';
+  document.getElementById('qtdAlternativasObj').value = '4';
+  document.getElementById('bannerEdicaoObj').classList.add('hidden');
+  document.getElementById('btnSalvarObj').textContent = '💾 SALVAR PROVA OBJETIVA';
+  questoesObj = [novaQuestaoObj()];
+  renderizarQuestoesObj();
+}
+
+function adicionarQuestaoObj() { questoesObj.push(novaQuestaoObj()); renderizarQuestoesObj(); }
+function removerQuestaoObj(i) { if (questoesObj.length > 1) { questoesObj.splice(i, 1); renderizarQuestoesObj(); } }
+function atualizarQuestaoObj(i, campo, valor) { questoesObj[i][campo] = valor; }
+function cancelarEdicaoObj() { novoFormObj(); }
+
+function atualizarAlternativasUI() { renderizarQuestoesObj(); }
+
+function renderizarQuestoesObj() {
+  var qtdAlt = parseInt(document.getElementById('qtdAlternativasObj').value);
+  document.getElementById('totalQuestoesObj').textContent = questoesObj.length;
+  
+  document.getElementById('questoesObjContainer').innerHTML = questoesObj.map(function (q, i) {
+    var html = '<div class="questao-card" style="border-left: 4px solid #6f42c1;">';
+    html += '<div class="questao-header"><div style="display:flex;align-items:center;gap:8px;"><div class="questao-num" style="background:#6f42c1;">' + (i + 1) + '</div><strong>Questão ' + (i + 1) + '</strong></div>';
+    html += '<button class="remove-btn" onclick="removerQuestaoObj(' + i + ')">🗑️</button></div>';
+    
+    html += '<div class="form-group"><label>Enunciado da Questão</label><textarea rows="3" onchange="atualizarQuestaoObj(' + i + ', \'enunciado\', this.value)">' + q.enunciado + '</textarea></div>';
+    
+    var letras = ['A', 'B', 'C', 'D', 'E'];
+    for(var j=0; j < qtdAlt; j++) {
+      var letra = letras[j];
+      var campo = 'alt_' + letra.toLowerCase();
+      var checked = q.gabarito === letra ? 'checked' : '';
+      html += '<div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">';
+      html += '<input type="radio" name="gab_' + i + '" value="' + letra + '" ' + checked + ' onchange="atualizarQuestaoObj(' + i + ', \'gabarito\', \'' + letra + '\')" style="width:auto; accent-color:#28a745;">';
+      html += '<strong style="color:#6f42c1; width:20px;">' + letra + ')</strong>';
+      html += '<input type="text" placeholder="Alternativa ' + letra + '" value="' + q[campo] + '" onchange="atualizarQuestaoObj(' + i + ', \'' + campo + '\', this.value)" style="flex:1;">';
+      html += '</div>';
+    }
+
+    html += '<div class="form-row" style="grid-template-columns: 1fr 1fr 1fr; margin-top:12px;">';
+    html += '<div class="form-group" style="margin:0;"><label>Valor</label><input type="number" step="0.1" value="' + q.valor + '" onchange="atualizarQuestaoObj(' + i + ', \'valor\', this.value)"></div>';
+    html += '<div class="form-group" style="margin:0; grid-column: span 2;"><label>Descritor / Habilidade (Opcional)</label><input type="text" value="' + q.descritor + '" onchange="atualizarQuestaoObj(' + i + ', \'descritor\', this.value)" placeholder="Ex: D1, EF05MA01..."></div>';
+    html += '</div></div>';
+    return html;
+  }).join('');
+}
+
+async function salvarProvaObjetiva() {
+  var nome = document.getElementById('nomeProvaObj').value.trim();
+  var bimestre = parseInt(document.getElementById('bimestreObj').value);
+  var peso = parseFloat(document.getElementById('pesoObj').value) || 1;
+  var disciplina = document.getElementById('disciplinaObj').value;
+  
+  if (!nome) { toast('Dê um nome para a prova!', 'error'); return; }
+  if (questoesObj.length === 0) { toast('Adicione ao menos uma questão!', 'error'); return; }
+  for (var i = 0; i < questoesObj.length; i++) { if (!questoesObj[i].enunciado.trim()) { toast('Questão ' + (i + 1) + ' sem enunciado!', 'error'); return; } }
+
+  try {
+    var idAval;
+    // 1. Salvar/Atualizar a Avaliação (modo_correcao: 'objetiva')
+    if (editandoIdObj) {
+      await sbFetch('PATCH', '/rest/v1/avaliacoes?id=eq.' + editandoIdObj, { nome: nome, bimestre: bimestre, peso_media: peso, numero_questoes: questoesObj.length, disciplina: disciplina });
+      await sbFetch('DELETE', '/rest/v1/questoes?id_avaliacao=eq.' + editandoIdObj);
+      idAval = editandoIdObj;
+    } else {
+      var r1 = await sbFetch('POST', '/rest/v1/avaliacoes', { nome: nome, data_prova: new Date().toISOString().split('T')[0], numero_questoes: questoesObj.length, bimestre: bimestre, peso_media: peso, disciplina: disciplina, modo_correcao: 'objetiva', tipo: 'Prova Objetiva' }, 'return=representation');
+      if (!r1.ok) { toast('Erro ao criar prova: ' + msgErro(await r1.json()), 'error'); return; }
+      idAval = (await r1.json())[0].id;
+    }
+
+    // 2. Salvar as Questões no banco (Tabela 'questoes')
+    var linhas = questoesObj.map(function (q, idx) {
+      return { 
+        id_avaliacao: idAval, numero: idx + 1, enunciado: q.enunciado.trim(), 
+        alternativa_a: q.alt_a, alternativa_b: q.alt_b, alternativa_c: q.alt_c, alternativa_d: q.alt_d, alternativa_e: q.alt_e,
+        gabarito: q.gabarito, valor: parseFloat(String(q.valor).replace(',', '.')) || 1, 
+        descritor: q.descritor, habilidade: q.descritor // Mapeia para habilidade também para o diagnóstico funcionar
+      };
+    });
+    
+    var r2 = await sbFetch('POST', '/rest/v1/questoes', linhas);
+    if (!r2.ok) { toast('Erro ao salvar questões: ' + msgErro(await r2.json()), 'error'); return; }
+    
+    toast('✅ Prova Objetiva salva com sucesso!', 'success');
+    novoFormObj(); carregarProvasObj();
+  } catch (e) { toast('Falha: ' + e.message, 'error'); }
+}
+
+async function carregarProvasObj() {
+  var lista = document.getElementById('provasObjLista');
+  lista.innerHTML = '<div class="loading">Carregando...</div>';
+  try {
+    var r = await sbFetch('GET', '/rest/v1/avaliacoes?modo_correcao=eq.objetiva&select=id,nome,bimestre,numero_questoes,data_prova&order=id.desc');
+    if (!r.ok) { lista.innerHTML = '<p style="color:#dc3545;text-align:center;padding:20px;">Erro ao carregar.</p>'; return; }
+    var data = await r.json();
+    if (!data || data.length === 0) { lista.innerHTML = '<p style="color:#888;text-align:center;padding:20px;">Nenhuma prova objetiva cadastrada.</p>'; return; }
+    
+    lista.innerHTML = data.map(function (p) {
+      return '<div class="prova-item"><div class="prova-item-info"><strong>' + p.nome + '</strong><div class="prova-item-meta">' + p.numero_questoes + ' questões • ' + p.bimestre + 'º bimestre</div></div>' +
+        '<div style="display:flex;gap:6px;"><button class="btn btn-warn btn-sm" onclick="editarProvaObj(' + p.id + ')">✏️ Editar</button><button class="btn btn-danger btn-sm" onclick="excluirProvaObj(' + p.id + ')">🗑️</button></div></div>';
+    }).join('');
+  } catch (e) { lista.innerHTML = '<p style="color:#dc3545;text-align:center;padding:20px;">Falha de conexão.</p>'; }
+}
+
+async function editarProvaObj(id) {
+  try {
+    var r1 = await sbFetch('GET', '/rest/v1/avaliacoes?id=eq.' + id + '&select=*');
+    var a = (await r1.json())[0];
+    var r2 = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + id + '&select=enunciado,alternativa_a,alternativa_b,alternativa_c,alternativa_d,alternativa_e,gabarito,valor,descritor&order=numero.asc');
+    var qs = await r2.json();
+    
+    document.getElementById('nomeProvaObj').value = a.nome;
+    document.getElementById('bimestreObj').value = String(a.bimestre);
+    document.getElementById('pesoObj').value = String(a.peso_media);
+    document.getElementById('disciplinaObj').value = a.disciplina || 'Matemática';
+    
+    questoesObj = qs.map(function (q) { 
+      return { enunciado: q.enunciado, alt_a: q.alternativa_a, alt_b: q.alternativa_b, alt_c: q.alternativa_c, alt_d: q.alternativa_d, alt_e: q.alternativa_e, gabarito: q.gabarito, valor: String(q.valor), descritor: q.descritor || '' }; 
+    });
+    if (questoesObj.length === 0) questoesObj = [novaQuestaoObj()];
+    
+    editandoIdObj = id;
+    document.getElementById('bannerEdicaoObj').classList.remove('hidden');
+    document.getElementById('bannerTextoObj').textContent = '✏️ Editando: ' + a.nome;
+    document.getElementById('btnSalvarObj').textContent = '💾 SALVAR ALTERAÇÕES';
+    renderizarQuestoesObj();
+    navegarPara('view-objetivas', document.querySelectorAll('.menu-item')[1]);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) { toast('Erro ao carregar: ' + e.message, 'error'); }
+}
+
+async function excluirProvaObj(id) {
+  if (!confirm('Excluir esta prova objetiva?')) return;
+  try {
+    await sbFetch('DELETE', '/rest/v1/questoes?id_avaliacao=eq.' + id);
+    await sbFetch('DELETE', '/rest/v1/avaliacoes?id=eq.' + id);
+    toast('Prova excluída!', 'success'); carregarProvasObj();
+  } catch (e) { toast('Erro: ' + e.message, 'error'); }
+}
+
+// Chame esta função dentro do mostrarPrincipal() para carregar a lista ao logar
+// carregarProvasObj();
 </script>
 
 </body>
