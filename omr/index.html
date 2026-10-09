@@ -660,14 +660,42 @@
   function adicionarQuestaoGerada(idx) {
     if (!window.questoesGeradasTemp || !window.questoesGeradasTemp[idx]) return;
     var q = window.questoesGeradasTemp[idx];
-    var textoResposta = q.resposta_esperada || '';
+
+    // A MÁGICA: Verifica se a IA gerou uma questão objetiva (tem alternativas)
     if (q.alternativas && q.gabarito) {
-      textoResposta = "GABARITO: " + q.gabarito + "\n\nAlternativas:\n" + Object.keys(q.alternativas).map(letra => letra + ") " + q.alternativas[letra]).join('\n');
+      
+      // Prepara o objeto para a tela de PROVAS OBJETIVAS
+      var novaQuestaoObj = {
+        enunciado: q.enunciado || '',
+        alt_a: q.alternativas['A'] || '',
+        alt_b: q.alternativas['B'] || '',
+        alt_c: q.alternativas['C'] || '',
+        alt_d: q.alternativas['D'] || '',
+        alt_e: q.alternativas['E'] || '',
+        gabarito: q.gabarito,
+        valor: String(q.valor || 1),
+        descritor: q.codigo || ''
+      };
+      
+      // Adiciona na lista de objetivas e atualiza a tela
+      questoesObj.push(novaQuestaoObj);
+      renderizarQuestoesObj();
+      toast('Questão OBJETIVA adicionada!', 'success');
+      fecharModal('modalIA');
+      // Leva o professor para a tela de Provas Objetivas
+      navegarPara('view-objetivas', document.querySelectorAll('.menu-item')[1]); 
+
+    } else {
+      
+      // Se não tiver alternativas, é DISSERTATIVA (código original)
+      var textoResposta = q.resposta_esperada || '';
+      questoes.push({ enunciado: q.enunciado || '', resposta: textoResposta, valor: String(q.valor || 2), imagemUrl: null, file: null });
+      renderizarQuestoes();
+      toast('Questão DISSERTATIVA adicionada!', 'success');
+      fecharModal('modalIA');
+      // Leva o professor para a tela de Provas Abertas
+      navegarPara('view-provas', document.querySelector('.menu-item'));
     }
-    questoes.push({ enunciado: q.enunciado || '', resposta: textoResposta, valor: String(q.valor || 2), imagemUrl: null, file: null });
-    renderizarQuestoes(); toast('Questão adicionada!', 'success');
-    fecharModal('modalIA');
-    navegarPara('view-provas', document.querySelector('.menu-item'));
   }
 
   async function identificarHabilidadeIA() {
