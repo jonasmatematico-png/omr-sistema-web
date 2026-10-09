@@ -996,12 +996,13 @@
       var rQuestoes = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade');
       var questoes = await rQuestoes.json();
       
-      // Se não achar nada na tabela objetiva, tenta na tabela aberta
+      // Se não achar nada na tabela objetiva, tenta na tabela aberta (LÓGICA HÍBRIDA)
       if (!Array.isArray(questoes) || questoes.length === 0) {
         var rQuestoesAbertas = await sbFetch('GET', '/rest/v1/questoes_abertas?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade');
         questoes = await rQuestoesAbertas.json();
       }
       
+      // Verificação final única
       if (!Array.isArray(questoes) || questoes.length === 0) { 
         area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Esta prova não possui questões registradas com descritor/habilidade.</p>'; 
         return; 
