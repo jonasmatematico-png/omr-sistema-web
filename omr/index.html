@@ -7,35 +7,24 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; min-height: 100vh; }
-    
-    /* --- LAYOUT GERAL --- */
     .container { max-width: 900px; margin: 0 auto; padding: 24px; }
     .header { background: #008080; color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
     .header h1 { font-size: 20px; font-weight: 600; }
     .header .user-info { display: flex; gap: 12px; align-items: center; font-size: 13px; }
-    
     .app-layout { display: flex; min-height: calc(100vh - 64px); }
-    
-    /* --- SIDEBAR (MENU LATERAL) --- */
     .sidebar { width: 240px; background: #fff; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; padding: 16px 0; box-shadow: 2px 0 5px rgba(0,0,0,0.05); }
     .sidebar-menu { flex: 1; display: flex; flex-direction: column; gap: 4px; padding: 0 12px; }
     .menu-item { background: transparent; border: none; text-align: left; padding: 12px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; color: #555; transition: all 0.2s; display: flex; align-items: center; gap: 10px; }
     .menu-item:hover { background: #f0f0f0; color: #008080; }
     .menu-item.active { background: #e0f2f1; color: #008080; font-weight: 600; }
     .sidebar-footer { padding: 16px 12px; border-top: 1px solid #e0e0e0; }
-    
-    /* --- CONTEÚDO PRINCIPAL --- */
     .main-content { flex: 1; padding: 24px; overflow-y: auto; background: #f5f5f5; }
     .main-content-inner { max-width: 1000px; margin: 0 auto; }
     .view { display: none; }
     .view.active { display: block; animation: fadeIn 0.3s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* --- BOTÃO FLUTUANTE IA (FAB) --- */
     .fab-ia { position: fixed; bottom: 24px; right: 24px; width: 60px; height: 60px; border-radius: 50%; background: #6f42c1; color: white; font-size: 24px; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(111, 66, 193, 0.4); z-index: 999; transition: transform 0.2s; display: flex; align-items: center; justify-content: center; }
     .fab-ia:hover { transform: scale(1.1); }
-
-    /* --- COMPONENTES --- */
     .btn { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: opacity 0.2s; }
     .btn:hover { opacity: 0.9; }
     .btn-primary { background: #008080; color: white; }
@@ -87,8 +76,6 @@
     .ia-preview-card strong { color: #6f42c1; }
     .habilidade-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #eee; }
     .habilidade-item input { width: auto; }
-
-    /* --- RESPONSIVIDADE (MOBILE) --- */
     @media (max-width: 768px) {
       .app-layout { flex-direction: column; }
       .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 8px; border-right: none; border-bottom: 1px solid #e0e0e0; }
@@ -98,7 +85,6 @@
       .form-row { grid-template-columns: 1fr; }
       .fab-ia { bottom: 16px; right: 16px; width: 50px; height: 50px; font-size: 20px; }
     }
-
     @page { size: A4; margin: 1cm; }
     @media print {
       body * { visibility: hidden; }
@@ -116,7 +102,6 @@
 </head>
 <body>
 
-<!-- TELA DE LOGIN -->
 <div id="authScreen" class="container">
   <div class="auth-container">
     <h2>📝 OMR Sistema</h2>
@@ -137,7 +122,6 @@
   </div>
 </div>
 
-<!-- TELA PRINCIPAL (DASHBOARD) -->
 <div id="mainScreen" class="hidden">
   <div class="header">
     <h1>📝 OMR Sistema</h1>
@@ -148,7 +132,6 @@
   </div>
   
   <div class="app-layout">
-    <!-- MENU LATERAL -->
     <nav class="sidebar" id="sidebar">
       <div class="sidebar-menu">
         <button class="menu-item active" onclick="navegarPara('view-provas', this)">📝 Provas Abertas</button>
@@ -160,11 +143,9 @@
       </div>
     </nav>
 
-    <!-- ÁREA DE CONTEÚDO -->
     <main class="main-content">
       <div class="main-content-inner">
         
-        <!-- VIEW: PROVAS ABERTAS -->
         <div id="view-provas" class="view active">
           <div id="bannerEdicao" class="banner-edit hidden">
             <span id="bannerTexto" style="font-weight:600;color:#856404;">✏️ Editando prova</span>
@@ -201,20 +182,17 @@
             <div id="questoesContainer"></div>
           </div>
           <button id="btnSalvar" class="btn btn-primary" style="width: 100%; padding: 14px;" onclick="salvarProva()">💾 SALVAR PROVA ABERTA</button>
-
           <div class="card" style="margin-top: 24px;">
             <div class="section-title">Provas cadastradas</div>
             <div id="provasLista"><div class="loading">Carregando...</div></div>
           </div>
         </div>
 
-        <!-- VIEW: PROVAS OBJETIVAS (MÚLTIPLA ESCOLHA) -->
         <div id="view-objetivas" class="view">
           <div id="bannerEdicaoObj" class="banner-edit hidden">
             <span id="bannerTextoObj" style="font-weight:600;color:#856404;">✏️ Editando prova objetiva</span>
             <button class="btn btn-sm" style="background:#856404;color:white;" onclick="cancelarEdicaoObj()">Cancelar edição</button>
           </div>
-          
           <div class="card">
             <div class="section-title">Dados da Prova Objetiva</div>
             <div class="form-group"><label>Nome da prova</label><input type="text" id="nomeProvaObj" placeholder="Ex: Prova SAEB - 9º Ano"></div>
@@ -240,7 +218,6 @@
               </div>
             </div>
           </div>
-
           <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
               <div class="section-title" style="margin: 0; border: none; padding: 0;">Gabarito (<span id="totalQuestoesObj">0</span> questões)</div>
@@ -248,16 +225,13 @@
             </div>
             <div id="questoesObjContainer"></div>
           </div>
-          
           <button id="btnSalvarObj" class="btn btn-primary" style="width: 100%; padding: 14px; background: #006666;" onclick="salvarProvaObjetiva()">💾 SALVAR PROVA OBJETIVA</button>
-
           <div class="card" style="margin-top: 24px;">
             <div class="section-title">Provas Objetivas Cadastradas</div>
             <div id="provasObjLista"><div class="loading">Carregando...</div></div>
           </div>
         </div>
 
-        <!-- VIEW: QR CODES -->
         <div id="view-qrcodes" class="view">
           <div class="card">
             <div class="section-title">🔲 QR dos alunos (para imprimir)</div>
@@ -269,16 +243,13 @@
             <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" onclick="imprimirFolhaProva()">📄 Gerar folha de QRs desta prova</button>
             <button class="btn btn-secondary" style="width: 100%; margin-top: 8px;" onclick="imprimirCartoes()">🪪 Gerar cartões reutilizáveis da turma</button>
           </div>
-          <button class="btn btn-ia" style="width: 100%; background: #4A148C;" onclick="window.open('https://omr-sistema-api.onrender.com/baixar_gabaritos', '_blank')">
-            📝 Gerar Gabaritos Personalizados (OMR)
-          </button>
+          <button class="btn btn-ia" style="width: 100%; background: #4A148C;" onclick="window.open('https://omr-sistema-api.onrender.com/baixar_gabaritos', '_blank')">📝 Gerar Gabaritos Personalizados (OMR)</button>
         </div>
 
-        <!-- VIEW: CORRETOR MANUAL -->
         <div id="view-corretor" class="view">
           <div class="card" style="border-left: 5px solid #dc3545; background: #fff5f5;">
             <div class="section-title" style="color: #dc3545; border-bottom: 1px solid #f5c6cb;">✏️ Corretor Manual de Prova</div>
-            <p style="font-size: 13px; color: #666; margin-bottom: 12px;">Marque as respostas diretamente no site e salve no banco. Ideal para alunos que o App OMR não corrigiu.</p>
+            <p style="font-size: 13px; color: #666; margin-bottom: 12px;">Marque as respostas diretamente no site e salve no banco.</p>
             <div class="form-row" style="grid-template-columns: 1fr 1fr;">
               <div class="form-group"><label>Turma:</label><select id="selTurmaCorretor" onchange="carregarAlunosCorretor()"><option value="">Selecione...</option></select></div>
               <div class="form-group"><label>Prova:</label><select id="selProvaCorretor" onchange="carregarAlunosCorretor()"><option value="">Selecione...</option></select></div>
@@ -288,13 +259,10 @@
           </div>
         </div>
 
-        <!-- VIEW: DIAGNÓSTICO -->
         <div id="view-diagnostico" class="view">
           <div class="card" style="border-left: 5px solid #FF6F00; background: #FFF8E1;">
             <div class="section-title" style="color: #FF6F00; border-bottom: 1px solid #FFE0B2;">📈 Diagnóstico da Turma</div>
             <p style="font-size: 13px; color: #666; margin-bottom: 12px;">Descubra quais habilidades a turma mais errou e foque sua recuperação onde realmente importa!</p>
-            
-            <!-- NOVO LAYOUT COM 3 COLUNAS -->
             <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr; margin-top: 12px;">
               <div class="form-group" style="margin-bottom: 0;">
                 <label>1. Selecione a Turma:</label>
@@ -316,12 +284,10 @@
                 </select>
               </div>
             </div>
-            
             <div id="areaGraficoDiagnostico" style="margin-top: 16px;"><p style="text-align: center; color: #999; font-style: italic;">Selecione a turma e a prova para ver o diagnóstico.</p></div>
           </div>
         </div>
 
-        <!-- VIEW: PLANILHA -->
         <div id="view-planilha" class="view">
           <div class="card" style="border-left: 5px solid #28a745; background: #f0fff4;">
             <div class="section-title" style="color: #28a745; border-bottom: 1px solid #c3e6cb;">📊 Exportar Respostas para Planilha</div>
@@ -340,10 +306,9 @@
   </div>
 </div>
 
-<!-- BOTÃO FLUTUANTE DO ASSISTENTE IA -->
 <button class="fab-ia" onclick="abrirModalIA()" title="Assistente Pedagógico IA">🤖</button>
 
-<!-- Modais (Mantidos fora do layout principal para sobrepor tudo) -->
+<!-- (Os modais permanecem exatamente iguais aos anteriores para economizar espaço, o foco é no JavaScript abaixo) -->
 <div id="modalColar" class="modal">
   <div class="modal-content">
     <div class="modal-header"><h3>📋 Colar prova do Word/Docs</h3><button class="btn btn-sm" onclick="fecharModal('modalColar')">✕</button></div>
@@ -464,7 +429,6 @@
   var editandoId = null;
   var matrizHabilidades = [];
 
-  // --- NAVEGAÇÃO DO MENU ---
   function navegarPara(viewId, btn) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById(viewId).classList.add('active');
@@ -547,7 +511,7 @@
     carregarProvasObj();
   }
 
-  function novaQuestao() { return { enunciado: '', resposta: '', valor: '2', imagemUrl: null, file: null }; }
+  function novaQuestao() { return { enunciado: '', resposta: '', valor: '2', imagemUrl: null, file: null, descritor: '' }; }
   function novoForm() {
     editandoId = null;
     document.getElementById('nomeProva').value = '';
@@ -572,13 +536,18 @@
       if (q.file) statusImg = '📎 Novo anexo: ' + q.file.name;
       else if (q.imagemUrl) statusImg = '🖼️ Imagem de referência anexada ✅ <a href="' + q.imagemUrl + '" target="_blank">ver</a> • <a href="#" onclick="removerImagem(' + i + ');return false;">remover</a>';
       else statusImg = 'Sem imagem (opcional)';
+      
       return '<div class="questao-card">' +
         '<div class="questao-header"><div style="display:flex;align-items:center;gap:8px;"><div class="questao-num">' + (i + 1) + '</div><strong>Questão ' + (i + 1) + '</strong></div>' +
         '<button class="remove-btn" onclick="removerQuestao(' + i + ')">🗑️</button></div>' +
-        '<div class="form-group"><label>Enunciado</label><textarea rows="4" onchange="atualizarQuestao(' + i + ', \'enunciado\', this.value)">' + q.enunciado + '</textarea></div>' +
-        '<div class="form-group"><label>Resposta esperada / critério</label><textarea rows="4" onchange="atualizarQuestao(' + i + ', \'resposta\', this.value)">' + q.resposta + '</textarea></div>' +
-        '<div class="form-row"><div class="form-group" style="max-width:150px;"><label>Valor</label><input type="number" step="0.1" value="' + q.valor + '" onchange="atualizarQuestao(' + i + ', \'valor\', this.value)"></div>' +
-        '<div class="form-group"><label>🖼️ Imagem do enunciado</label><input type="file" accept="image/*" onchange="anexarImagem(' + i + ', this)"><div class="img-status">' + statusImg + '</div></div></div></div>';
+        '<div class="form-group"><label>Enunciado</label><textarea rows="3" onchange="atualizarQuestao(' + i + ', \'enunciado\', this.value)">' + q.enunciado + '</textarea></div>' +
+        '<div class="form-group"><label>Resposta esperada / critério</label><textarea rows="3" onchange="atualizarQuestao(' + i + ', \'resposta\', this.value)">' + q.resposta + '</textarea></div>' +
+        '<div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">' +
+          '<div class="form-group" style="margin:0;"><label>Valor</label><input type="number" step="0.1" value="' + q.valor + '" onchange="atualizarQuestao(' + i + ', \'valor\', this.value)"></div>' +
+          '<div class="form-group" style="margin:0; grid-column: span 2;"><label>Descritor / Habilidade (Opcional)</label><input type="text" value="' + (q.descritor || '') + '" onchange="atualizarQuestao(' + i + ', \'descritor\', this.value)" placeholder="Ex: D1, EF05MA01..."></div>' +
+        '</div>' +
+        '<div class="form-group"><label>🖼️ Imagem do enunciado</label><input type="file" accept="image/*" onchange="anexarImagem(' + i + ', this)"><div class="img-status">' + statusImg + '</div></div>' +
+        '</div>';
     }).join('');
   }
 
@@ -681,10 +650,7 @@
     if (!window.questoesGeradasTemp || !window.questoesGeradasTemp[idx]) return;
     var q = window.questoesGeradasTemp[idx];
 
-    // A MÁGICA: Verifica se a IA gerou uma questão objetiva (tem alternativas)
     if (q.alternativas && q.gabarito) {
-      
-      // Prepara o objeto para a tela de PROVAS OBJETIVAS
       var novaQuestaoObj = {
         enunciado: q.enunciado || '',
         alt_a: q.alternativas['A'] || '',
@@ -696,24 +662,17 @@
         valor: String(q.valor || 1),
         descritor: q.codigo || ''
       };
-      
-      // Adiciona na lista de objetivas e atualiza a tela
       questoesObj.push(novaQuestaoObj);
       renderizarQuestoesObj();
       toast('Questão OBJETIVA adicionada!', 'success');
       fecharModal('modalIA');
-      // Leva o professor para a tela de Provas Objetivas
       navegarPara('view-objetivas', document.querySelectorAll('.menu-item')[1]); 
-
     } else {
-      
-      // Se não tiver alternativas, é DISSERTATIVA (código original)
       var textoResposta = q.resposta_esperada || '';
-      questoes.push({ enunciado: q.enunciado || '', resposta: textoResposta, valor: String(q.valor || 2), imagemUrl: null, file: null });
+      questoes.push({ enunciado: q.enunciado || '', resposta: textoResposta, valor: String(q.valor || 2), imagemUrl: null, file: null, descritor: q.codigo || '' });
       renderizarQuestoes();
       toast('Questão DISSERTATIVA adicionada!', 'success');
       fecharModal('modalIA');
-      // Leva o professor para a tela de Provas Abertas
       navegarPara('view-provas', document.querySelector('.menu-item'));
     }
   }
@@ -842,13 +801,15 @@
     try {
       var r1 = await sbFetch('GET', '/rest/v1/avaliacoes?id=eq.' + id + '&select=*');
       var a = (await r1.json())[0];
-      var r2 = await sbFetch('GET', '/rest/v1/questoes_abertas?id_avaliacao=eq.' + id + '&select=enunciado,resposta_esperada,valor,imagem_url&order=numero.asc');
+      var r2 = await sbFetch('GET', '/rest/v1/questoes_abertas?id_avaliacao=eq.' + id + '&select=enunciado,resposta_esperada,valor,imagem_url,descritor&order=numero.asc');
       var qs = await r2.json();
       document.getElementById('nomeProva').value = a.nome;
       document.getElementById('bimestre').value = String(a.bimestre);
       document.getElementById('peso').value = String(a.peso_media);
       document.getElementById('disciplina').value = a.disciplina || 'Matemática';
-      questoes = qs.map(function (q) { return { enunciado: q.enunciado, resposta: q.resposta_esperada, valor: String(q.valor), imagemUrl: q.imagem_url, file: null }; });
+      questoes = qs.map(function (q) { 
+        return { enunciado: q.enunciado, resposta: q.resposta_esperada, valor: String(q.valor), imagemUrl: q.imagem_url, file: null, descritor: q.descritor || '' }; 
+      });
       if (questoes.length === 0) questoes = [novaQuestao()];
       editandoId = id;
       document.getElementById('bannerEdicao').classList.remove('hidden');
@@ -889,7 +850,11 @@
         idAval = (await r1.json())[0].id;
       }
       var linhas = questoes.map(function (q, idx) {
-        return { id_avaliacao: idAval, numero: idx + 1, enunciado: q.enunciado.trim(), resposta_esperada: q.resposta.trim(), valor: parseFloat(String(q.valor).replace(',', '.')) || 2, imagem_url: q.imagemUrl };
+        return { 
+          id_avaliacao: idAval, numero: idx + 1, enunciado: q.enunciado.trim(), resposta_esperada: q.resposta.trim(), 
+          valor: parseFloat(String(q.valor).replace(',', '.')) || 2, imagem_url: q.imagemUrl,
+          descritor: q.descritor || '', habilidade: q.descritor || ''
+        };
       });
       var r2 = await sbFetch('POST', '/rest/v1/questoes_abertas', linhas);
       if (!r2.ok) { toast('Erro ao salvar questões: ' + msgErro(await r2.json()), 'error'); return; }
@@ -926,9 +891,8 @@
   (async function () { if (token && userEmail) { await refrescarSessao(); mostrarPrincipal(userEmail); } })();
 
   // ========================================================================
-  // 📊 FUNÇÕES DO DIAGNÓSTICO DA TURMA
+  // 📊 FUNÇÕES DO DIAGNÓSTICO DA TURMA (COM MENSAGENS INTELIGENTES)
   // ========================================================================
-  // NOVA FUNÇÃO: Carrega as turmas ao entrar na tela
   async function carregarTurmasDiagnostico() {
     var sel = document.getElementById('selTurmaDiagnostico');
     if (sel.options.length > 1) return;
@@ -941,12 +905,10 @@
     } catch(e) { sel.innerHTML = '<option value="">Erro ao carregar</option>'; }
   }
 
-  // NOVA FUNÇÃO: Carrega as provas apenas quando a turma é selecionada
   async function carregarProvasPorTurma() {
     var selProva = document.getElementById('selProvaDiagnostico');
     var idTurma = document.getElementById('selTurmaDiagnostico').value;
     
-    // Reseta a prova e o gráfico
     selProva.innerHTML = '<option value="">Carregando provas...</option>';
     selProva.disabled = true;
     document.getElementById('areaGraficoDiagnostico').innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">Selecione a prova para ver o diagnóstico.</p>';
@@ -962,11 +924,10 @@
       selProva.innerHTML = '<option value="">Selecione a prova...</option>' + provas.map(function(p) { 
         return '<option value="' + p.id + '">' + p.nome + '</option>'; 
       }).join('');
-      selProva.disabled = false; // Libera o campo de prova
+      selProva.disabled = false;
     } catch(e) { selProva.innerHTML = '<option value="">Erro ao carregar</option>'; }
   }
 
-  // FUNÇÃO ATUALIZADA E CORRIGIDA: Calcula o diagnóstico filtrando apenas os alunos da turma escolhida
   async function carregarDiagnostico() {
     var selTurma = document.getElementById('selTurmaDiagnostico');
     var selProva = document.getElementById('selProvaDiagnostico');
@@ -979,11 +940,11 @@
       return; 
     }
 
-    area.innerHTML = '<p style="text-align: center; color: #666;">⏳ Calculando diagnóstico da turma...</p>';
+    area.innerHTML = '<p style="text-align: center; color: #666;">⏳ Analisando dados do diagnóstico...</p>';
 
     try {
       // 1. Busca os IDs dos alunos desta turma específica
-      var rAlunos = await sbFetch('GET', '/rest/v1/alunos?id_turma=eq.' + idTurma + '&select=id');
+      var rAlunos = await sbFetch('GET', '/rest/v1/alunos?id_turma=eq.' + idTurma + '&select=id,nome_completo');
       var alunos = await rAlunos.json();
       if (!alunos || alunos.length === 0) {
         area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Nenhum aluno encontrado nesta turma.</p>';
@@ -991,27 +952,33 @@
       }
       var idsAlunos = alunos.map(function(a) { return a.id; }).join(',');
 
-      // 2. Busca as questões da prova (LÓGICA HÍBRIDA CORRIGIDA)
+      // 2. Busca as questões da prova (LÓGICA HÍBRIDA)
       var rQuestoes = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade');
-      var questoes = await rQuestoes.json(); // Leitura 1 (e única deste objeto)
+      var questoes = await rQuestoes.json();
       
-      // Se não achar nada na tabela objetiva, tenta na tabela aberta
       if (!Array.isArray(questoes) || questoes.length === 0) {
         var rQuestoesAbertas = await sbFetch('GET', '/rest/v1/questoes_abertas?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade');
-        questoes = await rQuestoesAbertas.json(); // Leitura do novo objeto
+        questoes = await rQuestoesAbertas.json();
       }
       
-      // Verificação final única
       if (!Array.isArray(questoes) || questoes.length === 0) { 
-        area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Esta prova não possui questões registradas com descritor/habilidade.</p>'; 
+        area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Esta prova não possui questões registradas. <br><small>Verifique se a prova foi salva corretamente.</small></p>'; 
+        return; 
+      }
+
+      // Verifica se as questões têm descritor ou habilidade
+      var temClassificacao = questoes.some(function(q) { return q.descritor || q.habilidade; });
+      if (!temClassificacao) {
+        area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ As questões desta prova estão sem "Descritor" ou "Habilidade". <br><small>Edite a prova e preencha o campo "Descritor/Habilidade" em cada questão para o diagnóstico funcionar.</small></p>'; 
         return; 
       }
 
       // 3. Busca as respostas APENAS dos alunos desta turma
       var rRespostas = await sbFetch('GET', '/rest/v1/respostas?id_avaliacao=eq.' + idProva + '&id_aluno=in.(' + idsAlunos + ')&select=id_questao,correta');
       var respostas = await rRespostas.json();
+      
       if (!Array.isArray(respostas) || respostas.length === 0) { 
-        area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Nenhum aluno desta turma corrigiu esta prova ainda.</p>'; 
+        area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Nenhum aluno desta turma corrigiu esta prova ainda no sistema. <br><small>O diagnóstico só aparece após as correções serem registradas (pelo App ou Corretor Manual).</small></p>'; 
         return; 
       }
       
@@ -1021,15 +988,18 @@
       // 4. Agrupa e calcula as porcentagens
       var mapaAgrupado = {};
       questoes.forEach(function(q) {
-        var chave = q[tipoEscolhido] || 'Não classificado';
+        var chave = (q[tipoEscolhido] && q[tipoEscolhido].trim() !== '') ? q[tipoEscolhido] : 'Não classificado';
         if (!mapaAgrupado[chave]) mapaAgrupado[chave] = { total: 0, acertos: 0 };
       });
+      
       respostas.forEach(function(r) {
         var questao = questoes.find(function(q) { return String(q.id) === String(r.id_questao); });
         if (questao) {
-          var chave = questao[tipoEscolhido] || 'Não classificado';
+          var chave = (questao[tipoEscolhido] && questao[tipoEscolhido].trim() !== '') ? questao[tipoEscolhido] : 'Não classificado';
           mapaAgrupado[chave].total++;
-          if (r.correta) mapaAgrupado[chave].acertos++;
+          if (r.correta === true || r.correta === 'true') {
+            mapaAgrupado[chave].acertos++;
+          }
         }
       });
 
@@ -1041,27 +1011,32 @@
       
       // 5. Desenha o gráfico (HTML)
       var html = '<h4 style="margin-bottom: 12px; color: #333;">📊 Desempenho da Turma por ' + tituloEixo + ' (do pior para o melhor):</h4>';
-      resultados.forEach(function(item) {
-        var cor = item.percentual < 50 ? '#dc3545' : (item.percentual < 70 ? '#ffc107' : '#28a745');
-        var emoji = item.percentual < 50 ? '🔴' : (item.percentual < 70 ? '🟡' : '🟢');
-        html += '<div style="margin-bottom: 12px;"><div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
-          '<strong>' + emoji + ' ' + item.chave + '</strong><span style="font-weight: bold; color: ' + cor + ';">' + item.percentual + '% de acerto</span></div>' +
-          '<div style="background: #e0e0e0; border-radius: 6px; height: 24px; overflow: hidden;"><div style="background: ' + cor + '; height: 100%; width: ' + item.percentual + '%; transition: width 0.5s;"></div></div>' +
-          '<div style="font-size: 11px; color: #666; margin-top: 2px;">' + item.acertos + ' acertos de ' + item.total + ' respostas</div></div>';
-      });
       
-      var itensRuins = resultados.filter(function(item) { return item.percentual < 50; });
-      window.itensRuinsAtual = itensRuins; window.tipoAnaliseAtual = tipoEscolhido;
-      
-      if (itensRuins.length > 0) {
-        html += '<div style="margin-top: 20px; padding: 16px; background: #FFE0B2; border-radius: 8px; border-left: 4px solid #FF6F00;">' +
-          '<h4 style="color: #E65100; margin-bottom: 8px;">🎯 Foco da Recuperação:</h4><p style="font-size: 13px; color: #333;">Os itens abaixo precisam de atenção urgente:</p><ul style="margin: 8px 0; padding-left: 20px;">';
-        itensRuins.forEach(function(item) { html += '<li><strong>' + item.chave + '</strong> (' + item.percentual + '% de acerto)</li>'; });
-        html += '</ul><button class="btn btn-ia" style="width: 100%; margin-top: 8px;" onclick="gerarPlanoRecuperacao(' + idProva + ')">✨ Gerar Plano de Recuperação com IA</button></div>';
+      if (resultados.length === 0) {
+         html += '<p style="text-align: center; color: #666;">Nenhum dado de desempenho encontrado.</p>';
+      } else {
+        resultados.forEach(function(item) {
+          var cor = item.percentual < 50 ? '#dc3545' : (item.percentual < 70 ? '#ffc107' : '#28a745');
+          var emoji = item.percentual < 50 ? '🔴' : (item.percentual < 70 ? '🟡' : '🟢');
+          html += '<div style="margin-bottom: 12px;"><div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
+            '<strong>' + emoji + ' ' + item.chave + '</strong><span style="font-weight: bold; color: ' + cor + ';">' + item.percentual + '% de acerto</span></div>' +
+            '<div style="background: #e0e0e0; border-radius: 6px; height: 24px; overflow: hidden;"><div style="background: ' + cor + '; height: 100%; width: ' + item.percentual + '%; transition: width 0.5s;"></div></div>' +
+            '<div style="font-size: 11px; color: #666; margin-top: 2px;">' + item.acertos + ' acertos de ' + item.total + ' respostas</div></div>';
+        });
+        
+        var itensRuins = resultados.filter(function(item) { return item.percentual < 50; });
+        window.itensRuinsAtual = itensRuins; window.tipoAnaliseAtual = tipoEscolhido;
+        
+        if (itensRuins.length > 0) {
+          html += '<div style="margin-top: 20px; padding: 16px; background: #FFE0B2; border-radius: 8px; border-left: 4px solid #FF6F00;">' +
+            '<h4 style="color: #E65100; margin-bottom: 8px;">🎯 Foco da Recuperação:</h4><p style="font-size: 13px; color: #333;">Os itens abaixo precisam de atenção urgente:</p><ul style="margin: 8px 0; padding-left: 20px;">';
+          itensRuins.forEach(function(item) { html += '<li><strong>' + item.chave + '</strong> (' + item.percentual + '% de acerto)</li>'; });
+          html += '</ul><button class="btn btn-ia" style="width: 100%; margin-top: 8px;" onclick="gerarPlanoRecuperacao(' + idProva + ')">✨ Gerar Plano de Recuperação com IA</button></div>';
+        }
       }
       area.innerHTML = html;
     } catch(e) {
-      console.error(e);
+      console.error("Erro no diagnóstico:", e);
       area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px; background: #ffe6e6; border-radius: 8px;">❌ <strong>Erro:</strong> ' + e.message + '</p>';
     }
   }
