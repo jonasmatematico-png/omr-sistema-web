@@ -966,7 +966,7 @@
     } catch(e) { selProva.innerHTML = '<option value="">Erro ao carregar</option>'; }
   }
 
-  // FUNÇÃO ATUALIZADA: Calcula o diagnóstico filtrando apenas os alunos da turma escolhida
+  // FUNÇÃO ATUALIZADA E CORRIGIDA: Calcula o diagnóstico filtrando apenas os alunos da turma escolhida
   async function carregarDiagnostico() {
     var selTurma = document.getElementById('selTurmaDiagnostico');
     var selProva = document.getElementById('selProvaDiagnostico');
@@ -991,23 +991,17 @@
       }
       var idsAlunos = alunos.map(function(a) { return a.id; }).join(',');
 
-      // 2. Busca as questões da prova
-      // 2. Busca as questões da prova (Tenta primeiro na tabela 'questoes' para objetivas)
+      // 2. Busca as questões da prova (LÓGICA HÍBRIDA CORRIGIDA)
       var rQuestoes = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade');
-      var questoes = await rQuestoes.json();
+      var questoes = await rQuestoes.json(); // Leitura 1 (e única deste objeto)
       
-      // Se não achar nada na tabela objetiva, tenta na tabela aberta (LÓGICA HÍBRIDA)
+      // Se não achar nada na tabela objetiva, tenta na tabela aberta
       if (!Array.isArray(questoes) || questoes.length === 0) {
         var rQuestoesAbertas = await sbFetch('GET', '/rest/v1/questoes_abertas?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade');
-        questoes = await rQuestoesAbertas.json();
+        questoes = await rQuestoesAbertas.json(); // Leitura do novo objeto
       }
       
       // Verificação final única
-      if (!Array.isArray(questoes) || questoes.length === 0) { 
-        area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Esta prova não possui questões registradas com descritor/habilidade.</p>'; 
-        return; 
-      }
-      var questoes = await rQuestoes.json();
       if (!Array.isArray(questoes) || questoes.length === 0) { 
         area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Esta prova não possui questões registradas com descritor/habilidade.</p>'; 
         return; 
@@ -1061,7 +1055,7 @@
       
       if (itensRuins.length > 0) {
         html += '<div style="margin-top: 20px; padding: 16px; background: #FFE0B2; border-radius: 8px; border-left: 4px solid #FF6F00;">' +
-          '<h4 style="color: #E65100; margin-bottom: 8px;"> Foco da Recuperação:</h4><p style="font-size: 13px; color: #333;">Os itens abaixo precisam de atenção urgente:</p><ul style="margin: 8px 0; padding-left: 20px;">';
+          '<h4 style="color: #E65100; margin-bottom: 8px;">🎯 Foco da Recuperação:</h4><p style="font-size: 13px; color: #333;">Os itens abaixo precisam de atenção urgente:</p><ul style="margin: 8px 0; padding-left: 20px;">';
         itensRuins.forEach(function(item) { html += '<li><strong>' + item.chave + '</strong> (' + item.percentual + '% de acerto)</li>'; });
         html += '</ul><button class="btn btn-ia" style="width: 100%; margin-top: 8px;" onclick="gerarPlanoRecuperacao(' + idProva + ')">✨ Gerar Plano de Recuperação com IA</button></div>';
       }
