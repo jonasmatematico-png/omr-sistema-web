@@ -76,6 +76,9 @@
     .ia-preview-card strong { color: #6f42c1; }
     .habilidade-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #eee; }
     .habilidade-item input { width: auto; }
+    .diagnostico-tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 2px solid #e0e0e0; }
+    .diagnostico-tab { flex: 1; padding: 12px; background: transparent; border: none; cursor: pointer; font-weight: 500; color: #666; font-size: 14px; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+    .diagnostico-tab.active { color: #008080; border-bottom-color: #008080; }
     @media (max-width: 768px) {
       .app-layout { flex-direction: column; }
       .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 8px; border-right: none; border-bottom: 1px solid #e0e0e0; }
@@ -248,7 +251,7 @@
 
         <div id="view-corretor" class="view">
           <div class="card" style="border-left: 5px solid #dc3545; background: #fff5f5;">
-            <div class="section-title" style="color: #dc3545; border-bottom: 1px solid #f5c6cb;">✏️ Corretor Manual de Prova</div>
+            <div class="section-title" style="color: #dc3545; border-bottom: 1px solid #f5c6cb;">️ Corretor Manual de Prova</div>
             <p style="font-size: 13px; color: #666; margin-bottom: 12px;">Marque as respostas diretamente no site. O sistema corrigirá automaticamente com base no gabarito.</p>
             <div class="form-row" style="grid-template-columns: 1fr 1fr;">
               <div class="form-group"><label>Turma:</label><select id="selTurmaCorretor" onchange="carregarAlunosCorretor()"><option value="">Selecione...</option></select></div>
@@ -261,36 +264,75 @@
 
         <div id="view-diagnostico" class="view">
           <div class="card" style="border-left: 5px solid #FF6F00; background: #FFF8E1;">
-            <div class="section-title" style="color: #FF6F00; border-bottom: 1px solid #FFE0B2;">📈 Diagnóstico da Turma</div>
-            <p style="font-size: 13px; color: #666; margin-bottom: 12px;">Descubra quais habilidades a turma mais errou e foque sua recuperação onde realmente importa!</p>
-            <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr; margin-top: 12px;">
-              <div class="form-group" style="margin-bottom: 0;">
-                <label>1. Selecione a Turma:</label>
-                <select id="selTurmaDiagnostico" onchange="carregarProvasPorTurma()">
-                  <option value="">Carregando turmas...</option>
-                </select>
+            <div class="section-title" style="color: #FF6F00; border-bottom: 1px solid #FFE0B2;"> Diagnóstico</div>
+            <p style="font-size: 13px; color: #666; margin-bottom: 12px;">Analise o desempenho da turma ou de alunos individuais por descritor/habilidade!</p>
+            
+            <div class="diagnostico-tabs">
+              <button class="diagnostico-tab active" onclick="mudarAbaDiagnostico('turma')" id="tabDiagTurma">👥 Diagnóstico da Turma</button>
+              <button class="diagnostico-tab" onclick="mudarAbaDiagnostico('aluno')" id="tabDiagAluno">👤 Diagnóstico do Aluno</button>
+            </div>
+
+            <div id="abaDiagTurma">
+              <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr; margin-top: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label>1. Selecione a Turma:</label>
+                  <select id="selTurmaDiagnostico" onchange="carregarProvasPorTurma()">
+                    <option value="">Carregando turmas...</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label>2. Selecione a Prova:</label>
+                  <select id="selProvaDiagnostico" onchange="carregarDiagnosticoTurma()" disabled>
+                    <option value="">Selecione a turma primeiro</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label>3. Analisar por:</label>
+                  <select id="tipoAnaliseTurma" onchange="carregarDiagnosticoTurma()">
+                    <option value="descritor">Descritor (SAEB)</option>
+                    <option value="habilidade">Habilidade (BNCC)</option>
+                  </select>
+                </div>
               </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <label>2. Selecione a Prova:</label>
-                <select id="selProvaDiagnostico" onchange="carregarDiagnostico()" disabled>
-                  <option value="">Selecione a turma primeiro</option>
-                </select>
+              <div id="areaGraficoDiagnosticoTurma" style="margin-top: 16px;"><p style="text-align: center; color: #999; font-style: italic;">Selecione a turma e a prova para ver o diagnóstico.</p></div>
+            </div>
+
+            <div id="abaDiagAluno" class="hidden">
+              <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr; margin-top: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label>1. Selecione a Turma:</label>
+                  <select id="selTurmaDiagAluno" onchange="carregarAlunosDiagAluno()">
+                    <option value="">Carregando turmas...</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label>2. Selecione o Aluno:</label>
+                  <select id="selAlunoDiagAluno" onchange="carregarProvasAluno()" disabled>
+                    <option value="">Selecione a turma primeiro</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label>3. Selecione a Prova:</label>
+                  <select id="selProvaDiagAluno" onchange="carregarDiagnosticoAluno()" disabled>
+                    <option value="">Selecione o aluno primeiro</option>
+                  </select>
+                </div>
               </div>
-              <div class="form-group" style="margin-bottom: 0;">
-                <label>3. Analisar por:</label>
-                <select id="tipoAnalise" onchange="carregarDiagnostico()">
+              <div class="form-group" style="margin-top: 12px;">
+                <label>4. Analisar por:</label>
+                <select id="tipoAnaliseAluno" onchange="carregarDiagnosticoAluno()">
                   <option value="descritor">Descritor (SAEB)</option>
                   <option value="habilidade">Habilidade (BNCC)</option>
                 </select>
               </div>
+              <div id="areaGraficoDiagnosticoAluno" style="margin-top: 16px;"><p style="text-align: center; color: #999; font-style: italic;">Selecione a turma, aluno e prova para ver o diagnóstico individual.</p></div>
             </div>
-            <div id="areaGraficoDiagnostico" style="margin-top: 16px;"><p style="text-align: center; color: #999; font-style: italic;">Selecione a turma e a prova para ver o diagnóstico.</p></div>
           </div>
         </div>
 
         <div id="view-planilha" class="view">
           <div class="card" style="border-left: 5px solid #28a745; background: #f0fff4;">
-            <div class="section-title" style="color: #28a745; border-bottom: 1px solid #c3e6cb;">📊 Exportar Respostas para Planilha</div>
+            <div class="section-title" style="color: #28a745; border-bottom: 1px solid #c3e6cb;"> Exportar Respostas para Planilha</div>
             <p style="font-size: 13px; color: #666; margin-bottom: 12px;">Gera uma tabela com as respostas de cada aluno, pronta para copiar e colar no Google Sheets.</p>
             <div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">
               <div class="form-group"><label>Turma:</label><select id="selTurmaPlanilha"></select></div>
@@ -322,7 +364,7 @@
 
 <div id="modalIA" class="modal">
   <div class="modal-content">
-    <div class="modal-header"><h3> Assistente Pedagógico IA</h3><button class="btn btn-sm" onclick="fecharModal('modalIA')">✕</button></div>
+    <div class="modal-header"><h3>🤖 Assistente Pedagógico IA</h3><button class="btn btn-sm" onclick="fecharModal('modalIA')"></button></div>
     <div class="ia-tabs">
       <div class="ia-tab active" onclick="mudarAbaIA('gerar')" id="tabGerar">✨ Gerar Questões</div>
       <div class="ia-tab" onclick="mudarAbaIA('identificar')" id="tabIdentificar">🔍 Identificar</div>
@@ -407,7 +449,7 @@
 
 <div id="modalRecuperacao" class="modal">
   <div class="modal-content" style="max-width: 800px;">
-    <div class="modal-header"><h3> Plano de Recuperação Dirigida</h3><button class="btn btn-sm" onclick="fecharModal('modalRecuperacao')">✕</button></div>
+    <div class="modal-header"><h3>🚀 Plano de Recuperação Dirigida</h3><button class="btn btn-sm" onclick="fecharModal('modalRecuperacao')">✕</button></div>
     <div id="areaPlanoRecuperacao"><p style="text-align: center; color: #666;">⏳ A IA está criando o plano...</p></div>
     <div style="display: flex; gap: 8px; margin-top: 16px;">
       <button class="btn btn-secondary" style="flex: 1;" onclick="fecharModal('modalRecuperacao')">Fechar</button>
@@ -538,7 +580,7 @@
       
       return '<div class="questao-card">' +
         '<div class="questao-header"><div style="display:flex;align-items:center;gap:8px;"><div class="questao-num">' + (i + 1) + '</div><strong>Questão ' + (i + 1) + '</strong></div>' +
-        '<button class="remove-btn" onclick="removerQuestao(' + i + ')">🗑️</button></div>' +
+        '<button class="remove-btn" onclick="removerQuestao(' + i + ')">️</button></div>' +
         '<div class="form-group"><label>Enunciado</label><textarea rows="3" onchange="atualizarQuestao(' + i + ', \'enunciado\', this.value)">' + q.enunciado + '</textarea></div>' +
         '<div class="form-group"><label>Resposta esperada / critério</label><textarea rows="3" onchange="atualizarQuestao(' + i + ', \'resposta\', this.value)">' + q.resposta + '</textarea></div>' +
         '<div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">' +
@@ -679,7 +721,7 @@
   async function identificarHabilidadeIA() {
     var texto = document.getElementById('iaTextoIdentificar').value.trim();
     if (texto.length < 10) { toast('Cole o texto completo da questão!', 'error'); return; }
-    var btn = document.getElementById('btnIdentificarIA'); btn.textContent = ' Identificando...'; btn.disabled = true;
+    var btn = document.getElementById('btnIdentificarIA'); btn.textContent = '⏳ Identificando...'; btn.disabled = true;
     try {
       var payload = { texto: texto, fonte: document.getElementById('iaFonte').value, componente: document.getElementById('disciplina').value, ano: parseInt(document.getElementById('iaAno').value) };
       var r = await fetch(API_URL + '/api/identificar_habilidade', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -890,19 +932,45 @@
   (async function () { if (token && userEmail) { await refrescarSessao(); mostrarPrincipal(userEmail); } })();
 
   // ========================================================================
-  // 📊 FUNÇÕES DO DIAGNÓSTICO DA TURMA (COM PAINEL DE DEPURAÇÃO)
+  // 📊 DIAGNÓSTICO DA TURMA E DO ALUNO
   // ========================================================================
-  async function carregarTurmasDiagnostico() {
-    var sel = document.getElementById('selTurmaDiagnostico');
-    if (sel.options.length > 1) return;
-    try {
-      var r = await sbFetch('GET', '/rest/v1/turmas?select=id,nome&order=nome.asc');
-      var turmas = await r.json();
-      sel.innerHTML = '<option value="">Selecione a turma...</option>' + turmas.map(function(t) { 
-        return '<option value="' + t.id + '">' + t.nome + '</option>'; 
-      }).join('');
-    } catch(e) { sel.innerHTML = '<option value="">Erro ao carregar</option>'; }
+  
+  function mudarAbaDiagnostico(aba) {
+    document.getElementById('abaDiagTurma').classList.add('hidden');
+    document.getElementById('abaDiagAluno').classList.add('hidden');
+    document.getElementById('tabDiagTurma').classList.remove('active');
+    document.getElementById('tabDiagAluno').classList.remove('active');
+    
+    if (aba === 'turma') {
+      document.getElementById('abaDiagTurma').classList.remove('hidden');
+      document.getElementById('tabDiagTurma').classList.add('active');
+    } else {
+      document.getElementById('abaDiagAluno').classList.remove('hidden');
+      document.getElementById('tabDiagAluno').classList.add('active');
+    }
   }
+
+  async function carregarTurmasDiagnostico() {
+  var selTurma = document.getElementById('selTurmaDiagnostico');
+  var selTurmaAluno = document.getElementById('selTurmaDiagAluno');
+  
+  if (selTurma.options.length > 1) return;
+  
+  try {
+    var r = await sbFetch('GET', '/rest/v1/turmas?select=id,nome&order=nome.asc');
+    var turmas = await r.json();
+    var html = '<option value="">Selecione a turma...</option>';
+    turmas.forEach(function(t) { 
+      html += '<option value="' + t.id + '">' + t.nome + '</option>'; 
+    });
+    // PREENCHE OS DOIS SELECTS (Turma e Aluno)
+    selTurma.innerHTML = html;
+    selTurmaAluno.innerHTML = html;
+  } catch(e) { 
+    selTurma.innerHTML = '<option value="">Erro ao carregar</option>';
+    selTurmaAluno.innerHTML = '<option value="">Erro ao carregar</option>';
+  }
+}
 
   async function carregarProvasPorTurma() {
     var selProva = document.getElementById('selProvaDiagnostico');
@@ -910,7 +978,7 @@
     
     selProva.innerHTML = '<option value="">Carregando provas...</option>';
     selProva.disabled = true;
-    document.getElementById('areaGraficoDiagnostico').innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">Selecione a prova para ver o diagnóstico.</p>';
+    document.getElementById('areaGraficoDiagnosticoTurma').innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">Selecione a prova para ver o diagnóstico.</p>';
 
     if (!idTurma) {
       selProva.innerHTML = '<option value="">Selecione a turma primeiro</option>';
@@ -926,123 +994,447 @@
       selProva.disabled = false;
     } catch(e) { selProva.innerHTML = '<option value="">Erro ao carregar</option>'; }
   }
+// ========================================================================
+// 📊 DIAGNÓSTICO DA TURMA (BUSCA HÍBRIDA EM TODAS AS TABELAS)
+// ========================================================================
+async function carregarDiagnosticoTurma() {
+  var selTurma = document.getElementById('selTurmaDiagnostico');
+  var selProva = document.getElementById('selProvaDiagnostico');
+  var idTurma = selTurma.value;
+  var idProva = selProva.value;
+  var area = document.getElementById('areaGraficoDiagnosticoTurma');
 
-  async function carregarDiagnostico() {
-    var selTurma = document.getElementById('selTurmaDiagnostico');
-    var selProva = document.getElementById('selProvaDiagnostico');
-    var idTurma = selTurma.value;
-    var idProva = selProva.value;
-    var area = document.getElementById('areaGraficoDiagnostico');
+  if (!idTurma || !idProva) { 
+    area.innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">Selecione a turma e a prova.</p>'; 
+    return; 
+  }
 
-    if (!idTurma || !idProva) { 
-      area.innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">Selecione a turma e a prova.</p>'; 
+  area.innerHTML = '<p style="text-align: center; color: #666;">⏳ Analisando dados do diagnóstico...</p>';
+
+  try {
+    // 1. Busca os alunos desta turma
+    var rAlunos = await sbFetch('GET', '/rest/v1/alunos?id_turma=eq.' + idTurma + '&select=id,nome_completo,numero_chamada');
+    var alunos = await rAlunos.json();
+    
+    if (!alunos || alunos.length === 0) {
+      area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Nenhum aluno encontrado nesta turma.</p>';
+      return;
+    }
+    var idsAlunos = alunos.map(function(a) { return a.id; }).join(',');
+
+    // 2. Busca as questões da prova
+    var rQuestoes = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade,valor');
+    var questoes = await rQuestoes.json();
+    
+    if (!Array.isArray(questoes) || questoes.length === 0) {
+      var rQuestoesAbertas = await sbFetch('GET', '/rest/v1/questoes_abertas?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade,valor');
+      questoes = await rQuestoesAbertas.json();
+    }
+    
+    if (!Array.isArray(questoes) || questoes.length === 0) { 
+      area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Esta prova não possui questões registradas.</p>'; 
       return; 
     }
 
-    area.innerHTML = '<p style="text-align: center; color: #666;">⏳ Analisando dados do diagnóstico...</p>';
+    var temClassificacao = questoes.some(function(q) { return q.descritor || q.habilidade; });
+    if (!temClassificacao) {
+      area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ As questões desta prova estão sem "Descritor" ou "Habilidade".</p>'; 
+      return; 
+    }
+
+    // 3. Busca as respostas dos alunos desta turma
+    var rRespostas = await sbFetch('GET', '/rest/v1/respostas?id_avaliacao=eq.' + idProva + '&id_aluno=in.(' + idsAlunos + ')&select=id_questao,correta,id_aluno');
+    var respostas = await rRespostas.json();
+
+    // 4. CÁLCULO DA NOTA
+    var notaMaximaProva = 0;
+    questoes.forEach(q => {
+      var valorQuestao = parseFloat(q.valor) || 1;
+      notaMaximaProva += valorQuestao;
+    });
+
+    var notasAlunos = {};
+    respostas.forEach(r => {
+      var alunoId = r.id_aluno;
+      if (!notasAlunos[alunoId]) notasAlunos[alunoId] = 0;
+      
+      var questao = questoes.find(q => String(q.id) === String(r.id_questao));
+      if (questao && (r.correta === true || r.correta === 'true' || r.correta === 1)) {
+        notasAlunos[alunoId] += parseFloat(questao.valor) || 1;
+      }
+    });
+
+    var somaNotas = 0;
+    var alunosComNota = 0;
+    Object.keys(notasAlunos).forEach(alunoId => {
+      somaNotas += notasAlunos[alunoId];
+      alunosComNota++;
+    });
+    
+    var mediaTurma = alunosComNota > 0 ? (somaNotas / alunosComNota).toFixed(1) : '0.0';
+
+    // 5. AGRUPA POR DESCRITOR/HABILIDADE
+    var tipoEscolhido = document.getElementById('tipoAnaliseTurma').value; 
+    var tituloEixo = tipoEscolhido === 'habilidade' ? 'Habilidade (BNCC)' : 'Descritor (SAEB)';
+    
+    var mapaAgrupado = {};
+    questoes.forEach(function(q) {
+      var chave = (q[tipoEscolhido] && q[tipoEscolhido].trim() !== '') ? q[tipoEscolhido] : 'Não classificado';
+      if (!mapaAgrupado[chave]) mapaAgrupado[chave] = { total: 0, acertos: 0 };
+    });
+    
+    respostas.forEach(function(r) {
+      var questao = questoes.find(function(q) { return String(q.id) === String(r.id_questao); });
+      if (questao) {
+        var chave = (questao[tipoEscolhido] && questao[tipoEscolhido].trim() !== '') ? questao[tipoEscolhido] : 'Não classificado';
+        mapaAgrupado[chave].total++;
+        if (r.correta === true || r.correta === 'true' || r.correta === 1) {
+          mapaAgrupado[chave].acertos++;
+        }
+      }
+    });
+
+    var resultados = Object.keys(mapaAgrupado).map(function(chave) {
+      var dados = mapaAgrupado[chave];
+      var percentual = dados.total > 0 ? (dados.acertos / dados.total * 100) : 0;
+      return { chave: chave, total: dados.total, acertos: dados.acertos, percentual: percentual.toFixed(1) };
+    }).sort(function(a, b) { return a.percentual - b.percentual; });
+    
+    // 6. MONTA O HTML
+    var html = '<div style="background: #e3f2fd; border-left: 5px solid #2196F3; padding: 16px; border-radius: 6px; margin-bottom: 20px;">';
+    html += '<h3 style="color: #1565C0; margin: 0 0 8px 0;">📊 Média da Turma: ' + mediaTurma + ' / ' + notaMaximaProva.toFixed(1) + ' pontos</h3>';
+    html += '<p style="margin: 0; font-size: 13px; color: #555;">Alunos que fizeram a prova: <b>' + alunosComNota + '</b> de <b>' + alunos.length + '</b></p>';
+    html += '</div>';
+
+    html += '<h4 style="margin-bottom: 12px; color: #333;">📈 Desempenho da Turma por ' + tituloEixo + ' (do pior para o melhor):</h4>';
+    
+    if (resultados.length === 0) {
+       html += '<p style="text-align: center; color: #666;">Nenhum dado de desempenho encontrado.</p>';
+    } else {
+      resultados.forEach(function(item) {
+        var cor = item.percentual < 50 ? '#dc3545' : (item.percentual < 70 ? '#ffc107' : '#28a745');
+        var emoji = item.percentual < 50 ? '🔴' : (item.percentual < 70 ? '🟡' : '🟢');
+        html += '<div style="margin-bottom: 12px;"><div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
+          '<strong>' + emoji + ' ' + item.chave + '</strong><span style="font-weight: bold; color: ' + cor + ';">' + item.percentual + '% de acerto</span></div>' +
+          '<div style="background: #e0e0e0; border-radius: 6px; height: 24px; overflow: hidden;"><div style="background: ' + cor + '; height: 100%; width: ' + item.percentual + '%; transition: width 0.5s;"></div></div>' +
+          '<div style="font-size: 11px; color: #666; margin-top: 2px;">' + item.acertos + ' acertos de ' + item.total + ' respostas</div></div>';
+      });
+      
+      var itensRuins = resultados.filter(function(item) { return item.percentual < 50; });
+      window.itensRuinsAtual = itensRuins; window.tipoAnaliseAtual = tipoEscolhido;
+      
+      if (itensRuins.length > 0) {
+        html += '<div style="margin-top: 20px; padding: 16px; background: #FFE0B2; border-radius: 8px; border-left: 4px solid #FF6F00;">' +
+          '<h4 style="color: #E65100; margin-bottom: 8px;">🎯 Foco da Recuperação:</h4><p style="font-size: 13px; color: #333;">Os itens abaixo precisam de atenção urgente:</p><ul style="margin: 8px 0; padding-left: 20px;">';
+        itensRuins.forEach(function(item) { html += '<li><strong>' + item.chave + '</strong> (' + item.percentual + '% de acerto)</li>'; });
+        html += '</ul><button class="btn btn-ia" style="width: 100%; margin-top: 8px;" onclick="gerarPlanoRecuperacao(' + idProva + ')">✨ Gerar Plano de Recuperação com IA</button></div>';
+      }
+    }
+
+    // PAINEL DE DEPURAÇÃO DETALHADO
+    html += '<div style="margin-top: 30px; padding: 15px; background: #e0f7fa; border: 1px solid #00bcd4; border-radius: 6px; font-size: 12px; color: #006064;">';
+    html += '<strong>🔍 Painel de Depuração:</strong><br>';
+    html += '• Turma ID: <b>' + idTurma + '</b> (Nome: ' + selTurma.options[selTurma.selectedIndex].text + ')<br>';
+    html += '• Prova ID: <b>' + idProva + '</b><br>';
+    html += '• Alunos na turma: <b>' + alunos.length + '</b><br>';
+    html += '• IDs dos alunos: <b>' + idsAlunos + '</b><br>';
+    html += '• Questões encontradas: <b>' + questoes.length + '</b><br>';
+    html += '• <b>Respostas encontradas para esta turma: ' + respostas.length + '</b><br>';
+    html += '• Alunos que fizeram a prova: <b>' + alunosComNota + '</b><br>';
+    html += '</div>';
+
+    area.innerHTML = html;
+  } catch(e) {
+    console.error("Erro no diagnóstico:", e);
+    area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px; background: #ffe6e6; border-radius: 8px;">❌ <strong>Erro:</strong> ' + e.message + '</p>';
+  }
+}
+
+// ========================================================================
+//  DIAGNÓSTICO INDIVIDUAL DO ALUNO (BUSCA HÍBRIDA)
+// ========================================================================
+async function carregarDiagnosticoAluno() {
+  var selAluno = document.getElementById('selAlunoDiagAluno');
+  var selProva = document.getElementById('selProvaDiagAluno');
+  var idAluno = selAluno.value;
+  var idProva = selProva.value;
+  var area = document.getElementById('areaGraficoDiagnosticoAluno');
+
+  if (!idAluno || !idProva) { 
+    area.innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">Selecione o aluno e a prova.</p>'; 
+    return; 
+  }
+
+  area.innerHTML = '<p style="text-align: center; color: #666;">⏳ Analisando desempenho do aluno...</p>';
+
+  try {
+    var rAluno = await sbFetch('GET', '/rest/v1/alunos?id=eq.' + idAluno + '&select=nome_completo,numero_chamada');
+    var alunoData = (await rAluno.json())[0];
+    var nomeAluno = alunoData ? (alunoData.numero_chamada + '. ' + alunoData.nome_completo) : 'Aluno';
+
+    var rQuestoes = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade,valor');
+    var questoes = await rQuestoes.json();
+    
+    if (!Array.isArray(questoes) || questoes.length === 0) {
+      var rQuestoesAbertas = await sbFetch('GET', '/rest/v1/questoes_abertas?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade,valor');
+      questoes = await rQuestoesAbertas.json();
+    }
+    
+    if (!Array.isArray(questoes) || questoes.length === 0) { 
+      area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Esta prova não possui questões registradas.</p>'; 
+      return; 
+    }
+
+    var temClassificacao = questoes.some(function(q) { return q.descritor || q.habilidade; });
+    if (!temClassificacao) {
+      area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ As questões desta prova estão sem "Descritor" ou "Habilidade".</p>'; 
+      return; 
+    }
+
+    // BUSCA HÍBRIDA DE RESPOSTAS DO ALUNO
+    var todasRespostas = [];
+    var infoBusca = '';
 
     try {
-      var rAlunos = await sbFetch('GET', '/rest/v1/alunos?id_turma=eq.' + idTurma + '&select=id,nome_completo');
-      var alunos = await rAlunos.json();
-      if (!alunos || alunos.length === 0) {
-        area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Nenhum aluno encontrado nesta turma.</p>';
-        return;
+      var rRespostas = await sbFetch('GET', '/rest/v1/respostas?id_avaliacao=eq.' + idProva + '&id_aluno=eq.' + idAluno + '&select=id_questao,correta,resposta_aluno');
+      var respostasObj = await rRespostas.json();
+      if (Array.isArray(respostasObj) && respostasObj.length > 0) {
+        todasRespostas = todasRespostas.concat(respostasObj);
+        infoBusca += '• Tabela "respostas": <b>' + respostasObj.length + '</b> respostas<br>';
       }
-      var idsAlunos = alunos.map(function(a) { return a.id; }).join(',');
-
-      var rQuestoes = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade');
-      var questoes = await rQuestoes.json();
-      
-      if (!Array.isArray(questoes) || questoes.length === 0) {
-        var rQuestoesAbertas = await sbFetch('GET', '/rest/v1/questoes_abertas?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade');
-        questoes = await rQuestoesAbertas.json();
-      }
-      
-      if (!Array.isArray(questoes) || questoes.length === 0) { 
-        area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Esta prova não possui questões registradas. <br><small>Verifique se a prova foi salva corretamente.</small></p>'; 
-        return; 
-      }
-
-      var temClassificacao = questoes.some(function(q) { return q.descritor || q.habilidade; });
-      if (!temClassificacao) {
-        area.innerHTML = '<p style="text-align: center; color: #dc3545;">️ As questões desta prova estão sem "Descritor" ou "Habilidade". <br><small>Edite a prova e preencha o campo "Descritor/Habilidade" em cada questão para o diagnóstico funcionar.</small></p>'; 
-        return; 
-      }
-
-      var rRespostas = await sbFetch('GET', '/rest/v1/respostas?id_avaliacao=eq.' + idProva + '&id_aluno=in.(' + idsAlunos + ')&select=id_questao,correta');
-      var respostas = await rRespostas.json();
-      
-      if (!Array.isArray(respostas) || respostas.length === 0) { 
-        area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Nenhum aluno desta turma corrigiu esta prova ainda no sistema. <br><small>O diagnóstico só aparece após as correções serem registradas (pelo App ou Corretor Manual).</small></p>'; 
-        return; 
-      }
-      
-      var tipoEscolhido = document.getElementById('tipoAnalise').value; 
-      var tituloEixo = tipoEscolhido === 'habilidade' ? 'Habilidade (BNCC)' : 'Descritor (SAEB)';
-      
-      var mapaAgrupado = {};
-      questoes.forEach(function(q) {
-        var chave = (q[tipoEscolhido] && q[tipoEscolhido].trim() !== '') ? q[tipoEscolhido] : 'Não classificado';
-        if (!mapaAgrupado[chave]) mapaAgrupado[chave] = { total: 0, acertos: 0 };
-      });
-      
-      respostas.forEach(function(r) {
-        var questao = questoes.find(function(q) { return String(q.id) === String(r.id_questao); });
-        if (questao) {
-          var chave = (questao[tipoEscolhido] && questao[tipoEscolhido].trim() !== '') ? questao[tipoEscolhido] : 'Não classificado';
-          mapaAgrupado[chave].total++;
-          if (r.correta === true || r.correta === 'true' || r.correta === 1) {
-            mapaAgrupado[chave].acertos++;
-          }
-        }
-      });
-
-      var resultados = Object.keys(mapaAgrupado).map(function(chave) {
-        var dados = mapaAgrupado[chave];
-        var percentual = dados.total > 0 ? (dados.acertos / dados.total * 100) : 0;
-        return { chave: chave, total: dados.total, acertos: dados.acertos, percentual: percentual.toFixed(1) };
-      }).sort(function(a, b) { return a.percentual - b.percentual; });
-      
-      var html = '<h4 style="margin-bottom: 12px; color: #333;"> Desempenho da Turma por ' + tituloEixo + ' (do pior para o melhor):</h4>';
-      
-      if (resultados.length === 0) {
-         html += '<p style="text-align: center; color: #666;">Nenhum dado de desempenho encontrado.</p>';
-      } else {
-        resultados.forEach(function(item) {
-          var cor = item.percentual < 50 ? '#dc3545' : (item.percentual < 70 ? '#ffc107' : '#28a745');
-          var emoji = item.percentual < 50 ? '' : (item.percentual < 70 ? '🟡' : '🟢');
-          html += '<div style="margin-bottom: 12px;"><div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
-            '<strong>' + emoji + ' ' + item.chave + '</strong><span style="font-weight: bold; color: ' + cor + ';">' + item.percentual + '% de acerto</span></div>' +
-            '<div style="background: #e0e0e0; border-radius: 6px; height: 24px; overflow: hidden;"><div style="background: ' + cor + '; height: 100%; width: ' + item.percentual + '%; transition: width 0.5s;"></div></div>' +
-            '<div style="font-size: 11px; color: #666; margin-top: 2px;">' + item.acertos + ' acertos de ' + item.total + ' respostas</div></div>';
-        });
-        
-        var itensRuins = resultados.filter(function(item) { return item.percentual < 50; });
-        window.itensRuinsAtual = itensRuins; window.tipoAnaliseAtual = tipoEscolhido;
-        
-        if (itensRuins.length > 0) {
-          html += '<div style="margin-top: 20px; padding: 16px; background: #FFE0B2; border-radius: 8px; border-left: 4px solid #FF6F00;">' +
-            '<h4 style="color: #E65100; margin-bottom: 8px;">🎯 Foco da Recuperação:</h4><p style="font-size: 13px; color: #333;">Os itens abaixo precisam de atenção urgente:</p><ul style="margin: 8px 0; padding-left: 20px;">';
-          itensRuins.forEach(function(item) { html += '<li><strong>' + item.chave + '</strong> (' + item.percentual + '% de acerto)</li>'; });
-          html += '</ul><button class="btn btn-ia" style="width: 100%; margin-top: 8px;" onclick="gerarPlanoRecuperacao(' + idProva + ')">✨ Gerar Plano de Recuperação com IA</button></div>';
-        }
-      }
-
-      // PAINEL DE DEPURAÇÃO (DEBUG)
-      html += '<div style="margin-top: 30px; padding: 15px; background: #e0f7fa; border: 1px solid #00bcd4; border-radius: 6px; font-size: 12px; color: #006064;">';
-      html += '<strong>🔍 Painel de Depuração (Dados do Banco):</strong><br>';
-      html += '• Questões encontradas: <b>' + questoes.length + '</b><br>';
-      html += '• Respostas de alunos encontradas: <b>' + respostas.length + '</b><br>';
-      html += '• Exemplo de dado "correta" da 1ª resposta: <b>' + (respostas[0] ? JSON.stringify(respostas[0].correta) : 'N/A') + '</b><br>';
-      html += '• Exemplo de "descritor" da 1ª questão: <b>' + (questoes[0] ? questoes[0].descritor : 'N/A') + '</b>';
-      html += '</div>';
-
-      area.innerHTML = html;
     } catch(e) {
-      console.error("Erro no diagnóstico:", e);
-      area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px; background: #ffe6e6; border-radius: 8px;">❌ <strong>Erro:</strong> ' + e.message + '</p>';
+      infoBusca += '• Tabela "respostas": erro<br>';
     }
+
+    try {
+      var rRespostasAbertas = await sbFetch('GET', '/rest/v1/respostas_abertas?id_avaliacao=eq.' + idProva + '&id_aluno=eq.' + idAluno + '&select=id_questao,correta,resposta_aluno');
+      var respostasAbertas = await rRespostasAbertas.json();
+      if (Array.isArray(respostasAbertas) && respostasAbertas.length > 0) {
+        todasRespostas = todasRespostas.concat(respostasAbertas);
+        infoBusca += '• Tabela "respostas_abertas": <b>' + respostasAbertas.length + '</b> respostas<br>';
+      }
+    } catch(e) {
+      infoBusca += '• Tabela "respostas_abertas": erro<br>';
+    }
+
+    var respostas = todasRespostas;
+
+    if (!Array.isArray(respostas) || respostas.length === 0) { 
+      var htmlErro = '<p style="text-align: center; color: #dc3545;">⚠️ Este aluno ainda não corrigiu esta prova.</p>';
+      htmlErro += '<div style="margin-top: 20px; padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; font-size: 12px;">';
+      htmlErro += '<strong>🔍 Depuração:</strong><br>';
+      htmlErro += '• Aluno ID: <b>' + idAluno + '</b><br>';
+      htmlErro += '• Prova ID: <b>' + idProva + '</b><br>';
+      htmlErro += infoBusca;
+      htmlErro += '</div>';
+      area.innerHTML = htmlErro;
+      return; 
+    }
+
+    var tipoEscolhido = document.getElementById('tipoAnaliseAluno').value; 
+    var tituloEixo = tipoEscolhido === 'habilidade' ? 'Habilidade (BNCC)' : 'Descritor (SAEB)';
+
+    var notaMaxima = 0;
+    var notaAluno = 0;
+    
+    questoes.forEach(q => {
+      var valorQuestao = parseFloat(q.valor) || 1;
+      notaMaxima += valorQuestao;
+    });
+    
+    respostas.forEach(r => {
+      var questao = questoes.find(q => String(q.id) === String(r.id_questao));
+      if (questao && (r.correta === true || r.correta === 'true' || r.correta === 1)) {
+        notaAluno += parseFloat(questao.valor) || 1;
+      }
+    });
+
+    var mapaAgrupado = {};
+    questoes.forEach(function(q) {
+      var chave = (q[tipoEscolhido] && q[tipoEscolhido].trim() !== '') ? q[tipoEscolhido] : 'Não classificado';
+      if (!mapaAgrupado[chave]) mapaAgrupado[chave] = { total: 0, acertos: 0 };
+    });
+    
+    respostas.forEach(function(r) {
+      var questao = questoes.find(function(q) { return String(q.id) === String(r.id_questao); });
+      if (questao) {
+        var chave = (questao[tipoEscolhido] && questao[tipoEscolhido].trim() !== '') ? questao[tipoEscolhido] : 'Não classificado';
+        mapaAgrupado[chave].total++;
+        if (r.correta === true || r.correta === 'true' || r.correta === 1) {
+          mapaAgrupado[chave].acertos++;
+        }
+      }
+    });
+
+    var resultados = Object.keys(mapaAgrupado).map(function(chave) {
+      var dados = mapaAgrupado[chave];
+      var percentual = dados.total > 0 ? (dados.acertos / dados.total * 100) : 0;
+      return { chave: chave, total: dados.total, acertos: dados.acertos, percentual: percentual.toFixed(1) };
+    }).sort(function(a, b) { return a.percentual - b.percentual; });
+    
+    var html = '<div style="background: #e8f5e9; border-left: 5px solid #4CAF50; padding: 16px; border-radius: 6px; margin-bottom: 20px;">';
+    html += '<h3 style="color: #2E7D32; margin: 0 0 8px 0;">👤 Nota de ' + nomeAluno + ': ' + notaAluno.toFixed(1) + ' / ' + notaMaxima.toFixed(1) + '</h3>';
+    html += '<p style="margin: 0; font-size: 13px; color: #555;">O aluno acertou questões totalizando <b>' + notaAluno.toFixed(1) + ' pontos</b> de um total de <b>' + notaMaxima.toFixed(1) + ' pontos</b> possíveis.</p>';
+    html += '</div>';
+
+    html += '<h4 style="margin-bottom: 12px; color: #333;"> Desempenho por ' + tituloEixo + ':</h4>';
+    
+    if (resultados.length === 0) {
+       html += '<p style="text-align: center; color: #666;">Nenhum dado de desempenho encontrado.</p>';
+    } else {
+      resultados.forEach(function(item) {
+        var cor = item.percentual < 50 ? '#dc3545' : (item.percentual < 70 ? '#ffc107' : '#28a745');
+        var emoji = item.percentual < 50 ? '🔴' : (item.percentual < 70 ? '🟡' : '');
+        html += '<div style="margin-bottom: 12px;"><div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
+          '<strong>' + emoji + ' ' + item.chave + '</strong><span style="font-weight: bold; color: ' + cor + ';">' + item.percentual + '% de acerto</span></div>' +
+          '<div style="background: #e0e0e0; border-radius: 6px; height: 24px; overflow: hidden;"><div style="background: ' + cor + '; height: 100%; width: ' + item.percentual + '%; transition: width 0.5s;"></div></div>' +
+          '<div style="font-size: 11px; color: #666; margin-top: 2px;">' + item.acertos + ' acertos de ' + item.total + ' questões</div></div>';
+      });
+      
+      var itensRuins = resultados.filter(function(item) { return item.percentual < 50; });
+      
+      if (itensRuins.length > 0) {
+        html += '<div style="margin-top: 20px; padding: 16px; background: #FFE0B2; border-radius: 8px; border-left: 4px solid #FF6F00;">' +
+          '<h4 style="color: #E65100; margin-bottom: 8px;"> Pontos de Atenção:</h4><p style="font-size: 13px; color: #333;">Este aluno precisa de reforço em:</p><ul style="margin: 8px 0; padding-left: 20px;">';
+        itensRuins.forEach(function(item) { html += '<li><strong>' + item.chave + '</strong> (' + item.percentual + '% de acerto)</li>'; });
+        html += '</ul></div>';
+      }
+    }
+
+    html += '<div style="margin-top: 30px; padding: 15px; background: #e0f7fa; border: 1px solid #00bcd4; border-radius: 6px; font-size: 12px; color: #006064;">';
+    html += '<strong> Painel de Depuração:</strong><br>';
+    html += '• Aluno: <b>' + nomeAluno + '</b> (ID: ' + idAluno + ')<br>';
+    html += '• Questões encontradas: <b>' + questoes.length + '</b><br>';
+    html += infoBusca;
+    html += '• <b>Total de respostas: ' + respostas.length + '</b><br>';
+    html += '</div>';
+
+    area.innerHTML = html;
+  } catch(e) {
+    console.error("Erro no diagnóstico do aluno:", e);
+    area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px; background: #ffe6e6; border-radius: 8px;">❌ <strong>Erro:</strong> ' + e.message + '</p>';
   }
+}
+
+
+  // ========================================================================
+// 👤 DIAGNÓSTICO INDIVIDUAL DO ALUNO (COM NOTA FINAL)
+// ========================================================================
+async function carregarDiagnosticoAluno() {
+  var selAluno = document.getElementById('selAlunoDiagAluno');
+  var selProva = document.getElementById('selProvaDiagAluno');
+  var idAluno = selAluno.value;
+  var idProva = selProva.value;
+  var area = document.getElementById('areaGraficoDiagnosticoAluno');
+
+  if (!idAluno || !idProva) { 
+    area.innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">Selecione o aluno e a prova.</p>'; 
+    return; 
+  }
+
+  area.innerHTML = '<p style="text-align: center; color: #666;">⏳ Analisando desempenho do aluno...</p>';
+
+  try {
+    var rAluno = await sbFetch('GET', '/rest/v1/alunos?id=eq.' + idAluno + '&select=nome_completo,numero_chamada');
+    var alunoData = (await rAluno.json())[0];
+    var nomeAluno = alunoData ? (alunoData.numero_chamada + '. ' + alunoData.nome_completo) : 'Aluno';
+
+    // BUSCA AS QUESTÕES INCLUINDO O CAMPO 'valor'
+    var rQuestoes = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade,valor');
+    var questoes = await rQuestoes.json();
+    
+    if (!Array.isArray(questoes) || questoes.length === 0) {
+      var rQuestoesAbertas = await sbFetch('GET', '/rest/v1/questoes_abertas?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade,valor');
+      questoes = await rQuestoesAbertas.json();
+    }
+    
+    if (!Array.isArray(questoes) || questoes.length === 0) { 
+      area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Esta prova não possui questões registradas.</p>'; 
+      return; 
+    }
+
+    var rRespostas = await sbFetch('GET', '/rest/v1/respostas?id_avaliacao=eq.' + idProva + '&id_aluno=eq.' + idAluno + '&select=id_questao,correta,resposta_aluno');
+    var respostas = await rRespostas.json();
+    
+    if (!Array.isArray(respostas) || respostas.length === 0) { 
+      area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Este aluno ainda não corrigiu esta prova.</p>'; 
+      return; 
+    }
+    
+    var tipoEscolhido = document.getElementById('tipoAnaliseAluno').value; 
+    var tituloEixo = tipoEscolhido === 'habilidade' ? 'Habilidade (BNCC)' : 'Descritor (SAEB)';
+    
+    // CÁLCULO DA NOTA DO ALUNO
+    var notaMaxima = 0;
+    var notaAluno = 0;
+    questoes.forEach(q => notaMaxima += (parseFloat(q.valor) || 0));
+    
+    var mapaAgrupado = {};
+    questoes.forEach(function(q) {
+      var chave = (q[tipoEscolhido] && q[tipoEscolhido].trim() !== '') ? q[tipoEscolhido] : 'Não classificado';
+      if (!mapaAgrupado[chave]) mapaAgrupado[chave] = { total: 0, acertos: 0 };
+    });
+    
+    respostas.forEach(function(r) {
+      var questao = questoes.find(function(q) { return String(q.id) === String(r.id_questao); });
+      if (questao) {
+        var chave = (questao[tipoEscolhido] && questao[tipoEscolhido].trim() !== '') ? questao[tipoEscolhido] : 'Não classificado';
+        mapaAgrupado[chave].total++;
+        if (r.correta === true || r.correta === 'true' || r.correta === 1) {
+          mapaAgrupado[chave].acertos++;
+          notaAluno += (parseFloat(questao.valor) || 0); // Soma o valor da questão acertada
+        }
+      }
+    });
+
+    var resultados = Object.keys(mapaAgrupado).map(function(chave) {
+      var dados = mapaAgrupado[chave];
+      var percentual = dados.total > 0 ? (dados.acertos / dados.total * 100) : 0;
+      return { chave: chave, total: dados.total, acertos: dados.acertos, percentual: percentual.toFixed(1) };
+    }).sort(function(a, b) { return a.percentual - b.percentual; });
+    
+    var html = '<div style="background: #e8f5e9; border-left: 5px solid #4CAF50; padding: 16px; border-radius: 6px; margin-bottom: 20px;">';
+    html += '<h3 style="color: #2E7D32; margin: 0 0 8px 0;">👤 Nota de ' + nomeAluno + ': ' + notaAluno.toFixed(1) + ' / ' + notaMaxima.toFixed(1) + '</h3>';
+    html += '<p style="margin: 0; font-size: 13px; color: #555;">O aluno acertou questões totalizando <b>' + notaAluno.toFixed(1) + ' pontos</b> de um total de <b>' + notaMaxima.toFixed(1) + ' pontos</b> possíveis.</p>';
+    html += '</div>';
+
+    html += '<h4 style="margin-bottom: 12px; color: #333;">Desempenho por ' + tituloEixo + ':</h4>';
+    
+    if (resultados.length === 0) {
+       html += '<p style="text-align: center; color: #666;">Nenhum dado de desempenho encontrado.</p>';
+    } else {
+      resultados.forEach(function(item) {
+        var cor = item.percentual < 50 ? '#dc3545' : (item.percentual < 70 ? '#ffc107' : '#28a745');
+        var emoji = item.percentual < 50 ? '🔴' : (item.percentual < 70 ? '' : '🟢');
+        html += '<div style="margin-bottom: 12px;"><div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
+          '<strong>' + emoji + ' ' + item.chave + '</strong><span style="font-weight: bold; color: ' + cor + ';">' + item.percentual + '% de acerto</span></div>' +
+          '<div style="background: #e0e0e0; border-radius: 6px; height: 24px; overflow: hidden;"><div style="background: ' + cor + '; height: 100%; width: ' + item.percentual + '%; transition: width 0.5s;"></div></div>' +
+          '<div style="font-size: 11px; color: #666; margin-top: 2px;">' + item.acertos + ' acertos de ' + item.total + ' questões</div></div>';
+      });
+      
+      var itensRuins = resultados.filter(function(item) { return item.percentual < 50; });
+      
+      if (itensRuins.length > 0) {
+        html += '<div style="margin-top: 20px; padding: 16px; background: #FFE0B2; border-radius: 8px; border-left: 4px solid #FF6F00;">' +
+          '<h4 style="color: #E65100; margin-bottom: 8px;">🎯 Pontos de Atenção:</h4><p style="font-size: 13px; color: #333;">Este aluno precisa de reforço em:</p><ul style="margin: 8px 0; padding-left: 20px;">';
+        itensRuins.forEach(function(item) { html += '<li><strong>' + item.chave + '</strong> (' + item.percentual + '% de acerto)</li>'; });
+        html += '</ul></div>';
+      }
+    }
+
+    html += '<div style="margin-top: 30px; padding: 15px; background: #e0f7fa; border: 1px solid #00bcd4; border-radius: 6px; font-size: 12px; color: #006064;">';
+    html += '<strong>🔍 Painel de Depuração:</strong><br>';
+    html += '• Aluno selecionado: <b>' + nomeAluno + '</b> (ID: ' + idAluno + ')<br>';
+    html += '• Questões encontradas: <b>' + questoes.length + '</b><br>';
+    html += '• Respostas do aluno: <b>' + respostas.length + '</b><br>';
+    html += '</div>';
+
+    area.innerHTML = html;
+  } catch(e) {
+    console.error("Erro no diagnóstico do aluno:", e);
+    area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px; background: #ffe6e6; border-radius: 8px;">❌ <strong>Erro:</strong> ' + e.message + '</p>';
+  }
+}
 
   async function gerarPlanoRecuperacao(idProva) {
     var itens = window.itensRuinsAtual;
@@ -1051,7 +1443,7 @@
     var ano = prompt('Para qual ano é o plano de recuperação?', '6'); if (!ano) return;
     var componente = prompt('Qual a disciplina?', 'Matemática'); if (!componente) return;
     var area = document.getElementById('areaPlanoRecuperacao');
-    area.innerHTML = '<div style="text-align: center; padding: 40px;"><p style="font-size: 18px; color: #6f42c1;">🤖 A IA está criando o plano...</p><p style="color: #666; margin-top: 8px;">Gerando ' + qtd + ' atividades focadas nos descritores/habilidades com menor desempenho</p></div>';
+    area.innerHTML = '<div style="text-align: center; padding: 40px;"><p style="font-size: 18px; color: #6f42c1;"> A IA está criando o plano...</p><p style="color: #666; margin-top: 8px;">Gerando ' + qtd + ' atividades focadas nos descritores/habilidades com menor desempenho</p></div>';
     document.getElementById('modalRecuperacao').classList.add('active');
     try {
       var r = await fetch(API_URL + '/api/gerar_plano_recuperacao', {
@@ -1066,7 +1458,7 @@
         html += '<p style="margin: 0; font-size: 14px; opacity: 0.95;">' + (plano.plano || plano.justificativa || '') + '</p>';
         html += '<p style="margin: 8px 0 0 0; font-size: 12px; opacity: 0.8;">🎯 Foco: ' + itens.map(function(i) { return i.chave; }).join(', ') + '</p></div>';
         if (plano.atividades && plano.atividades.length > 0) {
-          html += '<h3 style="color: #4A148C; margin-bottom: 12px;"> Atividades Sugeridas</h3>';
+          html += '<h3 style="color: #4A148C; margin-bottom: 12px;">📚 Atividades Sugeridas</h3>';
           plano.atividades.forEach(function(atv, idx) {
             html += '<div style="background: #f9f5ff; border-left: 4px solid #6f42c1; padding: 16px; margin-bottom: 12px; border-radius: 6px;">';
             html += '<h4 style="color: #6f42c1; margin: 0 0 8px 0;">Atividade ' + (idx + 1) + ': ' + (atv.titulo || 'Sem título') + '</h4>';
@@ -1106,11 +1498,11 @@
     var provaId = document.getElementById('selProvaPlanilha').value;
     var area = document.getElementById('areaTabelaPlanilha');
     if (!turmaId || !provaId) { toast('Selecione a turma e a prova!', 'error'); return; }
-    area.innerHTML = '<p style="text-align: center; color: #666;"> Gerando tabela...</p>';
+    area.innerHTML = '<p style="text-align: center; color: #666;">⏳ Gerando tabela...</p>';
     try {
       var rAlunos = await sbFetch('GET', '/rest/v1/alunos?id_turma=eq.' + turmaId + '&select=id,nome_completo,numero_chamada&order=numero_chamada.asc');
       var alunos = await rAlunos.json();
-      if (!Array.isArray(alunos) || alunos.length === 0) { area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Nenhum aluno encontrado nesta turma.</p>'; return; }
+      if (!Array.isArray(alunos) || alunos.length === 0) { area.innerHTML = '<p style="text-align: center; color: #dc3545;">️ Nenhum aluno encontrado nesta turma.</p>'; return; }
       var rQuestoes = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + provaId + '&select=id,numero&order=numero.asc');
       var questoes = await rQuestoes.json();
       if (!Array.isArray(questoes)) questoes = [];
@@ -1183,7 +1575,7 @@
   }
 
   // ========================================================================
-  // ✏️ CORRETOR MANUAL DE PROVA (AGORA AUTO-CORRIGE COM BASE NO GABARITO)
+  // ✏️ CORRETOR MANUAL DE PROVA
   // ========================================================================
   async function carregarSelectsCorretor() {
     try {
@@ -1216,13 +1608,11 @@
     if (!alunoId || !provaId) { area.innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">Selecione o aluno.</p>'; return; }
     area.innerHTML = '<p style="text-align: center; color: #666;">⏳ Carregando questões...</p>';
     try {
-      // AGORA BUSCA TAMBÉM O GABARITO PARA AUTO-CORRIGIR
       var rQuestoes = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + provaId + '&select=id,numero,gabarito&order=numero.asc');
       var questoes = await rQuestoes.json();
       var rRespostas = await sbFetch('GET', '/rest/v1/respostas?id_aluno=eq.' + alunoId + '&id_avaliacao=eq.' + provaId + '&select=id_questao,resposta_aluno');
       var respostasSalvas = await rRespostas.json();
       
-      // Salva o gabarito na memória para usar no salvamento
       window.gabaritoAtual = {};
       questoes.forEach(q => { if(q.gabarito) window.gabaritoAtual[q.id] = q.gabarito; });
 
@@ -1256,7 +1646,6 @@
     try {
       await sbFetch('DELETE', '/rest/v1/respostas?id_aluno=eq.' + alunoId + '&id_avaliacao=eq.' + provaId);
       var linhas = Object.keys(respostas).map(function(questaoId) {
-        // AUTO-CORREÇÃO: Compara a resposta do aluno com o gabarito salvo
         var gabaritoQuestao = window.gabaritoAtual[questaoId] || null;
         var estaCorreta = (gabaritoQuestao && respostas[questaoId] === gabaritoQuestao);
         
@@ -1265,7 +1654,7 @@
           id_avaliacao: parseInt(provaId), 
           id_questao: parseInt(questaoId), 
           resposta_aluno: respostas[questaoId], 
-          correta: estaCorreta // Agora salva true ou false de verdade!
+          correta: estaCorreta
         };
       });
       var r = await sbFetch('POST', '/rest/v1/respostas', linhas);
@@ -1281,7 +1670,7 @@
     var tema = document.getElementById('iaTemaAula').value.trim();
     if (!tema) { toast('Digite o tema da aula!', 'error'); return; }
     var btn = document.getElementById('btnPlanejarIA');
-    btn.textContent = '⏳ Planejando...'; btn.disabled = true;
+    btn.textContent = ' Planejando...'; btn.disabled = true;
     document.getElementById('iaResultadoPlanejar').innerHTML = '<p style="text-align:center; color:#666; padding: 20px;">🤖 A IA está montando seu plano de aula passo a passo...</p>';
     try {
       var r = await fetch(API_URL + '/api/gerar_plano_aula', {
@@ -1306,7 +1695,7 @@
         document.getElementById('iaResultadoPlanejar').innerHTML = html; toast('Plano de aula gerado com sucesso!', 'success');
       } else { toast('Erro: ' + (j.erro || 'Falha ao gerar plano'), 'error'); }
     } catch(e) { toast('Erro de conexão com a IA', 'error'); }
-    finally { btn.textContent = '🚀 GERAR PLANO DE AULA'; btn.disabled = false; }
+    finally { btn.textContent = ' GERAR PLANO DE AULA'; btn.disabled = false; }
   }
 
   function toggleAlternativas() {
