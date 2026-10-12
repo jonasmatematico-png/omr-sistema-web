@@ -23,8 +23,28 @@
     .view { display: none; }
     .view.active { display: block; animation: fadeIn 0.3s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .fab-ia { position: fixed; bottom: 24px; right: 24px; width: 60px; height: 60px; border-radius: 50%; background: #6f42c1; color: white; font-size: 24px; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(111, 66, 193, 0.4); z-index: 999; transition: transform 0.2s; display: flex; align-items: center; justify-content: center; }
-    .fab-ia:hover { transform: scale(1.1); }
+    .fab-ia { 
+    position: fixed; 
+    bottom: 30px; /* Aumentei um pouco para não colar na borda */
+    right: 30px;  
+    width: 60px; 
+    height: 60px; 
+    border-radius: 50%; 
+    background: #6f42c1; 
+    color: white; 
+    font-size: 24px; 
+    border: none; 
+    cursor: pointer; 
+    box-shadow: 0 4px 12px rgba(111, 66, 193, 0.4); 
+    z-index: 9999; /* Garante que fica ACIMA de tudo, inclusive modais se necessário */
+    transition: transform 0.2s; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+.fab-ia:hover { 
+    transform: scale(1.1); 
+}
     .btn { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: opacity 0.2s; }
     .btn:hover { opacity: 0.9; }
     .btn-primary { background: #008080; color: white; }
@@ -101,6 +121,13 @@
       #modalRecuperacao .modal-header { display: none; }
       #modalRecuperacao button { display: none !important; }
     }
+#authScreen ~ .fab-ia {
+    display: none !important;
+}
+
+#mainScreen:not(.hidden) ~ .fab-ia {
+    display: flex !important;
+}
   </style>
 </head>
 <body>
@@ -493,13 +520,19 @@
 </div>
 
 <script>
+
+if (!localStorage.getItem('sb_token')) {
+    var fab = document.querySelector('.fab-ia');
+    if(fab) fab.style.display = 'none';
+}
+
   const SUPABASE_URL = 'https://mkqnaiuplkqiitwxltli.supabase.co';
   const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rcW5haXVwbGtxaWl0d3hsdGxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzOTg5MzMsImV4cCI6MjA5OTk3NDkzM30.65MoDC1gMNpNs6bCKZlCTyCn2ijaaA6y9DOnQgNxacA';
   const API_URL = 'https://omr-sistema-api.onrender.com';
 
   var token = localStorage.getItem('sb_token');
-  var refreshToken = localStorage.getItem('sb_refresh');
-  var userEmail = localStorage.getItem('sb_email') || '';
+var refreshToken = localStorage.getItem('sb_refresh');
+var userEmail = localStorage.getItem('sb_email') || '';
   var questoes = [];
   var editandoId = null;
   var matrizHabilidades = [];
@@ -517,11 +550,22 @@
 }
 
   function headersCom(prefer) {
-    var h = { 'apikey': ANON, 'Content-Type': 'application/json' };
+    var h = { 
+        'apikey': ANON, 
+        'Content-Type': 'application/json' 
+    };
     if (prefer) h['Prefer'] = prefer;
-    if (token) h['Authorization'] = 'Bearer ' + token;
+    
+    // Só adiciona Authorization se houver token
+    if (token) {
+        h['Authorization'] = 'Bearer ' + token;
+    }
+    // REMOVIDO O CONSOLE.WARN PARA LIMPAR O CONSOLE
+    // Se quiser debugar depois, pode colocar um console.log aqui, mas não warn
+    
     return h;
-  }
+}
+
   function msgErro(j) { if (!j) return 'erro desconhecido'; return j.error_description || j.msg || j.message || JSON.stringify(j); }
   function toast(msg, tipo) {
     tipo = tipo || 'info';
@@ -538,9 +582,20 @@
     else { tabs[1].classList.add('active'); document.getElementById('loginForm').classList.add('hidden'); document.getElementById('signupForm').classList.remove('hidden'); }
   }
   function guardarSessao(j) {
-    token = j.access_token; refreshToken = j.refresh_token; userEmail = j.user.email;
-    localStorage.setItem('sb_token', token); localStorage.setItem('sb_refresh', refreshToken); localStorage.setItem('sb_email', userEmail);
-  }
+    token = j.access_token; 
+    refreshToken = j.refresh_token; 
+    userEmail = j.user.email;
+    
+    // Salva no LocalStorage
+    localStorage.setItem('sb_token', token); 
+    localStorage.setItem('sb_refresh', refreshToken); 
+    localStorage.setItem('sb_email', userEmail);
+    
+    // IMPORTANTE: Salva também o UID para futuras buscas de perfil
+    if (j.user && j.user.id) {
+        localStorage.setItem('sb_uid', j.user.id);
+    }
+}
   async function refrescarSessao() {
     if (!refreshToken) return false;
     try {
@@ -581,6 +636,8 @@
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('mainScreen').classList.remove('hidden');
     document.getElementById('userEmail').textContent = email;
+    var fab = document.querySelector('.fab-ia');
+    if(fab) fab.style.display = 'flex'; 
     
     // NOVO: Verifica se é Admin para mostrar/esconder o menu de Gestão
     const EMAIL_ADMIN_MASTER = 'jonasmatematico@yahoo.com.br';
@@ -1006,46 +1063,67 @@
   var selTurma = document.getElementById('selTurmaDiagnostico');
   var selTurmaAluno = document.getElementById('selTurmaDiagAluno');
   
+  // Evita recarregar se já estiver preenchido
   if (selTurma.options.length > 1) return;
   
   try {
+    // 1. Busca todas as turmas disponíveis no banco
     var r = await sbFetch('GET', '/rest/v1/turmas?select=id,nome&order=nome.asc');
-    var turmas = await r.json();
-    var html = '<option value="">Selecione a turma...</option>';
-    turmas.forEach(function(t) { 
-      html += '<option value="' + t.id + '">' + t.nome + '</option>'; 
+    var todasAsTurmas = await r.json();
+
+    // 2. Busca o perfil do usuário logado para saber quais turmas ele PODE ver
+    // Precisamos do ID do usuário (auth.uid()). Como não temos direto no JS, 
+    // vamos inferir pelo email ou usar uma busca segura na tabela perfis.
+    
+    let turmasPermitidasIds = [];
+    
+    // Verifica se é Admin (hardcoded para segurança imediata)
+    const EMAIL_ADMIN_MASTER = 'jonasmatematico@yahoo.com.br';
+    
+    if (userEmail === EMAIL_ADMIN_MASTER) {
+        // Admin vê todas
+        turmasPermitidasIds = todasAsTurmas.map(t => t.id);
+    } else {
+        // Professor: Busca suas turmas específicas na tabela perfis
+        // Nota: Isso assume que você salvou o UID no localStorage durante o login. 
+        // Se não salvou, podemos buscar pelo email na tabela perfis (menos seguro, mas funciona para MVP).
+        
+        var rPerfil = await sbFetch('GET', "/rest/v1/perfis?email=eq." + userEmail + "&select=turmas_id");
+        var perfilData = await rPerfil.json();
+        
+        if (perfilData && perfilData[0] && Array.isArray(perfilData[0].turmas_id)) {
+            turmasPermitidasIds = perfilData[0].turmas_id;
+        } else {
+            // Fallback: Se não encontrar perfil, bloqueia tudo (segurança máxima)
+            turmasPermitidasIds = []; 
+        }
+    }
+
+    // 3. Filtra a lista de turmas para mostrar apenas as permitidas
+    var turmasFiltradas = todasAsTurmas.filter(function(t) {
+        return turmasPermitidasIds.includes(t.id);
     });
-    // PREENCHE OS DOIS SELECTS (Turma e Aluno)
+
+    // 4. Monta o HTML dos selects
+    var html = '<option value="">Selecione a turma...</option>';
+    
+    if (turmasFiltradas.length === 0) {
+        html += '<option value="" disabled>Nenhuma turma disponível para você</option>';
+    } else {
+        turmasFiltradas.forEach(function(t) { 
+            html += '<option value="' + t.id + '">' + t.nome + '</option>'; 
+        });
+    }
+
     selTurma.innerHTML = html;
-    selTurmaAluno.innerHTML = html;
+    selTurmaAluno.innerHTML = html; // Aplica o filtro também no diagnóstico individual
+    
   } catch(e) { 
+    console.error("Erro ao carregar turmas:", e);
     selTurma.innerHTML = '<option value="">Erro ao carregar</option>';
     selTurmaAluno.innerHTML = '<option value="">Erro ao carregar</option>';
   }
 }
-
-  async function carregarProvasPorTurma() {
-    var selProva = document.getElementById('selProvaDiagnostico');
-    var idTurma = document.getElementById('selTurmaDiagnostico').value;
-    
-    selProva.innerHTML = '<option value="">Carregando provas...</option>';
-    selProva.disabled = true;
-    document.getElementById('areaGraficoDiagnosticoTurma').innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">Selecione a prova para ver o diagnóstico.</p>';
-
-    if (!idTurma) {
-      selProva.innerHTML = '<option value="">Selecione a turma primeiro</option>';
-      return;
-    }
-
-    try {
-      var r = await sbFetch('GET', '/rest/v1/avaliacoes?select=id,nome,numero_questoes&order=id.desc');
-      var provas = await r.json();
-      selProva.innerHTML = '<option value="">Selecione a prova...</option>' + provas.map(function(p) { 
-        return '<option value="' + p.id + '">' + p.nome + '</option>'; 
-      }).join('');
-      selProva.disabled = false;
-    } catch(e) { selProva.innerHTML = '<option value="">Erro ao carregar</option>'; }
-  }
 
 async function carregarDiagnosticoTurma() {
   var selTurma = document.getElementById('selTurmaDiagnostico');
@@ -1230,6 +1308,57 @@ async function carregarDiagnosticoTurma() {
   }
 }
 
+// FUNÇÃO AUXILIAR PARA CARREGAR PROVAS BASEADAS NA TURMA SELECIONADA
+async function carregarProvasPorTurma() {
+    var selTurma = document.getElementById('selTurmaDiagnostico');
+    var selProva = document.getElementById('selProvaDiagnostico');
+    var idTurma = selTurma.value;
+
+    // Limpa as opções atuais
+    selProva.innerHTML = '<option value="">Carregando provas...</option>';
+    selProva.disabled = true;
+
+    if (!idTurma) {
+        selProva.innerHTML = '<option value="">Selecione a turma primeiro</option>';
+        return;
+    }
+
+    // Dentro da função carregarProvasPorTurma()
+
+try {
+    // TENTATIVA 1: Ordenar por ID descendente (sempre existe e funciona como "mais recente primeiro")
+    // Se você tiver certeza de que a coluna de data se chama 'created_at', pode trocar id desc por created_at desc
+    var r = await sbFetch('GET', '/rest/v1/avaliacoes?select=id,nome&order=id.desc'); 
+    
+    if (!r.ok) {
+        // Se der erro ainda, tenta SEM ordenação nenhuma
+        console.warn("Tentativa com order=id falhou. Tentando sem order...");
+        r = await sbFetch('GET', '/rest/v1/avaliacoes?select=id,nome');
+        
+        if (!r.ok) throw new Error('Erro ao buscar provas: ' + r.status);
+    }
+    
+    var provas = await r.json();
+
+    if (!Array.isArray(provas) || provas.length === 0) {
+        selProva.innerHTML = '<option value="">Nenhuma prova encontrada</option>';
+        return;
+    }
+
+    var html = '<option value="">Selecione a prova...</option>';
+    provas.forEach(function(p) {
+        html += '<option value="' + p.id + '">' + p.nome + '</option>';
+    });
+
+    selProva.innerHTML = html;
+    selProva.disabled = false; // Destrava o select
+    
+} catch(e) {
+    console.error("Erro em carregarProvasPorTurma:", e);
+    selProva.innerHTML = '<option value="">Erro ao carregar</option>';
+}
+}
+
   async function gerarPlanoRecuperacao(idProva) {
     var itens = window.itensRuinsAtual;
     if (!itens || itens.length === 0) { toast('Não há itens com baixo desempenho para gerar plano.', 'error'); return; }
@@ -1272,6 +1401,8 @@ async function carregarDiagnosticoTurma() {
       } else { area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px;">❌ Erro: ' + (j.erro || 'Falha ao gerar plano') + '</p>'; toast('Erro ao gerar plano', 'error'); }
     } catch(e) { console.error(e); area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px;">❌ Falha na conexão: ' + e.message + '</p>'; toast('Falha na conexão com a IA', 'error'); }
   }
+
+
 
   // ========================================================================
   // 📋 FUNÇÕES DE EXPORTAÇÃO PARA PLANILHA
@@ -1880,34 +2011,114 @@ async function carregarListaUsuarios() {
     }
 
     // Monta a tabela
-    var html = '<table style="width:100%; border-collapse: collapse; font-size: 13px; margin-top:10px;">';
-    html += '<thead><tr style="background:#f5f5f5; border-bottom:2px solid #ddd;">';
-    html += '<th style="padding:10px; text-align:left;">Nome</th>';
-    html += '<th style="padding:10px; text-align:left;">E-mail</th>';
-    html += '<th style="padding:10px; text-align:center;">Tipo</th>';
-    html += '<th style="padding:10px; text-align:center;">Turmas</th>';
-    html += '</tr></thead><tbody>';
-    
-    usuarios.forEach(function(u) {
-      var corBadge = u.tipo_usuario === 'admin' ? '#dc3545' : '#28a745';
-      var qtdTurmas = Array.isArray(u.turmas_id) ? u.turmas_id.length : 0;
-      
-      html += '<tr style="border-bottom:1px solid #eee;">';
-      html += '<td style="padding:10px;"><strong>' + (u.nome_completo || 'Sem Nome') + '</strong></td>';
-      html += '<td style="padding:10px;">' + u.email + '</td>';
-      html += '<td style="padding:10px; text-align:center;"><span style="background:' + corBadge + '; color:white; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:bold;">' + u.tipo_usuario.toUpperCase() + '</span></td>';
-      html += '<td style="padding:10px; text-align:center;">' + qtdTurmas + '</td>';
-      html += '</tr>';
-    });
-    
-    html += '</tbody></table>';
-    container.innerHTML = html;
+
+var html = '<table style="width:100%; border-collapse: collapse; font-size: 13px; margin-top:10px;">';
+html += '<thead><tr style="background:#f5f5f5; border-bottom:2px solid #ddd;">';
+html += '<th style="padding:10px; text-align:left;">Nome</th>';
+html += '<th style="padding:10px; text-align:left;">E-mail</th>';
+html += '<th style="padding:10px; text-align:center;">Tipo</th>';
+html += '<th style="padding:10px; text-align:center;">Turmas</th>';
+html += '<th style="padding:10px; text-align:center;">Ações</th>'; // NOVA COLUNA
+html += '</tr></thead><tbody>';
+
+usuarios.forEach(function(u) {
+  var corBadge = u.tipo_usuario === 'admin' ? '#dc3545' : '#28a745';
+  var qtdTurmas = Array.isArray(u.turmas_id) ? u.turmas_id.length : 0;
+  
+  html += '<tr style="border-bottom:1px solid #eee;">';
+  html += '<td style="padding:10px;"><strong>' + (u.nome_completo || 'Sem Nome') + '</strong></td>';
+  html += '<td style="padding:10px;">' + u.email + '</td>';
+  html += '<td style="padding:10px; text-align:center;"><span style="background:' + corBadge + '; color:white; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:bold;">' + u.tipo_usuario.toUpperCase() + '</span></td>';
+  html += '<td style="padding:10px; text-align:center;">' + qtdTurmas + '</td>';
+  
+  // BOTÃO DE AÇÃO (Só aparece para não-Admins ou se quiser permitir editar admins também)
+  if (u.tipo_usuario !== 'admin') {
+      html += '<td style="padding:10px; text-align:center;"><button class="btn btn-sm btn-warn" onclick="abrirEditorTurmas(\'' + u.id + '\', \'' + u.email + '\', ' + JSON.stringify(u.turmas_id || []) + ')">✏️ Editar Turmas</button></td>';
+  } else {
+      html += '<td style="padding:10px; text-align:center;"><small style="color:#999;">Full Access</small></td>';
+  }
+  
+  html += '</tr>';
+});
+
+html += '</tbody></table>';
+container.innerHTML = html;
 
   } catch(e) {
     console.error("Detalhes do erro na Gestão:", e);
     container.innerHTML = '<div style="padding:15px; background:#fff3cd; border:1px solid #ffc107; border-radius:6px; color:#856404;">' +
       '<strong>⚠️ Atenção:</strong><br>' + e.message + '<br>' +
       '<small style="color:#666; display:block; margin-top:5px;">Se o erro persistir, verifique as políticas RLS no Supabase.</small></div>';
+  }
+}
+
+// Guarda o ID do usuário sendo editado temporariamente
+var usuarioEmEdicaoId = null; 
+
+async function abrirEditorTurmas(userId, userEmail, currentTurmasIds) {
+  usuarioEmEdicaoId = userId;
+  var container = document.getElementById('listaTurmasCheckbox');
+  container.innerHTML = '<p style="text-align:center; color:#666;">⏳ Carregando lista de turmas...</p>';
+  
+  try {
+    // Busca TODAS as turmas do sistema
+    var r = await sbFetch('GET', '/rest/v1/turmas?select=id,nome&order=nome.asc');
+    var todasAsTurmas = await r.json();
+    
+    if (!Array.isArray(todasAsTurmas)) throw new Error("Erro ao buscar turmas");
+
+    var html = '';
+    todasAsTurmas.forEach(function(turma) {
+      // Verifica se esta turma já está na lista do usuário
+      var isChecked = currentTurmasIds.includes(turma.id) ? 'checked' : '';
+      
+      html += '<label style="display:flex; align-items:center; gap:8px; padding:8px; border-bottom:1px solid #eee; cursor:pointer;">';
+      html += '<input type="checkbox" class="chk-turma" value="' + turma.id + '" ' + isChecked + ' style="width:auto; accent-color:#008080;">';
+      html += '<span style="font-weight:500;">' + turma.nome + '</span>';
+      html += '<small style="color:#999; margin-left:auto;">ID: ' + turma.id + '</small>';
+      html += '</label>';
+    });
+    
+    container.innerHTML = html;
+    document.getElementById('modalEditTurmas').classList.add('active');
+    
+  } catch(e) {
+    console.error(e);
+    container.innerHTML = '<p style="color:red; text-align:center;">Erro: ' + e.message + '</p>';
+  }
+}
+
+async function salvarEdicaoTurmas() {
+  if (!usuarioEmEdicaoId) { toast('Nenhum usuário selecionado!', 'error'); return; }
+  
+  var btn = document.getElementById('btnSalvarTurmas');
+  btn.textContent = '⏳ Salvando...';
+  btn.disabled = true;
+
+  // Coleta todos os IDs das turmas marcadas nos checkboxes
+  var checkboxes = document.querySelectorAll('.chk-turma:checked');
+  var novosIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+  try {
+    // Atualiza o registro na tabela perfis
+    var payload = { turmas_id: novosIds };
+    var r = await sbFetch('PATCH', '/rest/v1/perfis?id=eq.' + usuarioEmEdicaoId, payload);
+    
+    if (!r.ok) {
+      var erro = await r.json();
+      throw new Error(erro.message || 'Falha ao salvar');
+    }
+
+    toast('✅ Acesso às turmas atualizado com sucesso!', 'success');
+    fecharModal('modalEditTurmas');
+    carregarListaUsuarios(); // Recarrega a tabela para refletir as mudanças
+    
+  } catch(e) {
+    console.error(e);
+    toast('❌ Erro: ' + e.message, 'error');
+  } finally {
+    btn.textContent = '💾 SALVAR ALTERAÇÕES';
+    btn.disabled = false;
   }
 }
 
@@ -1923,15 +2134,6 @@ async function criarUsuarioSupabase() {
   toast('⏳ Criando conta no Supabase...', 'info');
 
   try {
-    // 1. Usa a API Admin do Supabase para criar o usuário
-    // Nota: Isso requer que o seu token tenha permissão de admin ou use a service_role key (cuidado!)
-    // Para simplificar agora, vamos usar o endpoint REST padrão assumindo que você tem permissão via RLS ou Token
-    
-    // ⚠️ ATENÇÃO TÉCNICA: 
-    // Criar usuários diretamente pelo front-end com o anon_key geralmente falha por segurança.
-    // A forma correta é usar a Service Role Key no BACKEND (Render/Python).
-    // MAS, para um MVP rápido, podemos tentar inserir direto na tabela auth.users se tivermos permissão super-admin no DB.
-    // Vamos fazer o caminho seguro: Inserir na tabela 'perfis' e avisar que o login precisa ser criado manualmente no painel Auth do Supabase POR ENQUANTO.
     
     // INSERIR PERFIL NO BANCO
     var payloadPerfil = {
@@ -1941,9 +2143,6 @@ async function criarUsuarioSupabase() {
       tipo_usuario: tipo,
       turmas_id: [] // Começa sem turmas
     };
-
-    // Como não temos o ID real do auth.user ainda, vamos salvar como pendente ou usar um workaround.
-    // WORKAROUND PARA DEMONSTRAÇÃO: Vamos apenas mostrar instruções claras.
     
     alert("PASSO MANUAL NECESSÁRIO:\n\n1. Vá no Painel do Supabase > Authentication > Users.\n2. Clique em 'Add User'.\n3. Coloque o e-mail: " + email + "\n4. Defina uma senha temporária.\n5. Copie o UUID gerado.\n6. Volte aqui e atualize a página.");
     
@@ -1956,6 +2155,28 @@ async function criarUsuarioSupabase() {
 }
 
 </script>
+
+<div id="modalEditTurmas" class="modal">
+  <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-header">
+      <h3>✏️ Editar Acesso às Turmas</h3>
+      <button class="btn btn-sm" onclick="fecharModal('modalEditTurmas')">✕</button>
+    </div>
+    <p style="font-size: 13px; color: #666; margin-bottom: 12px;">Selecione quais turmas este usuário pode visualizar e gerenciar.</p>
+    
+    <div id="listaTurmasCheckbox" style="max-height: 300px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 6px; background: #fafafa;">
+       <p style="text-align:center; color:#999;">Carregando turmas...</p>
+    </div>
+
+    <div style="display: flex; gap: 8px; margin-top: 16px;">
+      <button class="btn btn-secondary" style="flex: 1;" onclick="fecharModal('modalEditTurmas')">Cancelar</button>
+      <button class="btn btn-primary" style="flex: 1;" onclick="salvarEdicaoTurmas()" id="btnSalvarTurmas">💾 SALVAR ALTERAÇÕES</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
 
 </body>
 </html>
