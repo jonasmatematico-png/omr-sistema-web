@@ -1111,42 +1111,31 @@ async function carregarDiagnosticoTurma() {
       });
     }
 
-    // MODO DETETIVE
-    html += '<div style="margin-top: 30px; padding: 15px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 6px; font-size: 13px; color: #856404;">';
-    html += '<strong>🕵️ MODO DETETIVE (Por que pode não estar somando?):</strong><br><br>';
-    html += '• Total de Questões na Prova: <b>' + questoes.length + '</b><br>';
-    html += '• Total de Respostas dos Alunos: <b>' + respostas.length + '</b><br>';
-    html += '• Respostas que o sistema CONSEGUIU ligar à questão: <b style="color: green;">' + respostasProcessadas + '</b><br>';
-    html += '• Respostas que o sistema NÃO CONSEGUIU ligar: <b style="color: red;">' + falhasNoCasamento + '</b><br><br>';
-    html += '🔎 VALOR DA COLUNA "CORRETA" NA 1ª RESPOSTA: <b>[' + respostas[0].correta + ']</b> (Tipo: ' + typeof respostas[0].correta + ')<br><br>';
+  // ========================================================================
+    // MODO DETETIVE (VISÍVEL APENAS PARA O ADMINISTRADOR)
+    // ========================================================================
     
-    if (questoes.length > 0 && respostas.length > 0) {
-        var q1 = questoes[0];
-        var r1 = respostas[0];
-        html += '<strong>🔍 Analisando a 1ª resposta do aluno:</strong><br>';
-        html += '→ O aluno respondeu a questão de ID: <b>[' + r1.id_questao + ']</b> (Tipo: ' + typeof r1.id_questao + ')<br>';
-        html += '→ O sistema procurou na tabela de questões o ID: <b>[' + q1.id + ']</b> (Tipo: ' + typeof q1.id + ')<br>';
-
-        // NOVO: Mostrar o que o código está vendo nas questões
-    if (questoes.length > 0) {
-        var q1 = questoes[0];
-        html += '<br><strong>📋 Primeira questão da prova:</strong><br>';
-        html += '• ID: <b>' + q1.id + '</b><br>';
-        html += '• Número: <b>' + q1.numero + '</b><br>';
-        html += '• Descritor: <b>[' + (q1.descritor || 'VAZIO') + ']</b><br>';
-        html += '• Habilidade: <b>[' + (q1.habilidade || 'VAZIO') + ']</b><br>';
-        html += '• Valor: <b>' + (q1.valor || 'VAZIO') + '</b><br>';
-        html += '• Tipo de análise escolhido: <b>[' + tipoEscolhido + ']</b><br>';
-    }
+    // ⚠️ IMPORTANTE: TROQUE O E-MAIL ABAIXO PELO SEU E-MAIL REAL DE LOGIN NO SISTEMA
+    const EMAIL_ADMIN = 'jonasmatematico@yahoo.com.br'; 
+    
+    if (userEmail === EMAIL_ADMIN) {
+        html += '<div style="margin-top: 30px; padding: 15px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 6px; font-size: 12px; color: #856404;">';
+        html += '<strong>🕵️ MODO DETETIVE (Acesso Restrito ao Admin):</strong><br>';
+        html += '• Turma ID: <b>' + idTurma + '</b> | Prova ID: <b>' + idProva + '</b><br>';
+        html += '• Alunos na turma: <b>' + alunos.length + '</b><br>';
+        html += '• Questões encontradas: <b>' + questoes.length + '</b><br>';
+        html += '• Respostas encontradas: <b>' + respostas.length + '</b><br>';
+        html += '• Respostas ligadas às questões: <b style="color:green">' + respostasProcessadas + '</b> / <b style="color:red">' + falhasNoCasamento + '</b><br>';
         
-        var saoIguais = (String(q1.id).trim() === String(r1.id_questao).trim());
-        if (saoIguais) {
-            html += '<br><span style="color:green; font-weight:bold; font-size: 14px;">✅ OS NÚMEROS SÃO IGUAIS! Se mesmo assim não funciona, o problema é que a coluna "correta" na tabela respostas está vazia (null). Rode o script SQL de correção que te passei antes!</span><br>';
-        } else {
-            html += '<br><span style="color:red; font-weight:bold; font-size: 14px;">⚠️ AHA! OS NÚMEROS SÃO DIFERENTES! O sistema não está achando a questão porque os IDs não batem. Verifique no Supabase se a coluna na tabela "respostas" se chama exatamente "id_questao" (tudo minúsculo).</span><br>';
+        if (questoes.length > 0 && respostas.length > 0) {
+            var q1 = questoes[0];
+            var r1 = respostas[0];
+            html += '<hr style="border-color:#ffc107; margin: 8px 0;">';
+            html += '<small>Exemplo Q1: ID=' + q1.id + ', Descritor=[' + (q.descritor||'Vazio') + ']<br>';
+            html += 'Exemplo R1: id_questao=' + r1.id_questao + ', correta=[' + r1.correta + ']</small>';
         }
+        html += '</div>';
     }
-    html += '</div>';
 
     area.innerHTML = html;
   } catch(e) {
