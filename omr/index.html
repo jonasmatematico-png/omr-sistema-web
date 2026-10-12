@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+  <!-- LIBRARY CHART.JS PARA GRÁFICOS BONITOS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Provas Abertas • OMR Sistema</title>
@@ -1278,38 +1280,114 @@ async function carregarDiagnosticoTurma() {
       return { chave: chave, total: dados.total, acertos: dados.acertos, percentual: percentual.toFixed(1) };
     }).sort(function(a, b) { return a.percentual - b.percentual; });
     
-    // 6. Renderização
-    var html = '<div style="background: #e3f2fd; border-left: 5px solid #2196F3; padding: 16px; border-radius: 6px; margin-bottom: 20px;">';
+    // ========================================================================
+    // 6. NOVA RENDERIZAÇÃO COM CHART.JS
+    // ========================================================================
+    
+    var html = '';
+
+    // Cabeçalho Azul com Média
+    html += '<div style="background: #e3f2fd; border-left: 5px solid #2196F3; padding: 16px; border-radius: 6px; margin-bottom: 20px;">';
     html += '<h3 style="color: #1565C0; margin: 0 0 8px 0;">📊 Média da Turma: ' + mediaTurma + ' / ' + notaMaximaProva.toFixed(1) + ' pontos</h3>';
     html += '<p style="margin: 0; font-size: 13px; color: #555;">Alunos avaliados: <b>' + alunosComNota + '</b> de <b>' + alunos.length + '</b></p>';
     html += '</div>';
 
-    html += '<h4 style="margin-bottom: 12px; color: #333;">📈 Desempenho por ' + tituloEixo + ':</h4>';
+    // Título do Gráfico
+    html += '<h4 style="margin-bottom: 12px; color: #333; text-align:center;">📈 Desempenho por ' + tituloEixo + '</h4>';
     
-    if (resultados.length === 0) {
-       html += '<p style="text-align: center; color: #666;">Nenhum dado de desempenho encontrado.</p>';
-    } else {
-      resultados.forEach(function(item) {
-        var cor = item.percentual < 50 ? '#dc3545' : (item.percentual < 70 ? '#ffc107' : '#28a745');
-        var emoji = item.percentual < 50 ? '🔴' : (item.percentual < 70 ? '🟡' : '🟢');
-        html += '<div style="margin-bottom: 12px;"><div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
-          '<strong>' + emoji + ' ' + item.chave + '</strong><span style="font-weight: bold; color: ' + cor + ';">' + item.percentual + '% de acerto</span></div>' +
-          '<div style="background: #e0e0e0; border-radius: 6px; height: 24px; overflow: hidden;"><div style="background: ' + cor + '; height: 100%; width: ' + item.percentual + '%; transition: width 0.5s;"></div></div>' +
-          '<div style="font-size: 11px; color: #666; margin-top: 2px;">' + item.acertos + ' acertos de ' + item.total + ' respostas</div></div>';
-      });
-    }
+    // Container do Canvas (Onde o gráfico vai nascer)
+    html += '<div style="position: relative; height: 350px; width: 100%; max-width: 900px; margin: 0 auto;">';
+    html += '<canvas id="chartDiagnostico"></canvas>';
+    html += '</div>';
 
-    // MODO DETETIVE (Só Admin)
+    // Modo Detetive (Só Admin)
     const EMAIL_ADMIN_MASTER = 'jonasmatematico@yahoo.com.br';
     if (userEmail === EMAIL_ADMIN_MASTER) {
-        html += '<div style="margin-top: 30px; padding: 15px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 6px; font-size: 12px; color: #856404;">';
-        html += '<strong>🕵️ MODO DETETIVE (Admin Only):</strong><br>';
-        html += '• Alunos encontrados: <b>' + alunos.length + '</b><br>';
-        html += '• Respostas ligadas: <b>' + respostasProcessadas + '</b> | Falhas: <b>' + falhasNoCasamento + '</b><br>';
+        html += '<div style="margin-top: 20px; padding: 10px; background: #fff3cd; border: 1px dashed #ffc107; border-radius: 4px; font-size: 11px; color: #856404; text-align:center;">';
+        html += '🕵️ MODO DETETIVE: Alunos=' + alunos.length + ' | Respostas=' + respostasProcessadas + ' | Falhas=' + falhasNoCasamento;
         html += '</div>';
     }
 
+    // Injeta o HTML na tela
     area.innerHTML = html;
+
+    // --- DESENHA O GRÁFICO AGORA ---
+    // Usamos setTimeout para garantir que o canvas já existe no DOM antes de desenhar
+    setTimeout(function() {
+        var ctx = document.getElementById('chartDiagnostico');
+        
+        // Se não achou o canvas, sai silenciosamente (evita erro se a tela mudar rápido)
+        if (!ctx) return; 
+        
+        var chartCtx = ctx.getContext('2d');
+        
+        // Prepara os dados para o Chart.js
+        var labels = resultados.map(function(r) { return r.chave; });
+        var dataValues = resultados.map(function(r) { return parseFloat(r.percentual); });
+        
+        // Cores dinâmicas: Vermelho (<50%), Amarelo (<70%), Verde (>=70%)
+        var backgroundColors = dataValues.map(function(val) {
+            if (val < 50) return 'rgba(220, 53, 69, 0.8)';   // Vermelho forte
+            if (val < 70) return 'rgba(255, 193, 7, 0.8)';   // Amarelo alerta
+            return 'rgba(40, 167, 69, 0.8)';                 // Verde sucesso
+        });
+        
+        var borderColorList = backgroundColors.map(function(color) {
+            return color.replace('0.8', '1'); // Borda mais sólida
+        });
+
+        new Chart(chartCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '% de Acerto',
+                    data: dataValues,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColorList,
+                    borderWidth: 1,
+                    borderRadius: 6 // Cantos arredondados modernos
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: function(value) { return value + "%"; },
+                            font: { size: 11 }
+                        },
+                        grid: { color: '#f0f0f0' }
+                    },
+                    x: {
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 45,
+                            minRotation: 45,
+                            font: { size: 10 }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }, // Esconde legenda, cores falam por si
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                var perc = context.raw;
+                                var idx = context.dataIndex;
+                                var total = resultados[idx].total;
+                                var acertos = resultados[idx].acertos;
+                                return [perc + '% de acerto', '(' + acertos + ' de ' + total + ' respostas)'];
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }, 100); // Delay de 100ms para garantir renderização
 
   } catch(e) {
     console.error("Erro no diagnóstico:", e);
@@ -1920,26 +1998,75 @@ async function carregarDiagnosticoAluno() {
       }
     });
 
+    // ========================================================================
+    // NOVA LÓGICA DE CONTAGEM (Garante que Erradas/Não Feitas apareçam)
+    // ========================================================================
+    
     var mapaAgrupado = {};
+
+    // 1. Inicializa todos os grupos com base nas QUESTÕES DA PROVA
     questoes.forEach(function(q) {
       var chave = (tipoEscolhido === 'habilidade') ? (q.habilidade || q.descritor || '') : (q.descritor || q.habilidade || '');
       chave = chave ? chave.trim() : 'Não classificado';
-      if (!mapaAgrupado[chave]) mapaAgrupado[chave] = { total: 0, acertos: 0 };
+      
+      if (!mapaAgrupado[chave]) {
+        mapaAgrupado[chave] = { 
+          total: 0, 
+          acertos: 0,
+          questoes_ids: [] // Guarda os IDs para referência futura se precisar
+        };
+      }
+      // Incrementa o TOTAL baseado na existência da questão na prova
+      mapaAgrupado[chave].total++; 
+      mapaAgrupado[chave].questoes_ids.push(q.id);
     });
-    
+
+    // 2. Percorre as RESPOSTAS DO ALUNO para marcar os ACERTOS
     respostas.forEach(function(r) {
-      var questao = questoes.find(function(q) { return q.id == r.id_questao; });
-      if (questao) {
-        var chave = (tipoEscolhido === 'habilidade') ? (questao.habilidade || questao.descritor || '') : (questao.descritor || questao.habilidade || '');
+      // Verifica se essa resposta pertence a alguma questão da nossa lista
+      var questaoEncontrada = questoes.find(function(q) { return String(q.id) === String(r.id_questao); });
+      
+      if (questaoEncontrada) {
+        var chave = (tipoEscolhido === 'habilidade') ? (questaoEncontrada.habilidade || questaoEncontrada.descritor || '') : (questaoEncontrada.descritor || questaoEncontrada.habilidade || '');
         chave = chave ? chave.trim() : 'Não classificado';
         
-        if (!mapaAgrupado[chave]) mapaAgrupado[chave] = { total: 0, acertos: 0 };
-        mapaAgrupado[chave].total++;
+        // Só incrementa acerto se foi correta
         if (r.correta === true || r.correta === 'true' || r.correta === 1) {
-          mapaAgrupado[chave].acertos++;
+          if (mapaAgrupado[chave]) {
+            mapaAgrupado[chave].acertos++;
+          }
         }
       }
     });
+
+    // 3. Calcula as porcentagens finais
+    var resultados = Object.keys(mapaAgrupado).map(function(chave) {
+      var dados = mapaAgrupado[chave];
+      // Se total for 0 (improvável agora), evita divisão por zero
+      var percentual = dados.total > 0 ? (dados.acertos / dados.total * 100) : 0;
+      return { 
+        chave: chave, 
+        total: dados.total, 
+        acertos: dados.acertos, 
+        percentual: percentual.toFixed(1) 
+      };
+    }).sort(function(a, b) { return a.percentual - b.percentual; });
+    
+    // 3. Calcula as porcentagens finais
+    var resultados = Object.keys(mapaAgrupado).map(function(chave) {
+      var dados = mapaAgrupado[chave];
+      // Se total for 0 (improvável agora), evita divisão por zero
+      var percentual = dados.total > 0 ? (dados.acertos / dados.total * 100) : 0;
+      return { 
+        chave: chave, 
+        total: dados.total, 
+        acertos: dados.acertos, 
+        percentual: percentual.toFixed(1) 
+      };
+    }).sort(function(a, b) { return a.percentual - b.percentual; });
+
+    // 👇 COLE ESTA LINHA AQUI PARA DEBUGAR 👇
+    console.log("DADOS DO GRÁFICO:", JSON.stringify(resultados));
 
     var resultados = Object.keys(mapaAgrupado).map(function(chave) {
       var dados = mapaAgrupado[chave];
@@ -1947,26 +2074,94 @@ async function carregarDiagnosticoAluno() {
       return { chave: chave, total: dados.total, acertos: dados.acertos, percentual: percentual.toFixed(1) };
     }).sort(function(a, b) { return a.percentual - b.percentual; });
     
-    var html = '<div style="background: #e8f5e9; border-left: 5px solid #4CAF50; padding: 16px; border-radius: 6px; margin-bottom: 20px;">';
+    // ========================================================================
+    // NOVA RENDERIZAÇÃO COM CHART.JS PARA ALUNO INDIVIDUAL
+    // ========================================================================
+    
+    var html = '';
+
+    // Cabeçalho Verde com Nota do Aluno
+    html += '<div style="background: #e8f5e9; border-left: 5px solid #4CAF50; padding: 16px; border-radius: 6px; margin-bottom: 20px;">';
     html += '<h3 style="color: #2E7D32; margin: 0 0 8px 0;">👤 Nota de ' + nomeAluno + ': ' + notaAluno.toFixed(1) + ' / ' + notaMaxima.toFixed(1) + '</h3>';
+    html += '<p style="margin: 0; font-size: 13px; color: #555;">Total de questões avaliadas: <b>' + respostas.length + '</b></p>';
     html += '</div>';
 
-    html += '<h4 style="margin-bottom: 12px; color: #333;">📈 Desempenho por ' + tituloEixo + ':</h4>';
+    // Título do Gráfico
+    html += '<h4 style="margin-bottom: 12px; color: #333; text-align:center;">📈 Desempenho Individual por ' + tituloEixo + '</h4>';
     
-    if (resultados.length === 0) {
-    html += '<p style="text-align: center; color: #666;">Nenhum dado de desempenho encontrado.</p>';
-    } else {
-      resultados.forEach(function(item) {
-        var cor = item.percentual < 50 ? '#dc3545' : (item.percentual < 70 ? '#ffc107' : '#28a745');
-        var emoji = item.percentual < 50 ? '' : (item.percentual < 70 ? '🟡' : '🟢');
-        html += '<div style="margin-bottom: 12px;"><div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
-          '<strong>' + emoji + ' ' + item.chave + '</strong><span style="font-weight: bold; color: ' + cor + ';">' + item.percentual + '% de acerto</span></div>' +
-          '<div style="background: #e0e0e0; border-radius: 6px; height: 24px; overflow: hidden;"><div style="background: ' + cor + '; height: 100%; width: ' + item.percentual + '%; transition: width 0.5s;"></div></div>' +
-          '<div style="font-size: 11px; color: #666; margin-top: 2px;">' + item.acertos + ' acertos de ' + item.total + ' questões</div></div>';
-      });
-    }
+    // Container do Canvas
+    html += '<div style="position: relative; height: 350px; width: 100%; max-width: 900px; margin: 0 auto;">';
+    html += '<canvas id="chartDiagnosticoAluno"></canvas>';
+    html += '</div>';
 
+    // Injeta o HTML na tela
     area.innerHTML = html;
+
+   // --- DESENHA O GRÁFICO AGORA (VERSÃO RADAR / TEIA DE ARANHA) ---
+    setTimeout(function() {
+        var ctx = document.getElementById('chartDiagnosticoAluno');
+        if (!ctx) return; 
+        
+        var chartCtx = ctx.getContext('2d');
+        
+        // Prepara os dados
+        var labels = resultados.map(function(r) { return r.chave; });
+        var dataValues = resultados.map(function(r) { return parseFloat(r.percentual); });
+        
+        new Chart(chartCtx, {
+            type: 'radar', // <<< MUDANÇA CHAVE PARA RADAR
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '% de Acerto',
+                    data: dataValues,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)', // Fundo azul transparente
+                    borderColor: 'rgb(54, 162, 235)',           // Linha azul forte
+                    pointBackgroundColor: dataValues.map(v => v < 50 ? '#dc3545' : (v < 70 ? '#ffc107' : '#28a745')), // Pontos coloridos por status
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgb(54, 162, 235)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { display: true, color: '#eee' },
+                        grid: { circular: true, color: '#ddd' },
+                        pointLabels: {
+                            font: { size: 11, weight: 'bold' },
+                            color: '#333'
+                        },
+                        ticks: {
+                            backdropColor: 'transparent',
+                            color: '#999',
+                            stepSize: 20,
+                            callback: function(value) { return value + "%"; }
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 100
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                var perc = context.raw;
+                                var idx = context.dataIndex;
+                                var total = resultados[idx].total;
+                                var acertos = resultados[idx].acertos;
+                                return [perc + "% de acerto", "(" + acertos + " de " + total + " questões)"];
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }, 100);
+
   } catch(e) {
     console.error("Erro no diagnóstico do aluno:", e);
     area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px; background: #ffe6e6; border-radius: 8px;">❌ <strong>Erro:</strong> ' + e.message + '</p>';
