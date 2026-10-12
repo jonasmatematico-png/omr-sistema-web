@@ -581,6 +581,19 @@
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('mainScreen').classList.remove('hidden');
     document.getElementById('userEmail').textContent = email;
+    
+    // NOVO: Verifica se é Admin para mostrar/esconder o menu de Gestão
+    const EMAIL_ADMIN_MASTER = 'jonasmatematico@yahoo.com.br';
+    var btnGestao = document.querySelector('.menu-item[onclick="navegarPara(\'view-gestao\', this)"]');
+    
+    if (btnGestao) {
+        if (email === EMAIL_ADMIN_MASTER) {
+            btnGestao.style.display = 'flex'; // Mostra para o Admin
+        } else {
+            btnGestao.style.display = 'none'; // Esconde para Professores
+        }
+    }
+
     navegarPara('view-provas', document.querySelector('.menu-item'));
     novoForm();
     carregarProvas();
@@ -589,7 +602,7 @@
     carregarSelectsPlanilha();
     carregarSelectsCorretor();
     carregarProvasObj();
-  }
+}
 
   function novaQuestao() { return { enunciado: '', resposta: '', valor: '2', imagemUrl: null, file: null, descritor: '' }; }
   function novoForm() {
@@ -1046,28 +1059,43 @@ async function carregarDiagnosticoTurma() {
     return; 
   }
 
-  area.innerHTML = '<p style="text-align: center; color: #666;">⏳ Analisando dados do diagnóstico...</p>';
+  area.innerHTML = '<p style="text-align: center; color: #666;">⏳ Analisando dados...</p>';
 
   try {
-    // 1. Busca os alunos
+    // 1. Busca os alunos desta turma
+    // NOTA: Se o RLS estiver ativo e você não for admin/prof dessa turma, isso vai retornar [] vazio.
     var rAlunos = await sbFetch('GET', '/rest/v1/alunos?id_turma=eq.' + idTurma + '&select=id,nome_completo,numero_chamada');
+    
+    // Verifica se houve erro de permissão (401/403) ou se veio vazio
+    if (!rAlunos.ok) {
+       throw new Error('Sem permissão para acessar esta turma (' + rAlunos.status + ')');
+    }
+    
     var alunos = await rAlunos.json();
+    
     if (!alunos || alunos.length === 0) {
-      area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Nenhum aluno encontrado nesta turma.</p>';
+      area.innerHTML = '<div style="padding:20px; background:#fff3cd; border:1px solid #ffc107; border-radius:8px; text-align:center; color:#856404;">' +
+        '<strong>⚠️ Atenção:</strong><br>Nenhum aluno encontrado nesta turma.<br>' +
+        '<small>Isso pode ocorrer se:<br>1. A turma realmente não tem alunos cadastrados.<br>2. Você não é o administrador/responsável por esta turma (Segurança RLS ativa).</small></div>';
       return;
     }
+    
     var idsAlunos = alunos.map(function(a) { return a.id; }).join(',');
 
-    // 2. Busca as questões (O Gabarito)
-    var questoes = [];
+    // 2. Busca as questões
     var rQ = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade,valor');
-    var qTemp = await rQ.json();
-    if (Array.isArray(qTemp) && qTemp.length > 0) { questoes = qTemp; }
+    var questoes = [];
+    if (rQ.ok) {
+      var qTemp = await rQ.json();
+      if (Array.isArray(qTemp)) questoes = qTemp;
+    }
     
     if (questoes.length === 0) {
       var rQA = await sbFetch('GET', '/rest/v1/questoes_abertas?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade,valor');
-      var qaTemp = await rQA.json();
-      if (Array.isArray(qaTemp) && qaTemp.length > 0) { questoes = qaTemp; }
+      if (rQA.ok) {
+        var qaTemp = await rQA.json();
+        if (Array.isArray(qaTemp)) questoes = qaTemp;
+      }
     }
 
     if (questoes.length === 0) { 
@@ -1075,8 +1103,13 @@ async function carregarDiagnosticoTurma() {
       return; 
     }
 
-    // 3. Busca as respostas dos alunos (As folhas preenchidas)
+    // 3. Busca as respostas
     var rRespostas = await sbFetch('GET', '/rest/v1/respostas?id_avaliacao=eq.' + idProva + '&id_aluno=in.(' + idsAlunos + ')&select=id_questao,correta,id_aluno');
+    
+    if (!rRespostas.ok) {
+       throw new Error('Erro ao buscar respostas: ' + rRespostas.status);
+    }
+
     var respostas = await rRespostas.json();
 
     if (!Array.isArray(respostas) || respostas.length === 0) { 
@@ -1087,28 +1120,56 @@ async function carregarDiagnosticoTurma() {
     var tipoEscolhido = document.getElementById('tipoAnaliseTurma').value; 
     var tituloEixo = tipoEscolhido === 'habilidade' ? 'Habilidade (BNCC)' : 'Descritor (SAEB)';
     
-    // 4. CÁLCULO
+    // 4. Cálculos
     var notaMaximaProva = 0;
-    questoes.forEach(q => { notaMaximaProva += (parseFloat(q.valor) || 1); });
+    questoes.forEach(function(q) { notaMaximaProva += (parseFloat(q.valor) || 1); });
 
+    var notasAlunos = {};
+    respostas.forEach(function(r) {
+      var alunoId = r.id_aluno;
+      if (!notasAlunos[alunoId]) notasAlunos[alunoId] = 0;
+      
+      // CORREÇÃO DO BUG: Garantindo que a busca pela questão funcione
+      var questaoEncontrada = questoes.find(function(q) { return String(q.id) === String(r.id_questao); });
+      
+      if (questaoEncontrada && (r.correta === true || r.correta === 'true' || r.correta === 1)) {
+        notasAlunos[alunoId] += parseFloat(questaoEncontrada.valor) || 1;
+      }
+    });
+
+    var somaNotas = 0;
+    var alunosComNota = 0;
+    Object.keys(notasAlunos).forEach(function(alunoId) { 
+      somaNotas += notasAlunos[alunoId]; 
+      alunosComNota++; 
+    });
+    var mediaTurma = alunosComNota > 0 ? (somaNotas / alunosComNota).toFixed(1) : '0.0';
+
+    // 5. Agrupamento
     var mapaAgrupado = {};
+    var respostasProcessadas = 0;
+    var falhasNoCasamento = 0;
+
     questoes.forEach(function(q) {
-      var chave = (tipoEscolhido === 'habilidade') ? (q.habilidade || q.descritor || '') : (q.descritor || q.habilidade || '');
+      var chave = '';
+      if (tipoEscolhido === 'habilidade') {
+        chave = q.habilidade || q.descritor || '';
+      } else {
+        chave = q.descritor || q.habilidade || '';
+      }
       chave = chave ? chave.trim() : 'Não classificado';
       if (!mapaAgrupado[chave]) mapaAgrupado[chave] = { total: 0, acertos: 0 };
     });
     
-    var respostasProcessadas = 0;
-    var falhasNoCasamento = 0;
-
     respostas.forEach(function(r) {
-      // Tenta encontrar a questão correspondente de todas as formas possíveis
-      var questao = questoes.find(function(q) { 
-        return String(q.id).trim() === String(r.id_questao).trim(); 
-      });
-
-      if (questao) {
-        var chave = (tipoEscolhido === 'habilidade') ? (questao.habilidade || questao.descritor || '') : (questao.descritor || questao.habilidade || '');
+      var questaoEncontrada = questoes.find(function(q) { return String(q.id) === String(r.id_questao); });
+      if (questaoEncontrada) {
+        var chave = '';
+        if (tipoEscolhido === 'habilidade') {
+          chave = questaoEncontrada.habilidade || questaoEncontrada.descritor || '';
+        } else {
+          chave = questaoEncontrada.descritor || questaoEncontrada.habilidade || '';
+        }
         chave = chave ? chave.trim() : 'Não classificado';
         
         if (!mapaAgrupado[chave]) mapaAgrupado[chave] = { total: 0, acertos: 0 };
@@ -1129,60 +1190,45 @@ async function carregarDiagnosticoTurma() {
       return { chave: chave, total: dados.total, acertos: dados.acertos, percentual: percentual.toFixed(1) };
     }).sort(function(a, b) { return a.percentual - b.percentual; });
     
-    // 5. MONTA O HTML COM O MODO DETETIVE
+    // 6. Renderização
     var html = '<div style="background: #e3f2fd; border-left: 5px solid #2196F3; padding: 16px; border-radius: 6px; margin-bottom: 20px;">';
-    html += '<h3 style="color: #1565C0; margin: 0 0 8px 0;">📊 Diagnóstico da Turma</h3>';
+    html += '<h3 style="color: #1565C0; margin: 0 0 8px 0;">📊 Média da Turma: ' + mediaTurma + ' / ' + notaMaximaProva.toFixed(1) + ' pontos</h3>';
+    html += '<p style="margin: 0; font-size: 13px; color: #555;">Alunos avaliados: <b>' + alunosComNota + '</b> de <b>' + alunos.length + '</b></p>';
     html += '</div>';
 
     html += '<h4 style="margin-bottom: 12px; color: #333;">📈 Desempenho por ' + tituloEixo + ':</h4>';
     
-    if (resultados.length === 0 || resultados.every(r => r.total === 0)) {
-       html += '<p style="text-align: center; color: #dc3545; font-weight: bold;">⚠️ Nenhuma resposta pôde ser vinculada às questões. Veja o "Modo Detetive" abaixo.</p>';
+    if (resultados.length === 0) {
+       html += '<p style="text-align: center; color: #666;">Nenhum dado de desempenho encontrado.</p>';
     } else {
       resultados.forEach(function(item) {
-        if (item.total === 0) return;
         var cor = item.percentual < 50 ? '#dc3545' : (item.percentual < 70 ? '#ffc107' : '#28a745');
         var emoji = item.percentual < 50 ? '🔴' : (item.percentual < 70 ? '🟡' : '🟢');
         html += '<div style="margin-bottom: 12px;"><div style="display: flex; justify-content: space-between; margin-bottom: 4px;">' +
           '<strong>' + emoji + ' ' + item.chave + '</strong><span style="font-weight: bold; color: ' + cor + ';">' + item.percentual + '% de acerto</span></div>' +
-          '<div style="background: #e0e0e0; border-radius: 6px; height: 24px; overflow: hidden;"><div style="background: ' + cor + '; height: 100%; width: ' + item.percentual + '%;"></div></div>' +
+          '<div style="background: #e0e0e0; border-radius: 6px; height: 24px; overflow: hidden;"><div style="background: ' + cor + '; height: 100%; width: ' + item.percentual + '%; transition: width 0.5s;"></div></div>' +
           '<div style="font-size: 11px; color: #666; margin-top: 2px;">' + item.acertos + ' acertos de ' + item.total + ' respostas</div></div>';
       });
     }
 
-  // ========================================================================
-    // MODO DETETIVE (VISÍVEL APENAS PARA O ADMINISTRADOR)
-    // ========================================================================
-    
-    // ⚠️ IMPORTANTE: TROQUE O E-MAIL ABAIXO PELO SEU E-MAIL REAL DE LOGIN NO SISTEMA
-    const EMAIL_ADMIN = 'jonasmatematico@yahoo.com.br'; 
-    
-    if (userEmail === EMAIL_ADMIN) {
+    // MODO DETETIVE (Só Admin)
+    const EMAIL_ADMIN_MASTER = 'jonasmatematico@yahoo.com.br';
+    if (userEmail === EMAIL_ADMIN_MASTER) {
         html += '<div style="margin-top: 30px; padding: 15px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 6px; font-size: 12px; color: #856404;">';
-        html += '<strong>🕵️ MODO DETETIVE (Acesso Restrito ao Admin):</strong><br>';
-        html += '• Turma ID: <b>' + idTurma + '</b> | Prova ID: <b>' + idProva + '</b><br>';
-        html += '• Alunos na turma: <b>' + alunos.length + '</b><br>';
-        html += '• Questões encontradas: <b>' + questoes.length + '</b><br>';
-        html += '• Respostas encontradas: <b>' + respostas.length + '</b><br>';
-        html += '• Respostas ligadas às questões: <b style="color:green">' + respostasProcessadas + '</b> / <b style="color:red">' + falhasNoCasamento + '</b><br>';
-        
-        if (questoes.length > 0 && respostas.length > 0) {
-            var q1 = questoes[0];
-            var r1 = respostas[0];
-            html += '<hr style="border-color:#ffc107; margin: 8px 0;">';
-            html += '<small>Exemplo Q1: ID=' + q1.id + ', Descritor=[' + (q.descritor||'Vazio') + ']<br>';
-            html += 'Exemplo R1: id_questao=' + r1.id_questao + ', correta=[' + r1.correta + ']</small>';
-        }
+        html += '<strong>🕵️ MODO DETETIVE (Admin Only):</strong><br>';
+        html += '• Alunos encontrados: <b>' + alunos.length + '</b><br>';
+        html += '• Respostas ligadas: <b>' + respostasProcessadas + '</b> | Falhas: <b>' + falhasNoCasamento + '</b><br>';
         html += '</div>';
     }
 
     area.innerHTML = html;
+
   } catch(e) {
     console.error("Erro no diagnóstico:", e);
-    area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px; background: #ffe6e6; border-radius: 8px;">❌ <strong>Erro:</strong> ' + e.message + '</p>';
+    area.innerHTML = '<div style="padding:20px; background:#ffe6e6; border:1px solid #dc3545; border-radius:8px; text-align:center; color:#dc3545;">' +
+      '<strong>❌ Erro Técnico:</strong><br>' + e.message + '</div>';
   }
 }
-
 
   async function gerarPlanoRecuperacao(idProva) {
     var itens = window.itensRuinsAtual;
@@ -1791,42 +1837,77 @@ async function carregarDiagnosticoAluno() {
 // ========================================================================
 
 async function carregarListaUsuarios() {
-  // Só roda se for admin
-  if (userEmail !== 'jonasmatematico@yahoo.com.br') return; 
+  const container = document.getElementById('listaUsuariosGestao');
   
-  var container = document.getElementById('listaUsuariosGestao');
-  container.innerHTML = '<p style="text-align:center; color:#999;">Carregando...</p>';
+  // Validação Básica de Login
+  if (!token || !userEmail) {
+    container.innerHTML = '<p style="text-align:center; color:#999;">Faça login para acessar.</p>';
+    return;
+  }
+
+  // Validação de Admin (Hardcoded para garantia total)
+  const EMAIL_ADMIN_MASTER = 'jonasmatematico@yahoo.com.br';
+  if (userEmail !== EMAIL_ADMIN_MASTER) {
+    container.innerHTML = '<div style="padding:20px; background:#ffe6e6; border:1px solid #dc3545; border-radius:8px; text-align:center;"><strong>🚫 Acesso Negado</strong><br>Você não é administrador deste sistema.</div>';
+    return;
+  }
+
+  container.innerHTML = '<p style="text-align:center; color:#666;">⏳ Carregando lista de usuários...</p>';
 
   try {
-    // Busca todos os perfis cadastrados
+    // Usa sbFetch que já trata tokens expirados
     var r = await sbFetch('GET', '/rest/v1/perfis?select=id,nome_completo,email,tipo_usuario,turmas_id&order=created_at.desc');
+    
+    // Verifica status HTTP antes de tentar parsear JSON
+    if (!r.ok) {
+      // Se der 401/403, mostra mensagem amigável. Se der 500, loga detalhe.
+      if (r.status === 401 || r.status === 403) {
+        throw new Error('Sessão expirada ou sem permissão. Faça logout e login.');
+      } else {
+        throw new Error(`Erro no servidor (${r.status}). Tente novamente.`);
+      }
+    }
+
     var usuarios = await r.json();
 
-    if (!Array.isArray(usuarios) || usuarios.length === 0) {
-      container.innerHTML = '<p style="text-align:center; color:#dc3545;">Nenhum usuário encontrado além do Admin.</p>';
+    if (!Array.isArray(usuarios)) {
+      throw new Error('Formato de dados inválido recebido do banco.');
+    }
+
+    if (usuarios.length === 0) {
+      container.innerHTML = '<p style="text-align:center; color:#888;">Nenhum usuário cadastrado além do Admin.</p>';
       return;
     }
 
-    var html = '<table style="width:100%; border-collapse: collapse; font-size: 13px;">';
-    html += '<thead><tr style="background:#eee;"><th style="padding:8px; text-align:left;">Nome</th><th style="padding:8px; text-align:left;">E-mail</th><th style="padding:8px; text-align:center;">Tipo</th><th style="padding:8px; text-align:center;">Turmas Vinculadas</th></tr></thead><tbody>';
+    // Monta a tabela
+    var html = '<table style="width:100%; border-collapse: collapse; font-size: 13px; margin-top:10px;">';
+    html += '<thead><tr style="background:#f5f5f5; border-bottom:2px solid #ddd;">';
+    html += '<th style="padding:10px; text-align:left;">Nome</th>';
+    html += '<th style="padding:10px; text-align:left;">E-mail</th>';
+    html += '<th style="padding:10px; text-align:center;">Tipo</th>';
+    html += '<th style="padding:10px; text-align:center;">Turmas</th>';
+    html += '</tr></thead><tbody>';
     
     usuarios.forEach(function(u) {
       var corBadge = u.tipo_usuario === 'admin' ? '#dc3545' : '#28a745';
       var qtdTurmas = Array.isArray(u.turmas_id) ? u.turmas_id.length : 0;
       
-      html += '<tr style="border-bottom:1px solid #ddd;">';
-      html += '<td style="padding:8px;"><strong>' + u.nome_completo + '</strong></td>';
-      html += '<td style="padding:8px;">' + u.email + '</td>';
-      html += '<td style="padding:8px; text-align:center;"><span style="background:' + corBadge + '; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">' + u.tipo_usuario.toUpperCase() + '</span></td>';
-      html += '<td style="padding:8px; text-align:center;">' + qtdTurmas + ' turma(s)</td>';
+      html += '<tr style="border-bottom:1px solid #eee;">';
+      html += '<td style="padding:10px;"><strong>' + (u.nome_completo || 'Sem Nome') + '</strong></td>';
+      html += '<td style="padding:10px;">' + u.email + '</td>';
+      html += '<td style="padding:10px; text-align:center;"><span style="background:' + corBadge + '; color:white; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:bold;">' + u.tipo_usuario.toUpperCase() + '</span></td>';
+      html += '<td style="padding:10px; text-align:center;">' + qtdTurmas + '</td>';
       html += '</tr>';
     });
     
     html += '</tbody></table>';
     container.innerHTML = html;
+
   } catch(e) {
-    console.error(e);
-    container.innerHTML = '<p style="color:red;">Erro ao carregar lista: ' + e.message + '</p>';
+    console.error("Detalhes do erro na Gestão:", e);
+    container.innerHTML = '<div style="padding:15px; background:#fff3cd; border:1px solid #ffc107; border-radius:6px; color:#856404;">' +
+      '<strong>⚠️ Atenção:</strong><br>' + e.message + '<br>' +
+      '<small style="color:#666; display:block; margin-top:5px;">Se o erro persistir, verifique as políticas RLS no Supabase.</small></div>';
   }
 }
 
