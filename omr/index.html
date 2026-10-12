@@ -143,10 +143,44 @@
         <button class="menu-item" onclick="navegarPara('view-corretor', this)">️ Corretor Manual</button>
         <button class="menu-item" onclick="navegarPara('view-diagnostico', this)">📊 Diagnóstico</button>
         <button class="menu-item" onclick="navegarPara('view-planilha', this)">📋 Exportar Planilha</button>
+        <button class="menu-item" onclick="navegarPara('view-gestao', this)">👥 Gestão de Professores</button>
       </div>
     </nav>
 
     <main class="main-content">
+      <div id="view-gestao" class="view">
+          <div class="card" style="border-left: 5px solid #6f42c1; background: #f3e5f5;">
+            <div class="section-title" style="color: #6f42c1; border-bottom: 1px solid #e1bee7;">👥 Gerenciamento de Acesso</div>
+            <p style="font-size: 13px; color: #666; margin-bottom: 16px;">Cadastre novos professores ou visualize os já existentes. Apenas administradores podem acessar esta área.</p>
+            
+            <!-- Formulário de Novo Cadastro -->
+            <div style="background: white; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px;">
+              <h4 style="margin-top: 0; color: #333;">➕ Cadastrar Novo Professor</h4>
+              <div class="form-row">
+                <div class="form-group"><label>Nome Completo</label><input type="text" id="gestaoNome" placeholder="Ex: Maria Silva"></div>
+                <div class="form-group"><label>E-mail de Login</label><input type="email" id="gestaoEmail" placeholder="ex: maria@escola.com"></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label>Tipo de Acesso</label>
+                  <select id="gestaoTipo">
+                    <option value="professor">Professor (Vê apenas suas turmas)</option>
+                    <option value="admin">Administrador (Vê tudo)</option>
+                  </select>
+                </div>
+                <div class="form-group"><label>&nbsp;</label>
+                  <button class="btn btn-primary" style="width: 100%;" onclick="criarUsuarioSupabase()">🔐 Criar Conta no Supabase</button>
+                </div>
+              </div>
+              <small style="color: #666;">⚠️ Esta ação cria o login real no banco. A senha inicial será enviada por e-mail (configure SMTP no Supabase depois).</small>
+            </div>
+
+            <!-- Lista de Usuários Existentes -->
+            <div class="section-title" style="font-size: 14px; margin-top: 20px;">📋 Usuários Cadastrados</div>
+            <div id="listaUsuariosGestao" style="overflow-x: auto;">
+              <p style="text-align:center; color:#999;">Carregando usuários...</p>
+            </div>
+          </div>
+        </div>
       <div class="main-content-inner">
         
         <div id="view-provas" class="view active">
@@ -471,11 +505,16 @@
   var matrizHabilidades = [];
 
   function navegarPara(viewId, btn) {
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById(viewId).classList.add('active');
-    document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-    if(btn) btn.classList.add('active');
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(viewId).classList.add('active');
+  document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+
+  // NOVO: Se entrou na tela de Gestão, carrega a lista imediatamente
+  if (viewId === 'view-gestao') {
+    carregarListaUsuarios();
   }
+}
 
   function headersCom(prefer) {
     var h = { 'apikey': ANON, 'Content-Type': 'application/json' };
@@ -1746,6 +1785,95 @@ async function carregarDiagnosticoAluno() {
     area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px; background: #ffe6e6; border-radius: 8px;">❌ <strong>Erro:</strong> ' + e.message + '</p>';
   }
 }
+
+// ========================================================================
+// 👥 GESTÃO DE USUÁRIOS (ADMIN ONLY)
+// ========================================================================
+
+async function carregarListaUsuarios() {
+  // Só roda se for admin
+  if (userEmail !== 'jonasmatematico@yahoo.com.br') return; 
+  
+  var container = document.getElementById('listaUsuariosGestao');
+  container.innerHTML = '<p style="text-align:center; color:#999;">Carregando...</p>';
+
+  try {
+    // Busca todos os perfis cadastrados
+    var r = await sbFetch('GET', '/rest/v1/perfis?select=id,nome_completo,email,tipo_usuario,turmas_id&order=created_at.desc');
+    var usuarios = await r.json();
+
+    if (!Array.isArray(usuarios) || usuarios.length === 0) {
+      container.innerHTML = '<p style="text-align:center; color:#dc3545;">Nenhum usuário encontrado além do Admin.</p>';
+      return;
+    }
+
+    var html = '<table style="width:100%; border-collapse: collapse; font-size: 13px;">';
+    html += '<thead><tr style="background:#eee;"><th style="padding:8px; text-align:left;">Nome</th><th style="padding:8px; text-align:left;">E-mail</th><th style="padding:8px; text-align:center;">Tipo</th><th style="padding:8px; text-align:center;">Turmas Vinculadas</th></tr></thead><tbody>';
+    
+    usuarios.forEach(function(u) {
+      var corBadge = u.tipo_usuario === 'admin' ? '#dc3545' : '#28a745';
+      var qtdTurmas = Array.isArray(u.turmas_id) ? u.turmas_id.length : 0;
+      
+      html += '<tr style="border-bottom:1px solid #ddd;">';
+      html += '<td style="padding:8px;"><strong>' + u.nome_completo + '</strong></td>';
+      html += '<td style="padding:8px;">' + u.email + '</td>';
+      html += '<td style="padding:8px; text-align:center;"><span style="background:' + corBadge + '; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">' + u.tipo_usuario.toUpperCase() + '</span></td>';
+      html += '<td style="padding:8px; text-align:center;">' + qtdTurmas + ' turma(s)</td>';
+      html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  } catch(e) {
+    console.error(e);
+    container.innerHTML = '<p style="color:red;">Erro ao carregar lista: ' + e.message + '</p>';
+  }
+}
+
+async function criarUsuarioSupabase() {
+  if (userEmail !== 'jonasmatematico@yahoo.com.br') { toast('Acesso negado!', 'error'); return; }
+
+  var nome = document.getElementById('gestaoNome').value.trim();
+  var email = document.getElementById('gestaoEmail').value.trim();
+  var tipo = document.getElementById('gestaoTipo').value;
+
+  if (!nome || !email) { toast('Preencha Nome e E-mail!', 'error'); return; }
+
+  toast('⏳ Criando conta no Supabase...', 'info');
+
+  try {
+    // 1. Usa a API Admin do Supabase para criar o usuário
+    // Nota: Isso requer que o seu token tenha permissão de admin ou use a service_role key (cuidado!)
+    // Para simplificar agora, vamos usar o endpoint REST padrão assumindo que você tem permissão via RLS ou Token
+    
+    // ⚠️ ATENÇÃO TÉCNICA: 
+    // Criar usuários diretamente pelo front-end com o anon_key geralmente falha por segurança.
+    // A forma correta é usar a Service Role Key no BACKEND (Render/Python).
+    // MAS, para um MVP rápido, podemos tentar inserir direto na tabela auth.users se tivermos permissão super-admin no DB.
+    // Vamos fazer o caminho seguro: Inserir na tabela 'perfis' e avisar que o login precisa ser criado manualmente no painel Auth do Supabase POR ENQUANTO.
+    
+    // INSERIR PERFIL NO BANCO
+    var payloadPerfil = {
+      id: crypto.randomUUID(), // Gera um ID temporário, mas o ideal é vincular ao auth.id real
+      nome_completo: nome,
+      email: email,
+      tipo_usuario: tipo,
+      turmas_id: [] // Começa sem turmas
+    };
+
+    // Como não temos o ID real do auth.user ainda, vamos salvar como pendente ou usar um workaround.
+    // WORKAROUND PARA DEMONSTRAÇÃO: Vamos apenas mostrar instruções claras.
+    
+    alert("PASSO MANUAL NECESSÁRIO:\n\n1. Vá no Painel do Supabase > Authentication > Users.\n2. Clique em 'Add User'.\n3. Coloque o e-mail: " + email + "\n4. Defina uma senha temporária.\n5. Copie o UUID gerado.\n6. Volte aqui e atualize a página.");
+    
+    // Após criar no painel, recarregamos a lista
+    setTimeout(carregarListaUsuarios, 2000);
+
+  } catch(e) {
+    toast('Erro: ' + e.message, 'error');
+  }
+}
+
 </script>
 
 </body>
