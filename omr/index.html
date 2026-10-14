@@ -495,6 +495,32 @@
       </p>
       <textarea id="textareaColar" rows="10" placeholder="1) Qual é 2+2? | 4 | 2&#10;2) Capital do Brasil? | Brasília | 1.5"></textarea>
       <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" onclick="colarDoWord()">✅ IMPORTAR QUESTÕES</button>
+      <!-- 🆕 ABA: EXPERTS DE IA -->
+      <div id="abaExperts" class="hidden">
+        <div class="form-group">
+          <label>Escolha o Especialista:</label>
+          <select id="expertSelector" onchange="atualizarFormularioExpert()">
+            <option value="tutor_recuperacao">🎯 Tutor de Recuperação (Para alunos com dificuldade)</option>
+            <option value="criador_provas">📝 Criador de Provas (Gera questões inéditas)</option>
+            <option value="analista_desempenho">📊 Analista de Desempenho (Insights da turma)</option>
+            <option value="corretor_dissertativo">✍️ Corretor Dissertativo (Avalia respostas)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>ID do Aluno (Opcional, para personalizar com a Memória):</label>
+          <input type="number" id="expertIdAluno" placeholder="Ex: 119 (deixa em branco se for geral)">
+        </div>
+
+        <div class="form-group">
+          <label id="expertContextoLabel">Descreva a situação ou cole os dados:</label>
+          <textarea id="expertContexto" rows="6" placeholder="Ex: O aluno errou 5 questões de D25. Ele gosta de futebol."></textarea>
+        </div>
+
+        <button id="btnChamarExpert" class="btn btn-primary" style="width: 100%;" onclick="executarExpertIA()">🚀 ACIONAR EXPERT</button>
+        
+        <div id="expertResultado" style="margin-top: 16px;"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -508,9 +534,11 @@
     </div>
     <div class="modal-body">
       <div class="ia-tabs">
+        
         <button class="ia-tab active" id="tabGerar" onclick="mudarAbaIA('gerar')">Gerar Questões</button>
         <button class="ia-tab" id="tabIdentificar" onclick="mudarAbaIA('identificar')">Identificar Habilidade</button>
         <button class="ia-tab" id="tabPlanejar" onclick="mudarAbaIA('planejar')">Planejar Aula</button>
+        <button class="ia-tab" id="tabExperts" onclick="mudarAbaIA('experts')">🎓 Experts de IA</button>
       </div>
 
       <div id="abaGerar">
@@ -944,13 +972,17 @@ var userEmail = localStorage.getItem('sb_email') || '';
     document.getElementById('abaGerar').classList.add('hidden');
     document.getElementById('abaIdentificar').classList.add('hidden');
     document.getElementById('abaPlanejar').classList.add('hidden');
+    document.getElementById('abaExperts').classList.add('hidden'); // 🆕
+    
     document.getElementById('tabGerar').classList.remove('active');
     document.getElementById('tabIdentificar').classList.remove('active');
     document.getElementById('tabPlanejar').classList.remove('active');
+    document.getElementById('tabExperts').classList.remove('active'); // 🆕
 
     if (aba === 'gerar') { document.getElementById('abaGerar').classList.remove('hidden'); document.getElementById('tabGerar').classList.add('active'); }
     else if (aba === 'identificar') { document.getElementById('abaIdentificar').classList.remove('hidden'); document.getElementById('tabIdentificar').classList.add('active'); }
     else if (aba === 'planejar') { document.getElementById('abaPlanejar').classList.remove('hidden'); document.getElementById('tabPlanejar').classList.add('active'); }
+    else if (aba === 'experts') { document.getElementById('abaExperts').classList.remove('hidden'); document.getElementById('tabExperts').classList.add('active'); } // 🆕
   }
 
   async function carregarMatrizIA() {
@@ -2709,6 +2741,104 @@ async function cadastrarProfessorViaAPI() {
     btn.disabled = false;
   }
 }
+
+// ========================================================================
+// 🎓 FUNÇÕES DOS EXPERTS DE IA
+// ========================================================================
+
+function atualizarFormularioExpert() {
+    const expert = document.getElementById('expertSelector').value;
+    const label = document.getElementById('expertContextoLabel');
+    const textarea = document.getElementById('expertContexto');
+    
+    if (expert === 'tutor_recuperacao') {
+        label.innerText = 'Descreva os erros do aluno e o contexto (a IA usará a Memória se o ID for fornecido):';
+        textarea.placeholder = 'Ex: Errou questões de fração (D25). Contexto: Gosta de videogames.';
+    } else if (expert === 'criador_provas') {
+        label.innerText = 'Descreva o tema, ano e descritores desejados:';
+        textarea.placeholder = 'Ex: 6º ano, Matemática. Criar 3 questões de D23 e D25 sobre porcentagem.';
+    } else if (expert === 'analista_desempenho') {
+        label.innerText = 'Cole os dados de desempenho da turma (JSON ou texto):';
+        textarea.placeholder = 'Ex: Média da turma 5.2. 60% erraram D25. 30% erraram D12.';
+    } else if (expert === 'corretor_dissertativo') {
+        label.innerText = 'Cole o enunciado, a resposta do aluno e o valor da questão:';
+        textarea.placeholder = 'Enunciado: ...\nResposta do aluno: ...\nValor: 2.0';
+    }
+}
+
+async function executarExpertIA() {
+    const expertType = document.getElementById('expertSelector').value;
+    const contexto = document.getElementById('expertContexto').value;
+    const idAluno = document.getElementById('expertIdAluno').value || null;
+    const btn = document.getElementById('btnChamarExpert');
+    const resultadoDiv = document.getElementById('expertResultado');
+    
+    if (!contexto.trim()) {
+        toast('Por favor, preencha o contexto ou dados da tarefa!', 'error');
+        return;
+    }
+
+    btn.innerHTML = '⏳ O Expert está analisando...';
+    btn.disabled = true;
+    resultadoDiv.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">🤖 Processando com inteligência pedagógica...</div>';
+
+    try {
+        const response = await fetch('https://omr-sistema-api.onrender.com/api/chamar_expert', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                expert_type: expertType,
+                contexto: contexto,
+                id_aluno: idAluno ? parseInt(idAluno) : null,
+                dados_especificos: {} // Pode ser expandido no futuro
+            })
+        });
+
+        const data = await response.json();
+
+        if (!data.sucesso) throw new Error(data.erro || 'Erro desconhecido na IA.');
+
+        // Renderização dinâmica baseada no expert
+        let html = `<div style="background:#f0f4ff; padding:16px; border-radius:8px; border-left:4px solid #667eea;">`;
+        html += `<h4 style="margin-top:0; color:#4A148C;">🎓 Resultado: ${data.expert}</h4>`;
+        
+        // Formatação simples para exibir o JSON de forma legível
+        const dados = data.dados;
+        for (const [key, value] of Object.entries(dados)) {
+            if (key === 'atividades' && Array.isArray(value)) {
+                html += `<h5 style="color:#667eea; margin-top:12px;">📋 Atividades Geradas:</h5>`;
+                value.forEach((atv, idx) => {
+                    html += `<div style="background:white; padding:12px; margin-bottom:8px; border-radius:6px;">`;
+                    html += `<strong>${idx + 1}. ${atv.titulo || 'Atividade ' + (idx+1)}</strong> <small>(${atv.tipo || 'geral'})</small><br>`;
+                    html += `<p style="margin:6px 0; font-size:14px;">${atv.enunciado || atv.descricao || ''}</p>`;
+                    if (atv.gabarito_explicado || atv.resolucao) {
+                        html += `<details><summary style="cursor:pointer; color:#008080; font-size:13px;">Ver Gabarito/Resolução</summary>`;
+                        html += `<p style="background:#f9f9f9; padding:8px; margin-top:4px; font-size:13px; white-space:pre-wrap;">${atv.gabarito_explicado || atv.resolucao}</p></details>`;
+                    }
+                    html += `</div>`;
+                });
+            } else if (key === 'acoes_sugeridas' && Array.isArray(value)) {
+                html += `<h5 style="color:#667eea; margin-top:12px;">💡 Ações Sugeridas:</h5><ul>`;
+                value.forEach(acao => html += `<li style="margin-bottom:6px;">${acao}</li>`);
+                html += `</ul>`;
+            } else if (typeof value === 'string' || typeof value === 'number') {
+                html += `<p style="margin:8px 0;"><strong>${key.replace(/_/g, ' ').toUpperCase()}:</strong><br>${value}</p>`;
+            }
+        }
+        html += `<p style="text-align:right; font-size:11px; color:#999; margin-top:12px;">Gerado por ${data.modelo}</p></div>`;
+        
+        resultadoDiv.innerHTML = html;
+        toast('✅ Expert concluiu a tarefa com sucesso!', 'success');
+
+    } catch(e) {
+        console.error("Erro no Expert:", e);
+        resultadoDiv.innerHTML = `<div style="padding:20px; background:#ffe6e6; border-radius:8px; color:#dc3545; text-align:center;">❌ Erro: ${e.message}</div>`;
+    } finally {
+        btn.innerHTML = '🚀 ACIONAR EXPERT';
+        btn.disabled = false;
+    }
+}
+
 </script>
 
 </body>
