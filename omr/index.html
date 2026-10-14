@@ -533,14 +533,16 @@
       <button class="btn btn-secondary btn-sm" onclick="fecharModal('modalIA')">✕</button>
     </div>
     <div class="modal-body">
+      
+      <!-- Abas de Navegação -->
       <div class="ia-tabs">
-        
         <button class="ia-tab active" id="tabGerar" onclick="mudarAbaIA('gerar')">Gerar Questões</button>
         <button class="ia-tab" id="tabIdentificar" onclick="mudarAbaIA('identificar')">Identificar Habilidade</button>
         <button class="ia-tab" id="tabPlanejar" onclick="mudarAbaIA('planejar')">Planejar Aula</button>
         <button class="ia-tab" id="tabExperts" onclick="mudarAbaIA('experts')">🎓 Experts de IA</button>
       </div>
 
+      <!-- ABA 1: Gerar Questões -->
       <div id="abaGerar">
         <div class="form-row">
           <div class="form-group">
@@ -610,6 +612,7 @@
         <div id="iaResultadoGerar" style="margin-top: 16px;"></div>
       </div>
 
+      <!-- ABA 2: Identificar Habilidade -->
       <div id="abaIdentificar" class="hidden">
         <div class="form-group">
           <label>Cole o texto da questão</label>
@@ -619,6 +622,7 @@
         <div id="iaResultadoIdentificar" style="margin-top: 16px;"></div>
       </div>
 
+      <!-- ABA 3: Planejar Aula -->
       <div id="abaPlanejar" class="hidden">
         <div class="form-group">
           <label>Tema da Aula</label>
@@ -643,6 +647,34 @@
         <button id="btnPlanejarIA" class="btn btn-primary" style="width: 100%;" onclick="gerarPlanoAula()">📚 GERAR PLANO DE AULA</button>
         <div id="iaResultadoPlanejar" style="margin-top: 16px;"></div>
       </div>
+
+      <!-- ABA 4: Experts de IA (NOVA E CORRIGIDA) -->
+      <div id="abaExperts" class="hidden">
+        <div class="form-group">
+          <label>Escolha o Especialista:</label>
+          <select id="expertSelector" onchange="atualizarFormularioExpert()">
+            <option value="tutor_recuperacao">🎯 Tutor de Recuperação (Para alunos com dificuldade)</option>
+            <option value="criador_provas">📝 Criador de Provas (Gera questões inéditas)</option>
+            <option value="analista_desempenho">📊 Analista de Desempenho (Insights da turma)</option>
+            <option value="corretor_dissertativo">✍️ Corretor Dissertativo (Avalia respostas)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>ID do Aluno (Opcional, para personalizar com a Memória):</label>
+          <input type="number" id="expertIdAluno" placeholder="Ex: 119 (deixe em branco se for geral)">
+        </div>
+
+        <div class="form-group">
+          <label id="expertContextoLabel">Descreva a situação ou cole os dados:</label>
+          <textarea id="expertContexto" rows="6" placeholder="Ex: O aluno errou 5 questões de D25. Ele gosta de futebol."></textarea>
+        </div>
+
+        <button id="btnChamarExpert" class="btn btn-primary" style="width: 100%;" onclick="executarExpertIA()">🚀 ACIONAR EXPERT</button>
+        
+        <div id="expertResultado" style="margin-top: 16px;"></div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -968,22 +1000,37 @@ var userEmail = localStorage.getItem('sb_email') || '';
 
   function abrirModalIA() { document.getElementById('modalIA').classList.add('active'); mudarAbaIA('gerar'); document.getElementById('iaResultadoGerar').innerHTML = ''; document.getElementById('iaResultadoIdentificar').innerHTML = ''; document.getElementById('iaResultadoPlanejar').innerHTML = ''; }
  
-  function mudarAbaIA(aba) {
+function mudarAbaIA(aba) {
+    // Esconde todas as abas
     document.getElementById('abaGerar').classList.add('hidden');
     document.getElementById('abaIdentificar').classList.add('hidden');
     document.getElementById('abaPlanejar').classList.add('hidden');
-    document.getElementById('abaExperts').classList.add('hidden'); // 🆕
+    document.getElementById('abaExperts').classList.add('hidden'); // 🆕 ADICIONE ESTA
     
+    // Remove active de todos os botões
     document.getElementById('tabGerar').classList.remove('active');
     document.getElementById('tabIdentificar').classList.remove('active');
     document.getElementById('tabPlanejar').classList.remove('active');
-    document.getElementById('tabExperts').classList.remove('active'); // 🆕
+    document.getElementById('tabExperts').classList.remove('active'); // 🆕 ADICIONE ESTA
 
-    if (aba === 'gerar') { document.getElementById('abaGerar').classList.remove('hidden'); document.getElementById('tabGerar').classList.add('active'); }
-    else if (aba === 'identificar') { document.getElementById('abaIdentificar').classList.remove('hidden'); document.getElementById('tabIdentificar').classList.add('active'); }
-    else if (aba === 'planejar') { document.getElementById('abaPlanejar').classList.remove('hidden'); document.getElementById('tabPlanejar').classList.add('active'); }
-    else if (aba === 'experts') { document.getElementById('abaExperts').classList.remove('hidden'); document.getElementById('tabExperts').classList.add('active'); } // 🆕
-  }
+    // Mostra a aba clicada
+    if (aba === 'gerar') { 
+        document.getElementById('abaGerar').classList.remove('hidden'); 
+        document.getElementById('tabGerar').classList.add('active'); 
+    }
+    else if (aba === 'identificar') { 
+        document.getElementById('abaIdentificar').classList.remove('hidden'); 
+        document.getElementById('tabIdentificar').classList.add('active'); 
+    }
+    else if (aba === 'planejar') { 
+        document.getElementById('abaPlanejar').classList.remove('hidden'); 
+        document.getElementById('tabPlanejar').classList.add('active'); 
+    }
+    else if (aba === 'experts') {  // 🆕 ADICIONE ESTE BLOCO
+        document.getElementById('abaExperts').classList.remove('hidden'); 
+        document.getElementById('tabExperts').classList.add('active'); 
+    }
+}
 
   async function carregarMatrizIA() {
     var fonte = document.getElementById('iaFonte').value;
@@ -2774,7 +2821,7 @@ async function executarExpertIA() {
     const resultadoDiv = document.getElementById('expertResultado');
     
     if (!contexto.trim()) {
-        toast('Por favor, preencha o contexto ou dados da tarefa!', 'error');
+        alert('Por favor, preencha o contexto ou dados da tarefa!');
         return;
     }
 
@@ -2790,7 +2837,7 @@ async function executarExpertIA() {
                 expert_type: expertType,
                 contexto: contexto,
                 id_aluno: idAluno ? parseInt(idAluno) : null,
-                dados_especificos: {} // Pode ser expandido no futuro
+                dados_especificos: {}
             })
         });
 
@@ -2798,11 +2845,9 @@ async function executarExpertIA() {
 
         if (!data.sucesso) throw new Error(data.erro || 'Erro desconhecido na IA.');
 
-        // Renderização dinâmica baseada no expert
         let html = `<div style="background:#f0f4ff; padding:16px; border-radius:8px; border-left:4px solid #667eea;">`;
         html += `<h4 style="margin-top:0; color:#4A148C;">🎓 Resultado: ${data.expert}</h4>`;
         
-        // Formatação simples para exibir o JSON de forma legível
         const dados = data.dados;
         for (const [key, value] of Object.entries(dados)) {
             if (key === 'atividades' && Array.isArray(value)) {
@@ -2828,7 +2873,7 @@ async function executarExpertIA() {
         html += `<p style="text-align:right; font-size:11px; color:#999; margin-top:12px;">Gerado por ${data.modelo}</p></div>`;
         
         resultadoDiv.innerHTML = html;
-        toast('✅ Expert concluiu a tarefa com sucesso!', 'success');
+        alert('✅ Expert concluiu a tarefa com sucesso!');
 
     } catch(e) {
         console.error("Erro no Expert:", e);
@@ -2838,7 +2883,6 @@ async function executarExpertIA() {
         btn.disabled = false;
     }
 }
-
 </script>
 
 </body>
