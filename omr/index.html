@@ -495,33 +495,6 @@
       </p>
       <textarea id="textareaColar" rows="10" placeholder="1) Qual é 2+2? | 4 | 2&#10;2) Capital do Brasil? | Brasília | 1.5"></textarea>
       <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" onclick="colarDoWord()">✅ IMPORTAR QUESTÕES</button>
-      
-      <!-- 🆕 ABA: EXPERTS DE IA -->
-      <div id="abaExperts" class="hidden">
-        <div class="form-group">
-          <label>Escolha o Especialista:</label>
-          <select id="expertSelector" onchange="atualizarFormularioExpert()">
-            <option value="tutor_recuperacao">🎯 Tutor de Recuperação (Para alunos com dificuldade)</option>
-            <option value="criador_provas">📝 Criador de Provas (Gera questões inéditas)</option>
-            <option value="analista_desempenho">📊 Analista de Desempenho (Insights da turma)</option>
-            <option value="corretor_dissertativo">✍️ Corretor Dissertativo (Avalia respostas)</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>ID do Aluno (Opcional, para personalizar com a Memória):</label>
-          <input type="number" id="expertIdAluno" placeholder="Ex: 119 (deixa em branco se for geral)">
-        </div>
-
-        <div class="form-group">
-          <label id="expertContextoLabel">Descreva a situação ou cole os dados:</label>
-          <textarea id="expertContexto" rows="6" placeholder="Ex: O aluno errou 5 questões de D25. Ele gosta de futebol."></textarea>
-        </div>
-
-        <button id="btnChamarExpert" class="btn btn-primary" style="width: 100%;" onclick="executarExpertIA()">🚀 ACIONAR EXPERT</button>
-        
-        <div id="expertResultado" style="margin-top: 16px;"></div>
-      </div>
     </div>
   </div>
 </div>
@@ -541,6 +514,76 @@
         <button class="ia-tab" id="tabIdentificar" onclick="mudarAbaIA('identificar')">Identificar Habilidade</button>
         <button class="ia-tab" id="tabPlanejar" onclick="mudarAbaIA('planejar')">Planejar Aula</button>
         <button class="ia-tab" id="tabExperts" onclick="mudarAbaIA('experts')">🎓 Experts de IA</button>
+      </div>
+
+      <!-- ABA 1: Gerar Questões -->
+      <div id="abaGerar">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Fonte</label>
+            <select id="iaFonte" onchange="carregarMatrizIA()">
+              <option value="CP">Currículo Paulista</option>
+              <option value="BNCC">BNCC</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Ano</label>
+            <select id="iaAno" onchange="carregarMatrizIA()">
+              <option value="1">1º Ano</option>
+              <option value="2">2º Ano</option>
+              <option value="3">3º Ano</option>
+              <option value="4">4º Ano</option>
+              <option value="5">5º Ano</option>
+              <option value="6" selected>6º Ano</option>
+              <option value="7">7º Ano</option>
+              <option value="8">8º Ano</option>
+              <option value="9">9º Ano</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Habilidades (selecione pelo menos 1)</label>
+          <div id="iaListaHabilidades" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 12px; border-radius: 6px;">
+            <p style="text-align: center; color: #666;">Carregando...</p>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo de Questão</label>
+            <select id="iaTipoQuestao" onchange="toggleAlternativas()">
+              <option value="aberta">Dissertativa</option>
+              <option value="objetiva">Múltipla Escolha</option>
+            </select>
+          </div>
+          <div class="form-group" id="grupoNumAlternativas" style="display: none;">
+            <label>Nº de Alternativas</label>
+            <select id="iaNumAlternativas">
+              <option value="3">3 (A, B, C)</option>
+              <option value="4" selected>4 (A, B, C, D)</option>
+              <option value="5">5 (A, B, C, D, E)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Quantidade</label>
+            <input type="number" id="iaQtd" value="3" min="1" max="10">
+          </div>
+          <div class="form-group">
+            <label>Dificuldade</label>
+            <select id="iaDificuldade">
+              <option value="fácil">Fácil</option>
+              <option value="média" selected>Média</option>
+              <option value="difícil">Difícil</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Contexto (opcional)</label>
+          <input type="text" id="iaContexto" placeholder="Ex: use exemplos de futebol">
+        </div>
+        <button id="btnGerarIA" class="btn btn-primary" style="width: 100%;" onclick="gerarQuestoesIA()">✨ GERAR QUESTÕES COM IA</button>
+        <div id="iaResultadoGerar" style="margin-top: 16px;"></div>
       </div>
 
       <!-- ABA 2: Identificar Habilidade -->
@@ -579,12 +622,12 @@
         <div id="iaResultadoPlanejar" style="margin-top: 16px;"></div>
       </div>
 
-      <!-- 🎓 ABA: EXPERTS DE IA (DENTRO DO MODAL DA IA!) -->
+      <!-- ABA 4: Experts de IA -->
       <div id="abaExperts" class="hidden">
         <div class="form-group">
           <label>Escolha o Especialista:</label>
           <select id="expertSelector" onchange="atualizarFormularioExpert()">
-            <option value="tutor_recuperacao"> Tutor de Recuperação</option>
+            <option value="tutor_recuperacao">🎯 Tutor de Recuperação</option>
             <option value="criador_provas">📝 Criador de Provas</option>
             <option value="analista_desempenho">📊 Analista de Desempenho</option>
             <option value="corretor_dissertativo">✍️ Corretor Dissertativo</option>
@@ -601,34 +644,7 @@
           <textarea id="expertContexto" rows="6" placeholder="Ex: Errou D25. Gosta de futebol."></textarea>
         </div>
 
-        <button id="btnChamarExpert" class="btn btn-primary" style="width: 100%;" onclick="executarExpertIA()">🚀 ACIONAR EXPERT</button>
-        
-        <div id="expertResultado" style="margin-top: 16px;"></div>
-      </div>
-
-      <!-- ABA 4: Experts de IA (NOVA E CORRIGIDA) -->
-      <div id="abaExperts" class="hidden">
-        <div class="form-group">
-          <label>Escolha o Especialista:</label>
-          <select id="expertSelector" onchange="atualizarFormularioExpert()">
-            <option value="tutor_recuperacao">🎯 Tutor de Recuperação (Para alunos com dificuldade)</option>
-            <option value="criador_provas">📝 Criador de Provas (Gera questões inéditas)</option>
-            <option value="analista_desempenho">📊 Analista de Desempenho (Insights da turma)</option>
-            <option value="corretor_dissertativo">✍️ Corretor Dissertativo (Avalia respostas)</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>ID do Aluno (Opcional, para personalizar com a Memória):</label>
-          <input type="number" id="expertIdAluno" placeholder="Ex: 119 (deixe em branco se for geral)">
-        </div>
-
-        <div class="form-group">
-          <label id="expertContextoLabel">Descreva a situação ou cole os dados:</label>
-          <textarea id="expertContexto" rows="6" placeholder="Ex: O aluno errou 5 questões de D25. Ele gosta de futebol."></textarea>
-        </div>
-
-        <button id="btnChamarExpert" class="btn btn-primary" style="width: 100%;" onclick="executarExpertIA()">🚀 ACIONAR EXPERT</button>
+        <button id="btnChamarExpert" class="btn btn-primary" style="width: 100%;" onclick="executarExpertIA()"> ACIONAR EXPERT</button>
         
         <div id="expertResultado" style="margin-top: 16px;"></div>
       </div>
@@ -687,7 +703,7 @@
     <p style="font-size: 13px; color: #666; margin-bottom: 12px;">Selecione quais turmas este usuário pode visualizar e gerenciar.</p>
     
     <div id="listaTurmasCheckbox" style="max-height: 300px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 6px; background: #fafafa;">
-       <p style="text-align:center; color:#999;">Carregando turmas...</p>
+      <p style="text-align:center; color:#999;">Carregando turmas...</p>
     </div>
 
     <div style="display: flex; gap: 8px; margin-top: 16px;">
@@ -956,39 +972,31 @@ var userEmail = localStorage.getItem('sb_email') || '';
     toast(novas.length + ' questão(ões) importada(s)!', 'success');
   }
 
-  function abrirModalIA() { document.getElementById('modalIA').classList.add('active'); mudarAbaIA('gerar'); document.getElementById('iaResultadoGerar').innerHTML = ''; document.getElementById('iaResultadoIdentificar').innerHTML = ''; document.getElementById('iaResultadoPlanejar').innerHTML = ''; }
- 
-function mudarAbaIA(aba) {
-    // Esconde todas as abas
-    document.getElementById('abaGerar').classList.add('hidden');
-    document.getElementById('abaIdentificar').classList.add('hidden');
-    document.getElementById('abaPlanejar').classList.add('hidden');
-    document.getElementById('abaExperts').classList.add('hidden'); // 🆕 ADICIONE ESTA
-    
-    // Remove active de todos os botões
-    document.getElementById('tabGerar').classList.remove('active');
-    document.getElementById('tabIdentificar').classList.remove('active');
-    document.getElementById('tabPlanejar').classList.remove('active');
-    document.getElementById('tabExperts').classList.remove('active'); // 🆕 ADICIONE ESTA
+function abrirModalIA() { document.getElementById('modalIA').classList.add('active'); mudarAbaIA('gerar'); document.getElementById('iaResultadoGerar').innerHTML = ''; document.getElementById('iaResultadoIdentificar').innerHTML = ''; document.getElementById('iaResultadoPlanejar').innerHTML = ''; }
 
-    // Mostra a aba clicada
-    if (aba === 'gerar') { 
-        document.getElementById('abaGerar').classList.remove('hidden'); 
-        document.getElementById('tabGerar').classList.add('active'); 
+function mudarAbaIA(aba) {
+    // 1. Esconde todas as abas (com proteção contra erros)
+    var abas = ['abaGerar', 'abaIdentificar', 'abaPlanejar', 'abaExperts'];
+    for (var i = 0; i < abas.length; i++) {
+        var el = document.getElementById(abas[i]);
+        if (el) el.classList.add('hidden');
     }
-    else if (aba === 'identificar') { 
-        document.getElementById('abaIdentificar').classList.remove('hidden'); 
-        document.getElementById('tabIdentificar').classList.add('active'); 
+    
+    // 2. Remove o destaque de todos os botões
+    var botoes = ['tabGerar', 'tabIdentificar', 'tabPlanejar', 'tabExperts'];
+    for (var i = 0; i < botoes.length; i++) {
+        var btn = document.getElementById(botoes[i]);
+        if (btn) btn.classList.remove('active');
     }
-    else if (aba === 'planejar') { 
-        document.getElementById('abaPlanejar').classList.remove('hidden'); 
-        document.getElementById('tabPlanejar').classList.add('active'); 
-    }
-    else if (aba === 'experts') {  // 🆕 ADICIONE ESTE BLOCO
-        document.getElementById('abaExperts').classList.remove('hidden'); 
-        document.getElementById('tabExperts').classList.add('active'); 
-    }
+
+    // 3. Mostra a aba correta e destaca o botão correto
+    var abaAlvo = document.getElementById('aba' + aba.charAt(0).toUpperCase() + aba.slice(1));
+    var botaoAlvo = document.getElementById('tab' + aba.charAt(0).toUpperCase() + aba.slice(1));
+    
+    if (abaAlvo) abaAlvo.classList.remove('hidden');
+    if (botaoAlvo) botaoAlvo.classList.add('active');
 }
+
 
   async function carregarMatrizIA() {
     var fonte = document.getElementById('iaFonte').value;
