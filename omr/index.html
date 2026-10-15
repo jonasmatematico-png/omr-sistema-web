@@ -2815,29 +2815,53 @@ async function executarExpertIA() {
 
         let html = `<div style="background:#f0f4ff; padding:16px; border-radius:8px; border-left:4px solid #667eea;">`;
         html += `<h4 style="margin-top:0; color:#4A148C;">🎓 Resultado: ${data.expert}</h4>`;
-        
+
         const dados = data.dados;
         for (const [key, value] of Object.entries(dados)) {
+            // 1. Se for 'atividades', exibe bonito
             if (key === 'atividades' && Array.isArray(value)) {
                 html += `<h5 style="color:#667eea; margin-top:12px;">📋 Atividades Geradas:</h5>`;
                 value.forEach((atv, idx) => {
                     html += `<div style="background:white; padding:12px; margin-bottom:8px; border-radius:6px;">`;
                     html += `<strong>${idx + 1}. ${atv.titulo || 'Atividade ' + (idx+1)}</strong> <small>(${atv.tipo || 'geral'})</small><br>`;
-                    html += `<p style="margin:6px 0; font-size:14px;">${atv.enunciado || atv.descricao || ''}</p>`;
+                    html += `<p style="margin:6px 0; font-size:14px; white-space: pre-wrap;">${atv.enunciado || atv.descricao || ''}</p>`;
                     if (atv.gabarito_explicado || atv.resolucao) {
                         html += `<details><summary style="cursor:pointer; color:#008080; font-size:13px;">Ver Gabarito/Resolução</summary>`;
-                        html += `<p style="background:#f9f9f9; padding:8px; margin-top:4px; font-size:13px; white-space:pre-wrap;">${atv.gabarito_explicado || atv.resolucao}</p></details>`;
+                        html += `<p style="background:#f9f9f9; padding:8px; margin-top:4px; font-size:13px; white-space: pre-wrap;">${atv.gabarito_explicado || atv.resolucao}</p></details>`;
                     }
                     html += `</div>`;
                 });
-            } else if (key === 'acoes_sugeridas' && Array.isArray(value)) {
+            } 
+            // 2. Se for 'acoes_sugeridas', exibe como lista
+            else if (key === 'acoes_sugeridas' && Array.isArray(value)) {
                 html += `<h5 style="color:#667eea; margin-top:12px;">💡 Ações Sugeridas:</h5><ul>`;
                 value.forEach(acao => html += `<li style="margin-bottom:6px;">${acao}</li>`);
                 html += `</ul>`;
-            } else if (typeof value === 'string' || typeof value === 'number') {
-                html += `<p style="margin:8px 0;"><strong>${key.replace(/_/g, ' ').toUpperCase()}:</strong><br>${value}</p>`;
+            } 
+            // 3. SE FOR QUALQUER OUTRO TIPO DE LISTA (ex: 'trilha', 'passos'), exibe também!
+            else if (Array.isArray(value)) {
+                html += `<h5 style="color:#667eea; margin-top:12px;">📋 ${key.replace(/_/g, ' ').toUpperCase()}:</h5>`;
+                value.forEach((item, idx) => {
+                    html += `<div style="background:white; padding:12px; margin-bottom:8px; border-radius:6px;">`;
+                    if (typeof item === 'object' && item !== null) {
+                        html += `<strong>${item.titulo || item.etapa || 'Item ' + (idx+1)}</strong><br>`;
+                        html += `<p style="margin:6px 0; font-size:14px; white-space: pre-wrap;">${item.descricao || item.enunciado || JSON.stringify(item)}</p>`;
+                    } else {
+                        html += `<p style="margin:6px 0; font-size:14px;">${item}</p>`;
+                    }
+                    html += `</div>`;
+                });
+            } 
+            // 4. Se for texto ou número, exibe normal
+            else if (typeof value === 'string' || typeof value === 'number') {
+                html += `<div style="margin:16px 0; padding:16px; background:#ffffff; border-radius:8px; border-left:4px solid #667eea; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"><strong style="color:#4A148C; font-size:16px; display:block; margin-bottom:8px;">${key.replace(/_/g, ' ').toUpperCase()}</strong><span style="white-space: pre-wrap; line-height: 1.6; color:#333; font-size:14px;">${value}</span></div>`;
+            } 
+            // 5. Se for um objeto aninhado, exibe formatado
+            else if (typeof value === 'object' && value !== null) {
+                html += `<p style="margin:8px 0;"><strong>${key.replace(/_/g, ' ').toUpperCase()}:</strong><br><pre style="background:#f9f9f9; padding:8px; border-radius:4px; font-size:12px; white-space: pre-wrap;">${JSON.stringify(value, null, 2)}</pre></p>`;
             }
-        }
+        } 
+
         html += `<p style="text-align:right; font-size:11px; color:#999; margin-top:12px;">Gerado por ${data.modelo}</p></div>`;
         
         resultadoDiv.innerHTML = html;
