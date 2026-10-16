@@ -266,11 +266,57 @@
         <div id="provasObjLista" class="loading">Carregando...</div>
       </div>
     </div>
-
+    
     <!-- VIEW: DIAGNÓSTICO -->
     <div id="view-diagnostico" class="view">
       <h2>📊 Diagnóstico de Desempenho</h2>
       <div class="card">
+     
+     <!-- 🆕 SELETOR DE PROVAS DINÂMICO -->
+          <div style="margin-bottom: 20px;">
+            <label for="selectAvaliacao" style="font-weight: bold; color: #4A148C; display: block; margin-bottom: 8px;">📋 Selecione a Prova para Analisar:</label>
+            <select id="selectAvaliacao" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; background: white;">
+              <option value="">Carregando provas do banco...</option>
+            </select>
+          </div>
+
+          <button class="btn btn-primary" onclick="processarTriagem()" style="width: 100%; padding: 12px; font-size: 16px; font-weight: bold; margin-bottom: 20px;">
+             RECALCULAR E CLASSIFICAR TURMA
+          </button>
+
+          <div id="areaTriagem" style="display: none;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+              
+              <!-- ZONA DE ALERTA -->
+              <div style="background: #fff5f5; padding: 16px; border-radius: 8px; border-left: 5px solid #dc3545;">
+                <h4 style="color: #dc3545; margin-top: 0;">🚨 Piores Desempenhos (Abaixo do Básico / Básico)</h4>
+                <div id="listaPiores" style="max-height: 400px; overflow-y: auto;"></div>
+              </div>
+
+              <!-- ZONA DE DESTAQUE -->
+              <div style="background: #f0fff4; padding: 16px; border-radius: 8px; border-left: 5px solid #28a745;">
+                <h4 style="color: #28a745; margin-top: 0;">🏆 Melhores Desempenhos (Adequado / Avançado)</h4>
+                <div id="listaMelhores" style="max-height: 400px; overflow-y: auto;"></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- 🆕 SEÇÃO: UPLOAD DE PLANILHA -->
+        <div style="background: #f0f4ff; padding: 20px; border-radius: 12px; border: 2px dashed #667eea; margin-bottom: 20px;">
+          <h3 style="margin-top: 0; color: #4A148C;">📊 Importar Planilha de Notas (CSV)</h3>
+          <p style="font-size: 14px; color: #666; margin-bottom: 12px;">
+            Exporte sua planilha do Google Sheets/Excel como <strong>CSV (separado por vírgulas)</strong> e faça o upload abaixo.
+            O sistema calculará automaticamente as estatísticas e gerará o diagnóstico com IA.
+          </p>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <input type="file" id="inputCSV" accept=".csv" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; background: white;">
+            <button class="btn btn-primary" onclick="processarCSV()">🚀 PROCESSAR E GERAR DIAGNÓSTICO</button>
+          </div>
+          <div id="areaUploadResultado" style="margin-top: 16px;"></div>
+        </div>
+
         <div class="ia-tabs">
           <button class="ia-tab active" id="tabDiagTurma" onclick="mudarAbaDiagnostico('turma')">Por Turma</button>
           <button class="ia-tab" id="tabDiagAluno" onclick="mudarAbaDiagnostico('aluno')">Por Aluno</button>
@@ -785,7 +831,7 @@ if (!localStorage.getItem('sb_token')) {
 
   const SUPABASE_URL = 'https://mkqnaiuplkqiitwxltli.supabase.co';
   const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rcW5haXVwbGtxaWl0d3hsdGxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzOTg5MzMsImV4cCI6MjA5OTk3NDkzM30.65MoDC1gMNpNs6bCKZlCTyCn2ijaaA6y9DOnQgNxacA';
-  const API_URL = 'https://omr-sistema-api.onrender.com';
+  const API_URL = 'http://127.0.0.1:10000';
 
   var token = localStorage.getItem('sb_token');
 var refreshToken = localStorage.getItem('sb_refresh');
@@ -2765,7 +2811,13 @@ function atualizarFormularioExpert() {
     const expert = document.getElementById('expertSelector').value;
     const label = document.getElementById('expertContextoLabel');
     const textarea = document.getElementById('expertContexto');
-    
+    const resultadoDiv = document.getElementById('expertResultado');
+
+    //  1. Limpa a tela sempre que trocar de especialista (evita misturar resultados)
+    resultadoDiv.innerHTML = ''; 
+    textarea.value = ''; // Opcional: limpa o texto digitado também
+
+    // 🆕 2. Atualiza as instruções (Label e Placeholder)
     if (expert === 'tutor_recuperacao') {
         label.innerText = 'Descreva os erros do aluno e o contexto (a IA usará a Memória se o ID for fornecido):';
         textarea.placeholder = 'Ex: Errou questões de fração (D25). Contexto: Gosta de videogames.';
@@ -2773,7 +2825,7 @@ function atualizarFormularioExpert() {
         label.innerText = 'Descreva o tema, ano e descritores desejados:';
         textarea.placeholder = 'Ex: 6º ano, Matemática. Criar 3 questões de D23 e D25 sobre porcentagem.';
     } else if (expert === 'analista_desempenho') {
-        label.innerText = 'Cole os dados de desempenho da turma (JSON ou texto):';
+        label.innerText = 'Cole os dados de desempenho da turma (texto corrido):';
         textarea.placeholder = 'Ex: Média da turma 5.2. 60% erraram D25. 30% erraram D12.';
     } else if (expert === 'corretor_dissertativo') {
         label.innerText = 'Cole o enunciado, a resposta do aluno e o valor da questão:';
@@ -2798,7 +2850,8 @@ async function executarExpertIA() {
     resultadoDiv.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">🤖 Processando com inteligência pedagógica...</div>';
 
     try {
-        const response = await fetch('https://omr-sistema-api.onrender.com/api/chamar_expert', {
+        // Usando a URL local que configuramos (muito mais rápida para testes)
+        const response = await fetch('http://127.0.0.1:10000/api/chamar_expert', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -2817,55 +2870,58 @@ async function executarExpertIA() {
         html += `<h4 style="margin-top:0; color:#4A148C;">🎓 Resultado: ${data.expert}</h4>`;
 
         const dados = data.dados;
-        for (const [key, value] of Object.entries(dados)) {
-            // 1. Se for 'atividades', exibe bonito
-            if (key === 'atividades' && Array.isArray(value)) {
-                html += `<h5 style="color:#667eea; margin-top:12px;">📋 Atividades Geradas:</h5>`;
-                value.forEach((atv, idx) => {
-                    html += `<div style="background:white; padding:12px; margin-bottom:8px; border-radius:6px;">`;
-                    html += `<strong>${idx + 1}. ${atv.titulo || 'Atividade ' + (idx+1)}</strong> <small>(${atv.tipo || 'geral'})</small><br>`;
-                    html += `<p style="margin:6px 0; font-size:14px; white-space: pre-wrap;">${atv.enunciado || atv.descricao || ''}</p>`;
-                    if (atv.gabarito_explicado || atv.resolucao) {
-                        html += `<details><summary style="cursor:pointer; color:#008080; font-size:13px;">Ver Gabarito/Resolução</summary>`;
-                        html += `<p style="background:#f9f9f9; padding:8px; margin-top:4px; font-size:13px; white-space: pre-wrap;">${atv.gabarito_explicado || atv.resolucao}</p></details>`;
-                    }
-                    html += `</div>`;
-                });
-            } 
-            // 2. Se for 'acoes_sugeridas', exibe como lista
-            else if (key === 'acoes_sugeridas' && Array.isArray(value)) {
-                html += `<h5 style="color:#667eea; margin-top:12px;">💡 Ações Sugeridas:</h5><ul>`;
-                value.forEach(acao => html += `<li style="margin-bottom:6px;">${acao}</li>`);
-                html += `</ul>`;
-            } 
-            // 3. SE FOR QUALQUER OUTRO TIPO DE LISTA (ex: 'trilha', 'passos'), exibe também!
-            else if (Array.isArray(value)) {
-                html += `<h5 style="color:#667eea; margin-top:12px;">📋 ${key.replace(/_/g, ' ').toUpperCase()}:</h5>`;
-                value.forEach((item, idx) => {
-                    html += `<div style="background:white; padding:12px; margin-bottom:8px; border-radius:6px;">`;
-                    if (typeof item === 'object' && item !== null) {
-                        html += `<strong>${item.titulo || item.etapa || 'Item ' + (idx+1)}</strong><br>`;
-                        html += `<p style="margin:6px 0; font-size:14px; white-space: pre-wrap;">${item.descricao || item.enunciado || JSON.stringify(item)}</p>`;
-                    } else {
-                        html += `<p style="margin:6px 0; font-size:14px;">${item}</p>`;
-                    }
-                    html += `</div>`;
-                });
-            } 
-            // 4. Se for texto ou número, exibe normal
-            else if (typeof value === 'string' || typeof value === 'number') {
-                html += `<div style="margin:16px 0; padding:16px; background:#ffffff; border-radius:8px; border-left:4px solid #667eea; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"><strong style="color:#4A148C; font-size:16px; display:block; margin-bottom:8px;">${key.replace(/_/g, ' ').toUpperCase()}</strong><span style="white-space: pre-wrap; line-height: 1.6; color:#333; font-size:14px;">${value}</span></div>`;
-            } 
-            // 5. Se for um objeto aninhado, exibe formatado
-            else if (typeof value === 'object' && value !== null) {
-                html += `<p style="margin:8px 0;"><strong>${key.replace(/_/g, ' ').toUpperCase()}:</strong><br><pre style="background:#f9f9f9; padding:8px; border-radius:4px; font-size:12px; white-space: pre-wrap;">${JSON.stringify(value, null, 2)}</pre></p>`;
-            }
-        } 
 
+        // 1. SE FOR TEXTO PURO (Documento - Tutor, Analista, Corretor)
+        if (dados.resposta_documento) {
+            html += `<div style="background: #ffffff; padding: 24px; border-radius: 12px; border: 1px solid #e0e0e0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-top: 16px;">`;
+            html += `<div style="white-space: pre-wrap; line-height: 1.8; font-size: 15px; color: #333; font-family: 'Segoe UI', sans-serif;">`;
+            html += dados.resposta_documento;
+            html += `</div></div>`;
+        } 
+        // 2. SE FOR QUESTÕES (JSON estruturado do Criador de Provas)
+        else if (dados.questoes && Array.isArray(dados.questoes)) {
+            html += `<div style="margin-top: 16px;">`;
+            dados.questoes.forEach((q, idx) => {
+                html += `<div style="background: #f9f9f9; padding: 16px; margin-bottom: 16px; border-radius: 8px; border-left: 4px solid #667eea;">`;
+                html += `<h4 style="color: #333; margin-bottom: 12px;">Questão ${idx + 1}:</h4>`;
+                html += `<p style="font-size: 15px; line-height: 1.6; margin-bottom: 12px; white-space: pre-wrap;">${q.enunciado}</p>`;
+                
+                if (q.alternativas) {
+                    html += `<div style="margin-left: 20px; margin-bottom: 12px;">`;
+                    for (const [letra, texto] of Object.entries(q.alternativas)) {
+                        html += `<p style="margin: 6px 0; font-size: 14px;"><strong>${letra.toUpperCase()})</strong> ${texto}</p>`;
+                    }
+                    html += `</div>`;
+                }
+                
+                if (q.gabarito || q.explicacao) {
+                    html += `<details style="margin-top: 12px;">`;
+                    html += `<summary style="cursor: pointer; color: #008080; font-weight: 600;">Ver Gabarito e Explicação</summary>`;
+                    html += `<div style="background: #e8f5e9; padding: 12px; border-radius: 6px; margin-top: 8px;">`;
+                    if (q.gabarito) html += `<p style="margin: 0 0 8px 0;"><strong>Resposta Correta:</strong> ${q.gabarito.toUpperCase()}</p>`;
+                    if (q.explicacao) html += `<p style="margin: 0; white-space: pre-wrap; line-height: 1.6;">${q.explicacao}</p>`;
+                    html += `</div></details>`;
+                }
+                html += `</div>`;
+            });
+            html += `</div>`;
+        }
+        // 3. SE FOR OUTRO JSON (Fallback)
+        else {
+            for (const [key, value] of Object.entries(dados)) {
+                if (typeof value === 'string' || typeof value === 'number') {
+                    html += `<div style="margin:16px 0; padding:16px; background:#ffffff; border-radius:8px; border-left:4px solid #667eea; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">`;
+                    html += `<strong style="color:#4A148C; font-size:16px; display:block; margin-bottom:8px;">${key.replace(/_/g, ' ').toUpperCase()}</strong>`;
+                    html += `<span style="white-space: pre-wrap; line-height: 1.6; color:#333; font-size:14px;">${value}</span></div>`;
+                } else if (typeof value === 'object' && value !== null) {
+                    html += `<p style="margin:8px 0;"><strong>${key.replace(/_/g, ' ').toUpperCase()}:</strong><br><pre style="background:#f9f9f9; padding:8px; border-radius:4px; font-size:12px; white-space: pre-wrap;">${JSON.stringify(value, null, 2)}</pre></p>`;
+                }
+            }
+        }
+        
         html += `<p style="text-align:right; font-size:11px; color:#999; margin-top:12px;">Gerado por ${data.modelo}</p></div>`;
         
         resultadoDiv.innerHTML = html;
-        alert('✅ Expert concluiu a tarefa com sucesso!');
 
     } catch(e) {
         console.error("Erro no Expert:", e);
@@ -2875,6 +2931,299 @@ async function executarExpertIA() {
         btn.disabled = false;
     }
 }
+
+// ==========================================================
+// 📊 PROCESSAMENTO DE CSV E DIAGNÓSTICO AUTOMÁTICO
+// ==========================================================
+async function processarCSV() {
+    const input = document.getElementById('inputCSV');
+    const resultadoDiv = document.getElementById('areaUploadResultado');
+    
+    if (!input.files || input.files.length === 0) {
+        alert('Por favor, selecione um arquivo CSV primeiro!');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', input.files[0]);
+    
+    resultadoDiv.innerHTML = '<div style="text-align:center; padding:20px; color:#666;"> Processando planilha e gerando diagnóstico com IA...</div>';
+    
+    try {
+        const response = await fetch('http://127.0.0.1:10000/api/upload_diagnostico', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (!data.sucesso) throw new Error(data.erro || 'Erro no processamento.');
+        
+        const stats = data.estatisticas;
+        const diagIA = data.diagnostico_ia;
+        
+        // Monta HTML de estatísticas
+        let html = `<div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-top: 16px;">`;
+        
+        // Cards de resumo
+        html += `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px;">`;
+        html += `<div class="cartao"><div style="font-size:24px; font-weight:bold; color:#008080;">${stats.total_alunos}</div><div style="font-size:12px; color:#666;">Alunos</div></div>`;
+        html += `<div class="cartao"><div style="font-size:24px; font-weight:bold; color:#667eea;">${stats.media_turma}</div><div style="font-size:12px; color:#666;">Média da Turma</div></div>`;
+        html += `<div class="cartao"><div style="font-size:14px; font-weight:bold; color:#28a745;">${stats.q_mais_facil}</div><div style="font-size:12px; color:#666;">Mais Acertos</div></div>`;
+        html += `<div class="cartao"><div style="font-size:14px; font-weight:bold; color:#dc3545;">${stats.q_mais_dificil}</div><div style="font-size:12px; color:#666;">Menos Acertos</div></div>`;
+        html += `</div>`;
+        
+        // Gráfico de Níveis SAEB
+        html += `<h4 style="color:#4A148C; margin-bottom:12px;">📊 Distribuição por Nível SAEB</h4>`;
+        html += `<canvas id="graficoNiveis" style="max-height: 250px;"></canvas>`;
+        
+        // Gráfico de Acerto por Questão
+        html += `<h4 style="color:#4A148C; margin: 20px 0 12px;">📈 Percentual de Acerto por Questão</h4>`;
+        html += `<canvas id="graficoQuestoes" style="max-height: 250px;"></canvas>`;
+        
+        // Diagnóstico da IA
+        if (diagIA.resposta_documento) {
+            html += `<h4 style="color:#4A148C; margin: 20px 0 12px;">🤖 Diagnóstico Gerado pela IA</h4>`;
+            html += `<div style="background: #f9f9f9; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">`;
+            html += `<div style="white-space: pre-wrap; line-height: 1.8; font-size: 14px; color: #333;">${diagIA.resposta_documento}</div>`;
+            html += `</div>`;
+        }
+        
+        html += `</div>`;
+        resultadoDiv.innerHTML = html;
+        
+        // Renderiza gráficos com Chart.js
+        setTimeout(() => {
+            // Gráfico de Níveis
+            new Chart(document.getElementById('graficoNiveis'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(stats.niveis),
+                    datasets: [{
+                        data: Object.values(stats.niveis),
+                        backgroundColor: ['#dc3545', '#ffc107', '#17a2b8', '#28a745']
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+            
+            // Gráfico de Questões
+            new Chart(document.getElementById('graficoQuestoes'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(stats.percentuais_questoes),
+                    datasets: [{
+                        label: '% de Acerto',
+                        data: Object.values(stats.percentuais_questoes),
+                        backgroundColor: '#667eea'
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    scales: { y: { beginAtZero: true, max: 100 } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }, 100);
+        
+    } catch(e) {
+        console.error("Erro no CSV:", e);
+        resultadoDiv.innerHTML = `<div style="padding:20px; background:#ffe6e6; border-radius:8px; color:#dc3545; text-align:center;">❌ Erro: ${e.message}</div>`;
+    }
+}
+
+// ==========================================================
+// 📊 DASHBOARD DE TRIAGEM E AÇÃO COM IA
+// ==========================================================
+async function processarTriagem(idAvaliacao) {
+    const areaTriagem = document.getElementById('areaTriagem');
+    const listaPiores = document.getElementById('listaPiores');
+    const listaMelhores = document.getElementById('listaMelhores');
+    
+    areaTriagem.style.display = 'block';
+    listaPiores.innerHTML = '<p style="text-align:center; color:#666;">⏳ Processando e classificando...</p>';
+    listaMelhores.innerHTML = '<p style="text-align:center; color:#666;">⏳ Processando e classificando...</p>';
+
+    try {
+        const response = await fetch(`http://127.0.0.1:10000/api/classificar_prova/${idAvaliacao}`, {
+            method: 'POST'
+        });
+        const data = await response.json();
+
+        if (!data.sucesso) throw new Error(data.erro);
+
+        const alunos = data.alunos;
+        
+        // Separar e ordenar os alunos
+        const piores = alunos.filter(a => a.nivel_saeb === 'Abaixo do Básico' || a.nivel_saeb === 'Básico')
+                             .sort((a, b) => a.nota_final - b.nota_final); // Do menor para o maior
+        
+        const melhores = alunos.filter(a => a.nivel_saeb === 'Adequado' || a.nivel_saeb === 'Avançado')
+                               .sort((a, b) => b.nota_final - a.nota_final); // Do maior para o menor
+
+        // Renderizar Piores
+        if (piores.length === 0) listaPiores.innerHTML = '<p>Nenhum aluno nesta faixa.</p>';
+        else {
+            listaPiores.innerHTML = piores.map(aluno => `
+                <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div>
+                        <div style="font-weight: bold; color: #333;">${aluno.nome}</div>
+                        <div style="font-size: 12px; color: #666;">Nota: <strong>${aluno.nota_final}</strong> | Nível: <span style="color: #dc3545; font-weight: bold;">${aluno.nivel_saeb}</span></div>
+                    </div>
+                    <button class="btn btn-sm" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;" 
+                            onclick="prepararExpert('tutor_recuperacao', '${aluno.nome}', '${aluno.nivel_saeb}', ${aluno.nota_final})">
+                        🤖 Gerar Recuperação
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Renderizar Melhores
+        if (melhores.length === 0) listaMelhores.innerHTML = '<p>Nenhum aluno nesta faixa.</p>';
+        else {
+            listaMelhores.innerHTML = melhores.map(aluno => `
+                <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div>
+                        <div style="font-weight: bold; color: #333;">${aluno.nome}</div>
+                        <div style="font-size: 12px; color: #666;">Nota: <strong>${aluno.nota_final}</strong> | Nível: <span style="color: #28a745; font-weight: bold;">${aluno.nivel_saeb}</span></div>
+                    </div>
+                    <button class="btn btn-sm" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;" 
+                            onclick="prepararExpert('criador_provas', '${aluno.nome}', '${aluno.nivel_saeb}', ${aluno.nota_final})">
+                        🚀 Gerar Desafio
+                    </button>
+                </div>
+            `).join('');
+        }
+
+    } catch (e) {
+        console.error(e);
+        areaTriagem.innerHTML = `<p style="color: red; text-align: center;">❌ Erro: ${e.message}</p>`;
+    }
+}
+
+// Função auxiliar para abrir o modal do Robô já preenchido
+function prepararExpert(tipoExpert, nomeAluno, nivel, nota) {
+    // 1. Seleciona o expert correto no menu
+    document.getElementById('expertSelector').value = tipoExpert;
+    atualizarFormularioExpert(); // Atualiza os textos de ajuda
+    
+    // 2. Monta o contexto inteligente e preenche a caixa
+    let textoContexto = "";
+    if (tipoExpert === 'tutor_recuperacao') {
+        textoContexto = `O aluno(a) ${nomeAluno} obteve nota ${nota} e está classificado no nível "${nivel}". Por favor, gere um plano de recuperação personalizado e motivador focado nas dificuldades típicas deste nível.`;
+    } else if (tipoExpert === 'criador_provas') {
+        textoContexto = `O aluno(a) ${nomeAluno} está no nível "${nivel}" com nota ${nota}. Por favor, crie 2 questões desafiadoras (nível Avançado) para manter o engajamento e aprofundar o conhecimento.`;
+    }
+    document.getElementById('expertContexto').value = textoContexto;
+    
+    // 3. Rola a tela até o Robô e avisa o professor (Experiência UX perfeita)
+    alert(`✅ TUDO PRONTO PARA ${nomeAluno.toUpperCase()}!\n\n1. Clique no ícone do Robô 🤖 no menu.\n2. O texto já estará digitado na caixa.\n3. É só apertar "🚀 ACIONAR EXPERT"!`);
+}
+
+// ==========================================================
+// 📋 CARREGAR PROVAS NO MENU SUSPENSO
+// ==========================================================
+async function carregarAvaliacoes() {
+    const select = document.getElementById('selectAvaliacao');
+    if (!select) return; // Se a tela não estiver visível, sai da função
+    
+    try {
+        const response = await fetch('http://127.0.0.1:10000/api/listar_avaliacoes');
+        const data = await response.json();
+        
+        if (data.sucesso) {
+            select.innerHTML = '<option value="">-- Escolha uma prova --</option>';
+            data.avaliacoes.forEach(av => {
+                const option = document.createElement('option');
+                option.value = av.id;
+                option.textContent = `ID ${av.id} - ${av.nome}`;
+                select.appendChild(option);
+            });
+        }
+    } catch (e) {
+        console.error("Erro ao carregar provas:", e);
+        select.innerHTML = '<option value="">Erro ao carregar provas</option>';
+    }
+}
+
+// ==========================================================
+// 📊 ATUALIZAR A FUNÇÃO DE TRIAGEM (Sem ID fixo)
+// ==========================================================
+async function processarTriagem() {
+    const idAvaliacao = document.getElementById('selectAvaliacao').value;
+    
+    if (!idAvaliacao) {
+        alert('⚠️ Por favor, selecione uma prova no menu acima antes de classificar!');
+        return;
+    }
+
+    const areaTriagem = document.getElementById('areaTriagem');
+    const listaPiores = document.getElementById('listaPiores');
+    const listaMelhores = document.getElementById('listaMelhores');
+    
+    areaTriagem.style.display = 'block';
+    listaPiores.innerHTML = '<p style="text-align:center; color:#666;">⏳ Processando e classificando...</p>';
+    listaMelhores.innerHTML = '<p style="text-align:center; color:#666;">⏳ Processando e classificando...</p>';
+
+    try {
+        const response = await fetch(`http://127.0.0.1:10000/api/classificar_prova/${idAvaliacao}`, {
+            method: 'POST'
+        });
+        const data = await response.json();
+
+        if (!data.sucesso) throw new Error(data.erro);
+
+        const alunos = data.alunos;
+        
+        // Separar e ordenar os alunos
+        const piores = alunos.filter(a => a.nivel_saeb === 'Abaixo do Básico' || a.nivel_saeb === 'Básico')
+                             .sort((a, b) => a.nota_final - b.nota_final); 
+        
+        const melhores = alunos.filter(a => a.nivel_saeb === 'Adequado' || a.nivel_saeb === 'Avançado')
+                               .sort((a, b) => b.nota_final - a.nota_final); 
+
+        // Renderizar Piores
+        if (piores.length === 0) listaPiores.innerHTML = '<p>Nenhum aluno nesta faixa.</p>';
+        else {
+            listaPiores.innerHTML = piores.map(aluno => `
+                <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div>
+                        <div style="font-weight: bold; color: #333;">${aluno.nome}</div>
+                        <div style="font-size: 12px; color: #666;">Nota: <strong>${aluno.nota_final}</strong> | Nível: <span style="color: #dc3545; font-weight: bold;">${aluno.nivel_saeb}</span></div>
+                    </div>
+                    <button class="btn btn-sm" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;" 
+                            onclick="prepararExpert('tutor_recuperacao', '${aluno.nome}', '${aluno.nivel_saeb}', ${aluno.nota_final})">
+                        🤖 Gerar Recuperação
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Renderizar Melhores
+        if (melhores.length === 0) listaMelhores.innerHTML = '<p>Nenhum aluno nesta faixa.</p>';
+        else {
+            listaMelhores.innerHTML = melhores.map(aluno => `
+                <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div>
+                        <div style="font-weight: bold; color: #333;">${aluno.nome}</div>
+                        <div style="font-size: 12px; color: #666;">Nota: <strong>${aluno.nota_final}</strong> | Nível: <span style="color: #28a745; font-weight: bold;">${aluno.nivel_saeb}</span></div>
+                    </div>
+                    <button class="btn btn-sm" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;" 
+                            onclick="prepararExpert('criador_provas', '${aluno.nome}', '${aluno.nivel_saeb}', ${aluno.nota_final})">
+                        🚀 Gerar Desafio
+                    </button>
+                </div>
+            `).join('');
+        }
+
+    } catch (e) {
+        console.error(e);
+        areaTriagem.innerHTML = `<p style="color: red; text-align: center;">❌ Erro: ${e.message}</p>`;
+    }
+}
+// Carrega as provas assim que a página abre
+window.onload = carregarAvaliacoes;
+
 </script>
 
 </body>
