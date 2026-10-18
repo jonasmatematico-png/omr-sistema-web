@@ -3198,41 +3198,48 @@ async function carregarAvaliacoes() {
 }
 
 // ==========================================================
-// 🏫 CARREGAR TURMAS (Falando APENAS com o Backend Python)
+// 🏫 CARREGAR TURMAS (COM FILTRO DE SEGURANÇA DO USUÁRIO LOGADO)
 // ==========================================================
 async function carregarTurmas() {
     const select = document.getElementById('selectTurma');
-    if (!select) {
-        console.warn("⚠️ Elemento 'selectTurma' não encontrado no HTML.");
-        return;
-    }
+    if (!select) return;
 
     try {
-        console.log("🔄 Buscando turmas em:", `${API_BASE_URL}/api/listar_turmas`);
-        const response = await fetch(`${API_BASE_URL}/api/listar_turmas`);
+        // 1. Descobre quem é o usuário logado no Supabase
+        const { data: { user } } = await supabase.auth.getUser();
         
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            throw new TypeError("Oops, o backend não retornou JSON!");
+        if (!user) {
+            console.warn("⚠️ Usuário não logado ao carregar turmas.");
+            select.innerHTML = '<option value="">Faça login primeiro</option>';
+            return;
         }
 
+        console.log("🔄 Buscando turmas para o usuário logado (ID):", user.id);
+        
+        // 2. Envia o user_id na URL para o backend filtrar com segurança
+        const response = await fetch(`${API_BASE_URL}/api/listar_turmas?user_id=${user.id}`);
         const data = await response.json();
         
         if (data.sucesso) {
-            select.innerHTML = '<option value="">Todas as turmas</option>';
-            data.turmas.forEach(turma => {
-                const option = document.createElement('option');
-                option.value = turma.id;
-                option.textContent = `${turma.serie || ''} - ${turma.nome}`;
-                select.appendChild(option);
-            });
-            console.log("✅ Turmas carregadas com sucesso!");
+            select.innerHTML = '<option value="">-- Selecione a Turma --</option>';
+            
+            if (data.turmas.length === 0) {
+                select.innerHTML += '<option value="" disabled>Nenhuma turma vinculada ao seu perfil</option>';
+            } else {
+                data.turmas.forEach(turma => {
+                    const option = document.createElement('option');
+                    option.value = turma.id;
+                    option.textContent = `${turma.serie || ''} - ${turma.nome}`;
+                    select.appendChild(option);
+                });
+            }
+            console.log("✅ Turmas carregadas com sucesso e filtradas!");
         } else {
-            throw new Error(data.erro);
+            throw new Error(data.erro || data.msg);
         }
     } catch (e) {
         console.error("❌ Erro ao carregar turmas:", e);
-        select.innerHTML = '<option value="">Erro ao conectar</option>';
+        select.innerHTML = '<option value="">Erro ao carregar</option>';
     }
 }
 
