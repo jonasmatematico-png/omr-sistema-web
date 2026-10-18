@@ -825,15 +825,25 @@
 </div>
 
 <script>
-
-if (!localStorage.getItem('sb_token')) {
-    var fab = document.querySelector('.fab-ia');
-    if(fab) fab.style.display = 'none';
-}
-
+  // ==========================================================
+  // ⚙️ CONFIGURAÇÃO GLOBAL DO SUPABASE (O CORAÇÃO DO SISTEMA)
+  // ==========================================================
   const SUPABASE_URL = 'https://mkqnaiuplkqiitwxltli.supabase.co';
-  const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rcW5haXVwbGtxaWl0d3hsdGxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzOTg5MzMsImV4cCI6MjA5OTk3NDkzM30.65MoDC1gMNpNs6bCKZlCTyCn2ijaaA6y9DOnQgNxacA';
-  const API_URL = 'http://127.0.0.1:10000';
+  const SUPABASE_KEY = 'https://omr-sistema-api.onrender.com'; // <-- Mantenha sua chave real aqui
+
+  // Esta linha cria o cliente globalmente para todo o arquivo usar
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ==========================================================
+  // 🌍 DETECÇÃO INTELIGENTE DE AMBIENTE
+  // ==========================================================
+  let API_BASE_URL;
+  if (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') {
+      API_BASE_URL = 'http://127.0.0.1:10000';
+  } else {
+      API_BASE_URL = 'https://omr-sistema-api.onrender.com'; // Seu link do Render
+  }
+  
 
   var token = localStorage.getItem('sb_token');
 var refreshToken = localStorage.getItem('sb_refresh');
@@ -3035,22 +3045,6 @@ async function processarCSV() {
 }
 
 // ==========================================================
-// 🌍 DETECÇÃO INTELIGENTE DE AMBIENTE (BLINDADA)
-// ==========================================================
-let API_BASE_URL;
-
-if (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') {
-    // 🏠 LABORATÓRIO (Seu PC): Fala com o terminal local
-    API_BASE_URL = 'http://127.0.0.1:10000';
-} else {
-    // ☁️ PRODUÇÃO (Render): Fala com o servidor na nuvem
-    // ⚠️ IMPORTANTE: Se o seu frontend e backend estiverem no MESMO link do Render, deixe vazio: ''
-    // Se estiverem em links diferentes, cole o link do backend abaixo:
-    API_BASE_URL = 'https://omr-sistema-api.onrender.com'; // <--- TROQUE PELO SEU LINK REAL DO RENDER!
-}
-
-
-// ==========================================================
 // 📊 DASHBOARD DE TRIAGEM (Com Filtro de Turma)
 // ==========================================================
 async function processarTriagem() {
@@ -3198,32 +3192,37 @@ async function carregarAvaliacoes() {
 }
 
 // ==========================================================
-// 🏫 CARREGAR TURMAS (COM FILTRO DE SEGURANÇA DO USUÁRIO LOGADO)
+// 🏫 CARREGAR TURMAS (COM VERIFICAÇÃO DE SEGURANÇA)
 // ==========================================================
 async function carregarTurmas() {
     const select = document.getElementById('selectTurma');
     if (!select) return;
 
     try {
-        // 1. Descobre quem é o usuário logado no Supabase
-        const { data: { user } } = await supabase.auth.getUser();
+        // 1. Verifica se o Supabase foi inicializado corretamente
+        if (typeof supabase === 'undefined') {
+            throw new Error("Supabase não foi inicializado. Verifique o topo do script.");
+        }
+
+        // 2. Descobre quem é o usuário logado
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
         
-        if (!user) {
-            console.warn("⚠️ Usuário não logado ao carregar turmas.");
+        if (authError || !user) {
+            console.warn("⚠️ Usuário não logado ou sessão expirada.");
             select.innerHTML = '<option value="">Faça login primeiro</option>';
             return;
         }
 
         console.log("🔄 Buscando turmas para o usuário logado (ID):", user.id);
         
-        // 2. Envia o user_id na URL para o backend filtrar com segurança
+        // 3. Envia o user_id na URL para o backend filtrar com segurança
         const response = await fetch(`${API_BASE_URL}/api/listar_turmas?user_id=${user.id}`);
         const data = await response.json();
         
         if (data.sucesso) {
             select.innerHTML = '<option value="">-- Selecione a Turma --</option>';
             
-            if (data.turmas.length === 0) {
+            if (!data.turmas || data.turmas.length === 0) {
                 select.innerHTML += '<option value="" disabled>Nenhuma turma vinculada ao seu perfil</option>';
             } else {
                 data.turmas.forEach(turma => {
@@ -3235,11 +3234,11 @@ async function carregarTurmas() {
             }
             console.log("✅ Turmas carregadas com sucesso e filtradas!");
         } else {
-            throw new Error(data.erro || data.msg);
+            throw new Error(data.erro || data.msg || "Erro desconhecido do servidor");
         }
     } catch (e) {
-        console.error("❌ Erro ao carregar turmas:", e);
-        select.innerHTML = '<option value="">Erro ao carregar</option>';
+        console.error("❌ Erro detalhado ao carregar turmas:", e);
+        select.innerHTML = `<option value="">Erro: ${e.message}</option>`;
     }
 }
 
