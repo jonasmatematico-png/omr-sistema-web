@@ -3035,11 +3035,19 @@ async function processarCSV() {
 }
 
 // ==========================================================
-// 🌍 DETECÇÃO INTELIGENTE DE AMBIENTE (LABORATÓRIO vs RENDER)
+// 🌍 DETECÇÃO INTELIGENTE DE AMBIENTE (BLINDADA)
 // ==========================================================
-const API_BASE_URL = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') 
-    ? 'http://127.0.0.1:10000' 
-    : ''; 
+let API_BASE_URL;
+
+if (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') {
+    // 🏠 LABORATÓRIO (Seu PC): Fala com o terminal local
+    API_BASE_URL = 'http://127.0.0.1:10000';
+} else {
+    // ☁️ PRODUÇÃO (Render): Fala com o servidor na nuvem
+    // ⚠️ IMPORTANTE: Se o seu frontend e backend estiverem no MESMO link do Render, deixe vazio: ''
+    // Se estiverem em links diferentes, cole o link do backend abaixo:
+    API_BASE_URL = 'https://omr-sistema-api.onrender.com'; // <--- TROQUE PELO SEU LINK REAL DO RENDER!
+}
 
 
 // ==========================================================
