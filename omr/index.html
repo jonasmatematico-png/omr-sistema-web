@@ -271,14 +271,6 @@
     <div id="view-diagnostico" class="view">
       <h2>📊 Diagnóstico de Desempenho</h2>
       <div class="card">
-     
-     <!-- 🆕 SELETOR DE PROVAS DINÂMICO -->
-          <div style="margin-bottom: 20px;">
-            <label for="selectAvaliacao" style="font-weight: bold; color: #4A148C; display: block; margin-bottom: 8px;">📋 Selecione a Prova para Analisar:</label>
-            <select id="selectAvaliacao" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; background: white;">
-              <option value="">Carregando provas do banco...</option>
-            </select>
-          </div>
 
           <button class="btn btn-primary" onclick="processarTriagem()" style="width: 100%; padding: 12px; font-size: 16px; font-weight: bold; margin-bottom: 20px;">
              RECALCULAR E CLASSIFICAR TURMA
@@ -303,19 +295,28 @@
           </div>
         </div>
 
-        <!-- 🆕 SEÇÃO: UPLOAD DE PLANILHA -->
-        <div style="background: #f0f4ff; padding: 20px; border-radius: 12px; border: 2px dashed #667eea; margin-bottom: 20px;">
-          <h3 style="margin-top: 0; color: #4A148C;">📊 Importar Planilha de Notas (CSV)</h3>
-          <p style="font-size: 14px; color: #666; margin-bottom: 12px;">
-            Exporte sua planilha do Google Sheets/Excel como <strong>CSV (separado por vírgulas)</strong> e faça o upload abaixo.
-            O sistema calculará automaticamente as estatísticas e gerará o diagnóstico com IA.
-          </p>
-          <div style="display: flex; gap: 12px; align-items: center;">
-            <input type="file" id="inputCSV" accept=".csv" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; background: white;">
-            <button class="btn btn-primary" onclick="processarCSV()">🚀 PROCESSAR E GERAR DIAGNÓSTICO</button>
+        <!-- 🆕 SELETORES DINÂMICOS (PROVA + TURMA) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            
+            <div>
+              <label for="selectAvaliacao" style="font-weight: bold; color: #4A148C; display: block; margin-bottom: 8px;">📋 Selecione a Prova:</label>
+              <select id="selectAvaliacao" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; background: white;">
+                <option value="">Carregando provas...</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="selectTurma" style="font-weight: bold; color: #4A148C; display: block; margin-bottom: 8px;">🏫 Selecione a Turma (Opcional):</label>
+              <select id="selectTurma" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; background: white;">
+                <option value="">Todas as turmas</option>
+              </select>
+            </div>
+
           </div>
-          <div id="areaUploadResultado" style="margin-top: 16px;"></div>
-        </div>
+
+          <button class="btn btn-primary" onclick="processarTriagem()" style="width: 100%; padding: 12px; font-size: 16px; font-weight: bold; margin-bottom: 20px;">
+             🧮 RECALCULAR E CLASSIFICAR
+          </button>
 
         <div class="ia-tabs">
           <button class="ia-tab active" id="tabDiagTurma" onclick="mudarAbaDiagnostico('turma')">Por Turma</button>
@@ -824,6 +825,7 @@
 </div>
 
 <script>
+
 if (!localStorage.getItem('sb_token')) {
     var fab = document.querySelector('.fab-ia');
     if(fab) fab.style.display = 'none';
@@ -3033,127 +3035,22 @@ async function processarCSV() {
 }
 
 // ==========================================================
-// 📊 DASHBOARD DE TRIAGEM E AÇÃO COM IA
+// 🌍 DETECÇÃO INTELIGENTE DE AMBIENTE (LABORATÓRIO vs RENDER)
 // ==========================================================
-async function processarTriagem(idAvaliacao) {
-    const areaTriagem = document.getElementById('areaTriagem');
-    const listaPiores = document.getElementById('listaPiores');
-    const listaMelhores = document.getElementById('listaMelhores');
-    
-    areaTriagem.style.display = 'block';
-    listaPiores.innerHTML = '<p style="text-align:center; color:#666;">⏳ Processando e classificando...</p>';
-    listaMelhores.innerHTML = '<p style="text-align:center; color:#666;">⏳ Processando e classificando...</p>';
+const API_BASE_URL = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') 
+    ? 'http://127.0.0.1:10000' 
+    : ''; 
 
-    try {
-        const response = await fetch(`http://127.0.0.1:10000/api/classificar_prova/${idAvaliacao}`, {
-            method: 'POST'
-        });
-        const data = await response.json();
-
-        if (!data.sucesso) throw new Error(data.erro);
-
-        const alunos = data.alunos;
-        
-        // Separar e ordenar os alunos
-        const piores = alunos.filter(a => a.nivel_saeb === 'Abaixo do Básico' || a.nivel_saeb === 'Básico')
-                             .sort((a, b) => a.nota_final - b.nota_final); // Do menor para o maior
-        
-        const melhores = alunos.filter(a => a.nivel_saeb === 'Adequado' || a.nivel_saeb === 'Avançado')
-                               .sort((a, b) => b.nota_final - a.nota_final); // Do maior para o menor
-
-        // Renderizar Piores
-        if (piores.length === 0) listaPiores.innerHTML = '<p>Nenhum aluno nesta faixa.</p>';
-        else {
-            listaPiores.innerHTML = piores.map(aluno => `
-                <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                    <div>
-                        <div style="font-weight: bold; color: #333;">${aluno.nome}</div>
-                        <div style="font-size: 12px; color: #666;">Nota: <strong>${aluno.nota_final}</strong> | Nível: <span style="color: #dc3545; font-weight: bold;">${aluno.nivel_saeb}</span></div>
-                    </div>
-                    <button class="btn btn-sm" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;" 
-                            onclick="prepararExpert('tutor_recuperacao', '${aluno.nome}', '${aluno.nivel_saeb}', ${aluno.nota_final})">
-                        🤖 Gerar Recuperação
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        // Renderizar Melhores
-        if (melhores.length === 0) listaMelhores.innerHTML = '<p>Nenhum aluno nesta faixa.</p>';
-        else {
-            listaMelhores.innerHTML = melhores.map(aluno => `
-                <div style="background: white; padding: 10px; margin-bottom: 8px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                    <div>
-                        <div style="font-weight: bold; color: #333;">${aluno.nome}</div>
-                        <div style="font-size: 12px; color: #666;">Nota: <strong>${aluno.nota_final}</strong> | Nível: <span style="color: #28a745; font-weight: bold;">${aluno.nivel_saeb}</span></div>
-                    </div>
-                    <button class="btn btn-sm" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;" 
-                            onclick="prepararExpert('criador_provas', '${aluno.nome}', '${aluno.nivel_saeb}', ${aluno.nota_final})">
-                        🚀 Gerar Desafio
-                    </button>
-                </div>
-            `).join('');
-        }
-
-    } catch (e) {
-        console.error(e);
-        areaTriagem.innerHTML = `<p style="color: red; text-align: center;">❌ Erro: ${e.message}</p>`;
-    }
-}
-
-// Função auxiliar para abrir o modal do Robô já preenchido
-function prepararExpert(tipoExpert, nomeAluno, nivel, nota) {
-    // 1. Seleciona o expert correto no menu
-    document.getElementById('expertSelector').value = tipoExpert;
-    atualizarFormularioExpert(); // Atualiza os textos de ajuda
-    
-    // 2. Monta o contexto inteligente e preenche a caixa
-    let textoContexto = "";
-    if (tipoExpert === 'tutor_recuperacao') {
-        textoContexto = `O aluno(a) ${nomeAluno} obteve nota ${nota} e está classificado no nível "${nivel}". Por favor, gere um plano de recuperação personalizado e motivador focado nas dificuldades típicas deste nível.`;
-    } else if (tipoExpert === 'criador_provas') {
-        textoContexto = `O aluno(a) ${nomeAluno} está no nível "${nivel}" com nota ${nota}. Por favor, crie 2 questões desafiadoras (nível Avançado) para manter o engajamento e aprofundar o conhecimento.`;
-    }
-    document.getElementById('expertContexto').value = textoContexto;
-    
-    // 3. Rola a tela até o Robô e avisa o professor (Experiência UX perfeita)
-    alert(`✅ TUDO PRONTO PARA ${nomeAluno.toUpperCase()}!\n\n1. Clique no ícone do Robô 🤖 no menu.\n2. O texto já estará digitado na caixa.\n3. É só apertar "🚀 ACIONAR EXPERT"!`);
-}
 
 // ==========================================================
-// 📋 CARREGAR PROVAS NO MENU SUSPENSO
-// ==========================================================
-async function carregarAvaliacoes() {
-    const select = document.getElementById('selectAvaliacao');
-    if (!select) return; // Se a tela não estiver visível, sai da função
-    
-    try {
-        const response = await fetch('http://127.0.0.1:10000/api/listar_avaliacoes');
-        const data = await response.json();
-        
-        if (data.sucesso) {
-            select.innerHTML = '<option value="">-- Escolha uma prova --</option>';
-            data.avaliacoes.forEach(av => {
-                const option = document.createElement('option');
-                option.value = av.id;
-                option.textContent = `ID ${av.id} - ${av.nome}`;
-                select.appendChild(option);
-            });
-        }
-    } catch (e) {
-        console.error("Erro ao carregar provas:", e);
-        select.innerHTML = '<option value="">Erro ao carregar provas</option>';
-    }
-}
-
-// ==========================================================
-// 📊 ATUALIZAR A FUNÇÃO DE TRIAGEM (Sem ID fixo)
+// 📊 DASHBOARD DE TRIAGEM (Com Filtro de Turma)
 // ==========================================================
 async function processarTriagem() {
     const idAvaliacao = document.getElementById('selectAvaliacao').value;
+    const idTurma = document.getElementById('selectTurma').value; //  Pega a turma selecionada
     
     if (!idAvaliacao) {
-        alert('⚠️ Por favor, selecione uma prova no menu acima antes de classificar!');
+        alert('⚠️ Por favor, selecione uma prova!');
         return;
     }
 
@@ -3162,12 +3059,15 @@ async function processarTriagem() {
     const listaMelhores = document.getElementById('listaMelhores');
     
     areaTriagem.style.display = 'block';
-    listaPiores.innerHTML = '<p style="text-align:center; color:#666;">⏳ Processando e classificando...</p>';
-    listaMelhores.innerHTML = '<p style="text-align:center; color:#666;">⏳ Processando e classificando...</p>';
+    listaPiores.innerHTML = '<p style="text-align:center; color:#666;">⏳ Processando...</p>';
+    listaMelhores.innerHTML = '<p style="text-align:center; color:#666;">⏳ Processando...</p>';
 
     try {
-        const response = await fetch(`http://127.0.0.1:10000/api/classificar_prova/${idAvaliacao}`, {
-            method: 'POST'
+        //  Envia a turma no corpo da requisição (JSON)
+        const response = await fetch(`${API_BASE_URL}/api/classificar_prova/${idAvaliacao}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_turma: idTurma || null })
         });
         const data = await response.json();
 
@@ -3175,7 +3075,6 @@ async function processarTriagem() {
 
         const alunos = data.alunos;
         
-        // Separar e ordenar os alunos
         const piores = alunos.filter(a => a.nivel_saeb === 'Abaixo do Básico' || a.nivel_saeb === 'Básico')
                              .sort((a, b) => a.nota_final - b.nota_final); 
         
@@ -3193,7 +3092,7 @@ async function processarTriagem() {
                     </div>
                     <button class="btn btn-sm" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;" 
                             onclick="prepararExpert('tutor_recuperacao', '${aluno.nome}', '${aluno.nivel_saeb}', ${aluno.nota_final})">
-                        🤖 Gerar Recuperação
+                         Gerar Recuperação
                     </button>
                 </div>
             `).join('');
@@ -3210,7 +3109,7 @@ async function processarTriagem() {
                     </div>
                     <button class="btn btn-sm" style="background: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;" 
                             onclick="prepararExpert('criador_provas', '${aluno.nome}', '${aluno.nivel_saeb}', ${aluno.nota_final})">
-                        🚀 Gerar Desafio
+                         Gerar Desafio
                     </button>
                 </div>
             `).join('');
@@ -3221,8 +3120,122 @@ async function processarTriagem() {
         areaTriagem.innerHTML = `<p style="color: red; text-align: center;">❌ Erro: ${e.message}</p>`;
     }
 }
-// Carrega as provas assim que a página abre
-window.onload = carregarAvaliacoes;
+
+
+// ==========================================================
+// 🤖 FUNÇÃO AUXILIAR PARA PREPARAR O EXPERT
+// ==========================================================
+function prepararExpert(tipoExpert, nomeAluno, nivel, nota) {
+    const selector = document.getElementById('expertSelector');
+    if (selector) {
+        selector.value = tipoExpert;
+        if (typeof atualizarFormularioExpert === 'function') {
+            atualizarFormularioExpert();
+        }
+    }
+    
+    let textoContexto = "";
+    if (tipoExpert === 'tutor_recuperacao') {
+        textoContexto = `O aluno(a) ${nomeAluno} obteve nota ${nota} e está classificado no nível "${nivel}". Por favor, gere um plano de recuperação personalizado e motivador focado nas dificuldades típicas deste nível.`;
+    } else if (tipoExpert === 'criador_provas') {
+        textoContexto = `O aluno(a) ${nomeAluno} está no nível "${nivel}" com nota ${nota}. Por favor, crie 2 questões desafiadoras (nível Avançado) para manter o engajamento e aprofundar o conhecimento.`;
+    }
+    
+    const contextoInput = document.getElementById('expertContexto');
+    if (contextoInput) {
+        contextoInput.value = textoContexto;
+    }
+
+    alert(`✅ TUDO PRONTO PARA ${nomeAluno.toUpperCase()}!\n\n1. Clique no ícone do Robô 🤖 no menu.\n2. O texto já estará digitado na caixa.\n3. É só apertar " ACIONAR EXPERT"!`);
+}
+
+// ==========================================================
+// 📋 CARREGAR PROVAS (Falando APENAS com o Backend Python)
+// ==========================================================
+async function carregarAvaliacoes() {
+    const select = document.getElementById('selectAvaliacao');
+    if (!select) {
+        console.warn("⚠️ Elemento 'selectAvaliacao' não encontrado no HTML.");
+        return; 
+    }
+    
+    try {
+        console.log("🔄 Buscando provas em:", `${API_BASE_URL}/api/listar_avaliacoes`);
+        const response = await fetch(`${API_BASE_URL}/api/listar_avaliacoes`);
+        
+        // Se não for JSON, o backend está retornando erro HTML
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            throw new TypeError("Oops, o backend não retornou JSON! Verifique se o app.py está rodando.");
+        }
+
+        const data = await response.json();
+        
+        if (data.sucesso) {
+            select.innerHTML = '<option value="">-- Escolha uma prova --</option>';
+            data.avaliacoes.forEach(av => {
+                const option = document.createElement('option');
+                option.value = av.id;
+                option.textContent = `ID ${av.id} - ${av.nome}`;
+                select.appendChild(option);
+            });
+            console.log("✅ Provas carregadas com sucesso!");
+        } else {
+            throw new Error(data.erro);
+        }
+    } catch (e) {
+        console.error("❌ Erro ao carregar provas:", e);
+        select.innerHTML = '<option value="">Erro ao conectar com o servidor</option>';
+    }
+}
+
+// ==========================================================
+// 🏫 CARREGAR TURMAS (Falando APENAS com o Backend Python)
+// ==========================================================
+async function carregarTurmas() {
+    const select = document.getElementById('selectTurma');
+    if (!select) {
+        console.warn("⚠️ Elemento 'selectTurma' não encontrado no HTML.");
+        return;
+    }
+
+    try {
+        console.log("🔄 Buscando turmas em:", `${API_BASE_URL}/api/listar_turmas`);
+        const response = await fetch(`${API_BASE_URL}/api/listar_turmas`);
+        
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            throw new TypeError("Oops, o backend não retornou JSON!");
+        }
+
+        const data = await response.json();
+        
+        if (data.sucesso) {
+            select.innerHTML = '<option value="">Todas as turmas</option>';
+            data.turmas.forEach(turma => {
+                const option = document.createElement('option');
+                option.value = turma.id;
+                option.textContent = `${turma.serie || ''} - ${turma.nome}`;
+                select.appendChild(option);
+            });
+            console.log("✅ Turmas carregadas com sucesso!");
+        } else {
+            throw new Error(data.erro);
+        }
+    } catch (e) {
+        console.error("❌ Erro ao carregar turmas:", e);
+        select.innerHTML = '<option value="">Erro ao conectar</option>';
+    }
+}
+
+// ==========================================================
+// 🚀 INICIALIZAÇÃO SEGURA
+// ==========================================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("🟢 Página carregada. Iniciando comunicação com o backend...");
+    carregarAvaliacoes();
+    carregarTurmas();
+});
 
 </script>
 
