@@ -829,7 +829,7 @@
   // ⚙️ CONFIGURAÇÃO GLOBAL DO SUPABASE (O CORAÇÃO DO SISTEMA)
   // ==========================================================
   const SUPABASE_URL = 'https://mkqnaiuplkqiitwxltli.supabase.co';
-  const SUPABASE_KEY = 'https://omr-sistema-api.onrender.com'; // <-- Mantenha sua chave real aqui
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rcW5haXVwbGtxaWl0d3hsdGxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzOTg5MzMsImV4cCI6MjA5OTk3NDkzM30.65MoDC1gMNpNs6bCKZlCTyCn2ijaaA6y9DOnQgNxacA'; // <-- Mantenha sua chave real aqui
 
   // Esta linha cria o cliente globalmente para todo o arquivo usar
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -865,7 +865,7 @@ var userEmail = localStorage.getItem('sb_email') || '';
 
   function headersCom(prefer) {
     var h = { 
-        'apikey': ANON, 
+        'apikey': SUPABASE_KEY, 
         'Content-Type': 'application/json' 
     };
     if (prefer) h['Prefer'] = prefer;
@@ -908,7 +908,7 @@ var userEmail = localStorage.getItem('sb_email') || '';
   async function refrescarSessao() {
     if (!refreshToken) return false;
     try {
-      var r = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', { method: 'POST', headers: { 'apikey': ANON, 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: refreshToken }) });
+      var r = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', { method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: refreshToken }) });
       if (!r.ok) return false;
       var j = await r.json();
       if (j.access_token) { guardarSessao(j); return true; }
@@ -1182,11 +1182,11 @@ function mudarAbaIA(aba) {
     var ext = (file.name.split('.').pop() || 'png').toLowerCase();
     var path = 'q_' + Date.now() + '_' + Math.floor(Math.random() * 10000) + '.' + ext;
     async function tentar(bearer) {
-      return await fetch(SUPABASE_URL + '/storage/v1/object/enunciados/' + path, { method: 'POST', headers: { 'apikey': ANON, 'Authorization': 'Bearer ' + bearer, 'Content-Type': file.type || 'image/png', 'x-upsert': 'true' }, body: file });
+      return await fetch(SUPABASE_URL + '/storage/v1/object/enunciados/' + path, { method: 'POST', headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + bearer, 'Content-Type': file.type || 'image/png', 'x-upsert': 'true' }, body: file });
     }
-    var r = await tentar(token || ANON);
-    if (!r.ok && token) { await refrescarSessao(); r = await tentar(token || ANON); }
-    if (!r.ok && token) { r = await tentar(ANON); }
+    var r = await tentar(token || SUPABASE_KEY);
+    if (!r.ok && token) { await refrescarSessao(); r = await tentar(token || SUPABASE_KEY); }
+    if (!r.ok && token) { r = await tentar(SUPABASE_KEY); }
     if (!r.ok) throw new Error('Upload ' + r.status + ': ' + (await r.text()));
     return SUPABASE_URL + '/storage/v1/object/public/enunciados/' + path;
   }
