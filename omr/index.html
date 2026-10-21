@@ -1459,7 +1459,8 @@ async function carregarDiagnosticoTurma() {
     
     var idsAlunos = alunos.map(function(a) { return a.id; }).join(',');
 
-    var rQ = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor_codigo,habilidade,valor');
+    // ✅ CORREÇÃO: Nomes corretos para cada tabela
+    var rQ = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor,habilidade,valor');
     var questoes = [];
     if (rQ.ok) {
       var qTemp = await rQ.json();
@@ -1467,7 +1468,8 @@ async function carregarDiagnosticoTurma() {
     }
     
     if (questoes.length === 0) {
-      var rQA = await sbFetch('GET', '/rest/v1/questoes_abertas?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor_codigo,habilidade,valor');
+      // ✅ CORREÇÃO: Aqui usamos _codigo, pois é a tabela de abertas
+      var rQA = await sbFetch('GET', '/rest/v1/questoes_abertas?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor_codigo,habilidade_codigo,valor');
       if (rQA.ok) {
         var qaTemp = await rQA.json();
         if (Array.isArray(qaTemp)) questoes = qaTemp;
@@ -1977,101 +1979,124 @@ try {
     grupo.style.display = (tipo === 'objetiva') ? 'block' : 'none';
   }
 
-  var questoesObj = [];
-  var editandoIdObj = null;
+  // ========================================================================
+// 📝 SEÇÃO: PROVA OBJETIVA (MÚLTIPLA ESCOLHA)
+// ========================================================================
 
-  function novaQuestaoObj() { 
-    return { enunciado: '', alt_a: '', alt_b: '', alt_c: '', alt_d: '', alt_e: '', gabarito: 'A', valor: '1', descritor: '' }; 
-  }
+var questoesObj = [];
+var editandoIdObj = null;
 
-  function novoFormObj() {
-    editandoIdObj = null;
-    document.getElementById('nomeProvaObj').value = '';
-    document.getElementById('bimestreObj').value = '3';
-    document.getElementById('disciplinaObj').value = 'Matemática';
-    document.getElementById('pesoObj').value = '1';
-    document.getElementById('qtdAlternativasObj').value = '4';
-    document.getElementById('bannerEdicaoObj').classList.add('hidden');
-    document.getElementById('btnSalvarObj').textContent = '💾 SALVAR PROVA OBJETIVA';
-    questoesObj = [novaQuestaoObj()];
-    renderizarQuestoesObj();
-  }
+// 1. Cria o modelo da questão com os nomes EXATOS do banco de dados 'questoes'
+function novaQuestaoObj() { 
+  return { 
+    enunciado: '', 
+    alt_a: '', alt_b: '', alt_c: '', alt_d: '', alt_e: '', 
+    gabarito: 'A', 
+    valor: '1', 
+    descritor: '',      // <-- Nome correto para tabela 'questoes'
+    habilidade: ''      // <-- Nome correto para tabela 'questoes'
+  }; 
+}
 
-  function adicionarQuestaoObj() { questoesObj.push(novaQuestaoObj()); renderizarQuestoesObj(); }
-  function removerQuestaoObj(i) { if (questoesObj.length > 1) { questoesObj.splice(i, 1); renderizarQuestoesObj(); } }
-  function atualizarQuestaoObj(i, campo, valor) { questoesObj[i][campo] = valor; }
-  function cancelarEdicaoObj() { novoFormObj(); }
-  function atualizarAlternativasUI() { renderizarQuestoesObj(); }
+function novoFormObj() {
+  editandoIdObj = null;
+  document.getElementById('nomeProvaObj').value = '';
+  document.getElementById('bimestreObj').value = '3';
+  document.getElementById('disciplinaObj').value = 'Matemática';
+  document.getElementById('pesoObj').value = '1';
+  document.getElementById('qtdAlternativasObj').value = '4';
+  document.getElementById('bannerEdicaoObj').classList.add('hidden');
+  document.getElementById('btnSalvarObj').textContent = '💾 SALVAR PROVA OBJETIVA';
+  questoesObj = [novaQuestaoObj()];
+  renderizarQuestoesObj();
+}
 
-  function renderizarQuestoesObj() {
-    var qtdAlt = parseInt(document.getElementById('qtdAlternativasObj').value);
-    document.getElementById('totalQuestoesObj').textContent = questoesObj.length;
+function adicionarQuestaoObj() { questoesObj.push(novaQuestaoObj()); renderizarQuestoesObj(); }
+function removerQuestaoObj(i) { if (questoesObj.length > 1) { questoesObj.splice(i, 1); renderizarQuestoesObj(); } }
+function atualizarQuestaoObj(i, campo, valor) { questoesObj[i][campo] = valor; }
+function cancelarEdicaoObj() { novoFormObj(); }
+
+// 2. Renderiza o HTML usando os nomes corretos (descritor e habilidade)
+function renderizarQuestoesObj() {
+  var qtdAlt = parseInt(document.getElementById('qtdAlternativasObj').value);
+  document.getElementById('totalQuestoesObj').textContent = questoesObj.length;
+  
+  document.getElementById('questoesObjContainer').innerHTML = questoesObj.map(function (q, i) {
+    var html = '<div class="questao-card" style="border-left: 4px solid #6f42c1;">';
+    html += '<div class="questao-header"><div style="display:flex;align-items:center;gap:8px;"><div class="questao-num" style="background:#6f42c1;">' + (i + 1) + '</div><strong>Questão ' + (i + 1) + '</strong></div>';
+    html += '<button class="remove-btn" onclick="removerQuestaoObj(' + i + ')">🗑️</button></div>';
     
-    document.getElementById('questoesObjContainer').innerHTML = questoesObj.map(function (q, i) {
-      var html = '<div class="questao-card" style="border-left: 4px solid #6f42c1;">';
-      html += '<div class="questao-header"><div style="display:flex;align-items:center;gap:8px;"><div class="questao-num" style="background:#6f42c1;">' + (i + 1) + '</div><strong>Questão ' + (i + 1) + '</strong></div>';
-      html += '<button class="remove-btn" onclick="removerQuestaoObj(' + i + ')">🗑️</button></div>';
-      
-      html += '<div class="form-group"><label>Enunciado da Questão</label><textarea rows="3" onchange="atualizarQuestaoObj(' + i + ', \'enunciado\', this.value)">' + q.enunciado + '</textarea></div>';
-      
-      var letras = ['A', 'B', 'C', 'D', 'E'];
-      for(var j=0; j < qtdAlt; j++) {
-        var letra = letras[j];
-        var campo = 'alt_' + letra.toLowerCase();
-        var checked = q.gabarito === letra ? 'checked' : '';
-        html += '<div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">';
-        html += '<input type="radio" name="gab_' + i + '" value="' + letra + '" ' + checked + ' onchange="atualizarQuestaoObj(' + i + ', \'gabarito\', \'' + letra + '\')" style="width:auto; accent-color:#28a745;">';
-        html += '<strong style="color:#6f42c1; width:20px;">' + letra + ')</strong>';
-        html += '<input type="text" placeholder="Alternativa ' + letra + '" value="' + q[campo] + '" onchange="atualizarQuestaoObj(' + i + ', \'' + campo + '\', this.value)" style="flex:1;">';
-        html += '</div>';
-      }
-
-      html += '<div class="form-row" style="grid-template-columns: 1fr 1fr 1fr; margin-top:12px;">';
-      html += '<div class="form-group" style="margin:0;"><label>Valor</label><input type="number" step="0.1" value="' + q.valor + '" onchange="atualizarQuestaoObj(' + i + ', \'valor\', this.value)"></div>';
-      html += '<div class="form-group" style="margin:0; grid-column: span 2;"><label>Descritor / Habilidade (Opcional)</label><input type="text" value="' + q.descritor_codigo + '" onchange="atualizarQuestaoObj(' + i + ', \'descritor_codigo\', this.value)" placeholder="Ex: D1, EF05MA01..."></div>';
-      html += '</div></div>';
-      return html;
-    }).join('');
-  }
-
-  async function salvarProvaObjetiva() {
-    var nome = document.getElementById('nomeProvaObj').value.trim();
-    var bimestre = parseInt(document.getElementById('bimestreObj').value);
-    var peso = parseFloat(document.getElementById('pesoObj').value) || 1;
-    var disciplina = document.getElementById('disciplinaObj').value;
+    html += '<div class="form-group"><label>Enunciado da Questão</label><textarea rows="3" onchange="atualizarQuestaoObj(' + i + ', \'enunciado\', this.value)">' + q.enunciado + '</textarea></div>';
     
-    if (!nome) { toast('Dê um nome para a prova!', 'error'); return; }
-    if (questoesObj.length === 0) { toast('Adicione ao menos uma questão!', 'error'); return; }
-    for (var i = 0; i < questoesObj.length; i++) { if (!questoesObj[i].enunciado.trim()) { toast('Questão ' + (i + 1) + ' sem enunciado!', 'error'); return; } }
+    var letras = ['A', 'B', 'C', 'D', 'E'];
+    for(var j=0; j < qtdAlt; j++) {
+      var letra = letras[j];
+      var campo = 'alt_' + letra.toLowerCase();
+      var checked = q.gabarito === letra ? 'checked' : '';
+      html += '<div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">';
+      html += '<input type="radio" name="gab_' + i + '" value="' + letra + '" ' + checked + ' onchange="atualizarQuestaoObj(' + i + ', \'gabarito\', \'' + letra + '\')" style="width:auto; accent-color:#28a745;">';
+      html += '<strong style="color:#6f42c1; width:20px;">' + letra + ')</strong>';
+      html += '<input type="text" placeholder="Alternativa ' + letra + '" value="' + q[campo] + '" onchange="atualizarQuestaoObj(' + i + ', \'' + campo + '\', this.value)" style="flex:1;">';
+      html += '</div>';
+    }
 
-    try {
-      var idAval;
-      if (editandoIdObj) {
-        await sbFetch('PATCH', '/rest/v1/avaliacoes?id=eq.' + editandoIdObj, { nome: nome, bimestre: bimestre, peso_media: peso, numero_questoes: questoesObj.length, disciplina: disciplina });
-        await sbFetch('DELETE', '/rest/v1/questoes?id_avaliacao=eq.' + editandoIdObj);
-        idAval = editandoIdObj;
-      } else {
-        var r1 = await sbFetch('POST', '/rest/v1/avaliacoes', { nome: nome, data_prova: new Date().toISOString().split('T')[0], numero_questoes: questoesObj.length, bimestre: bimestre, peso_media: peso, disciplina: disciplina, modo_correcao: 'objetiva', tipo: 'Prova Objetiva' }, 'return=representation');
-        if (!r1.ok) { toast('Erro ao criar prova: ' + msgErro(await r1.json()), 'error'); return; }
-        idAval = (await r1.json())[0].id;
-      }
+    html += '<div class="form-row" style="grid-template-columns: 1fr 1fr; margin-top:12px;">';
+    html += '<div class="form-group" style="margin:0;"><label>Valor</label><input type="number" step="0.1" value="' + q.valor + '" onchange="atualizarQuestaoObj(' + i + ', \'valor\', this.value)"></div>';
+    // ✅ CORREÇÃO: Agora usa 'descritor' e 'habilidade' consistentemente
+    html += '<div class="form-group" style="margin:0;"><label>Descritor (SAEB)</label><input type="text" value="' + (q.descritor || '') + '" onchange="atualizarQuestaoObj(' + i + ', \'descritor\', this.value)" placeholder="Ex: D25"></div>';
+    html += '<div class="form-group" style="margin:0;"><label>Habilidade (BNCC)</label><input type="text" value="' + (q.habilidade || '') + '" onchange="atualizarQuestaoObj(' + i + ', \'habilidade\', this.value)" placeholder="Ex: EF05MA01"></div>';
+    html += '</div></div>';
+    return html;
+  }).join('');
+}
 
-      var linhas = questoesObj.map(function (q, idx) {
-        return { 
-          id_avaliacao: idAval, numero: idx + 1, enunciado: q.enunciado.trim(), 
-          alternativa_a: q.alt_a, alternativa_b: q.alt_b, alternativa_c: q.alt_c, alternativa_d: q.alt_d, alternativa_e: q.alt_e,
-          gabarito: q.gabarito, valor: parseFloat(String(q.valor).replace(',', '.')) || 1, 
-          descritor: q.descritor, habilidade: q.descritor
-        };
-      });
-      
-      var r2 = await sbFetch('POST', '/rest/v1/questoes', linhas);
-      if (!r2.ok) { toast('Erro ao salvar questões: ' + msgErro(await r2.json()), 'error'); return; }
-      
-      toast('✅ Prova Objetiva salva com sucesso!', 'success');
-      novoFormObj(); carregarProvasObj();
-    } catch (e) { toast('Falha: ' + e.message, 'error'); }
-  }
+// 3. Salva no banco de dados 'questoes' com os nomes corretos
+async function salvarProvaObjetiva() {
+  var nome = document.getElementById('nomeProvaObj').value.trim();
+  var bimestre = parseInt(document.getElementById('bimestreObj').value);
+  var peso = parseFloat(document.getElementById('pesoObj').value) || 1;
+  var disciplina = document.getElementById('disciplinaObj').value;
+  
+  if (!nome) { toast('Dê um nome para a prova!', 'error'); return; }
+  if (questoesObj.length === 0) { toast('Adicione ao menos uma questão!', 'error'); return; }
+  
+  try {
+    var idAval;
+    if (editandoIdObj) {
+      await sbFetch('PATCH', '/rest/v1/avaliacoes?id=eq.' + editandoIdObj, { nome: nome, bimestre: bimestre, peso_media: peso, numero_questoes: questoesObj.length, disciplina: disciplina });
+      await sbFetch('DELETE', '/rest/v1/questoes?id_avaliacao=eq.' + editandoIdObj);
+      idAval = editandoIdObj;
+    } else {
+      var r1 = await sbFetch('POST', '/rest/v1/avaliacoes', { nome: nome, data_prova: new Date().toISOString().split('T')[0], numero_questoes: questoesObj.length, bimestre: bimestre, peso_media: peso, disciplina: disciplina, modo_correcao: 'objetiva', tipo: 'Prova Objetiva' }, 'return=representation');
+      if (!r1.ok) { toast('Erro ao criar prova: ' + msgErro(await r1.json()), 'error'); return; }
+      idAval = (await r1.json())[0].id;
+    }
+
+    // ✅ CORREÇÃO FINAL: Mapeamento exato das colunas da tabela 'questoes'
+    var linhas = questoesObj.map(function (q, idx) {
+      return { 
+        id_avaliacao: idAval, 
+        numero: idx + 1, 
+        enunciado: q.enunciado.trim(), 
+        alternativa_a: q.alt_a, 
+        alternativa_b: q.alt_b, 
+        alternativa_c: q.alt_c, 
+        alternativa_d: q.alt_d, 
+        alternativa_e: q.alt_e,
+        gabarito: q.gabarito, 
+        valor: parseFloat(String(q.valor).replace(',', '.')) || 1, 
+        descritor: q.descritor || '',       // <-- Coluna correta
+        habilidade: q.habilidade || ''      // <-- Coluna correta
+      };
+    });
+    
+    var r2 = await sbFetch('POST', '/rest/v1/questoes', linhas);
+    if (!r2.ok) { toast('Erro ao salvar questões: ' + msgErro(await r2.json()), 'error'); return; }
+    
+    toast('✅ Prova Objetiva salva com sucesso!', 'success');
+    novoFormObj(); carregarProvasObj();
+  } catch (e) { toast('Falha: ' + e.message, 'error'); }
+}
 
   async function carregarProvasObj() {
     var lista = document.getElementById('provasObjLista');
@@ -3193,38 +3218,32 @@ async function carregarAvaliacoes() {
 }
 
 // ==========================================================
-// 🏫 CARREGAR TURMAS (COM VERIFICAÇÃO DE SEGURANÇA)
+// 🏫 CARREGAR TURMAS (CORRIGIDO PARA LOGIN MANUAL)
 // ==========================================================
 async function carregarTurmas() {
     const select = document.getElementById('selectTurma');
     if (!select) return;
 
     try {
-        // 1. Verifica se o Supabase foi inicializado corretamente
-        if (typeof supabase === 'undefined') {
-            throw new Error("Supabase não foi inicializado. Verifique o topo do script.");
-        }
-
-        // 2. Descobre quem é o usuário logado
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
-        if (authError || !user) {
-            console.warn("⚠️ Usuário não logado ou sessão expirada.");
+        // ✅ CORREÇÃO: Verifica nossa variável global 'token' em vez do auth do Supabase
+        if (!token || !userEmail) {
             select.innerHTML = '<option value="">Faça login primeiro</option>';
             return;
         }
 
-        console.log("🔄 Buscando turmas para o usuário logado (ID):", user.id);
+        // Pega o ID do usuário que salvamos no localStorage
+        const userId = localStorage.getItem('sb_uid') || 'admin';
         
-        // 3. Envia o user_id na URL para o backend filtrar com segurança
-        const response = await fetch(`${API_BASE_URL}/api/listar_turmas?user_id=${user.id}`);
+        console.log("🔄 Buscando turmas para o usuário:", userId);
+        
+        const response = await fetch(`${API_BASE_URL}/api/listar_turmas?user_id=${userId}`);
         const data = await response.json();
         
         if (data.sucesso) {
             select.innerHTML = '<option value="">-- Selecione a Turma --</option>';
             
             if (!data.turmas || data.turmas.length === 0) {
-                select.innerHTML += '<option value="" disabled>Nenhuma turma vinculada ao seu perfil</option>';
+                select.innerHTML += '<option value="" disabled>Nenhuma turma vinculada</option>';
             } else {
                 data.turmas.forEach(turma => {
                     const option = document.createElement('option');
@@ -3233,12 +3252,11 @@ async function carregarTurmas() {
                     select.appendChild(option);
                 });
             }
-            console.log("✅ Turmas carregadas com sucesso e filtradas!");
         } else {
-            throw new Error(data.erro || data.msg || "Erro desconhecido do servidor");
+            throw new Error(data.erro || data.msg || "Erro desconhecido");
         }
     } catch (e) {
-        console.error("❌ Erro detalhado ao carregar turmas:", e);
+        console.error("❌ Erro ao carregar turmas:", e);
         select.innerHTML = `<option value="">Erro: ${e.message}</option>`;
     }
 }
