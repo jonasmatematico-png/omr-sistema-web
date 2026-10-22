@@ -113,6 +113,7 @@
     
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -374,7 +375,7 @@
       </div>
 
       <div class="card">
-        <div id="areaGraficoDiagnosticoTurma"></div>
+        <div id="areaDiagnosticoTurma"></div>
         <div id="areaGraficoDiagnosticoAluno"></div>
       </div>
     </div>
@@ -1425,10 +1426,7 @@ async function carregarDiagnosticoTurma() {
   var idProva = selProva.value;
   
   // 🔍 DETECTOR DE CAIXAS: Procura por vários IDs possíveis
-  var area = document.getElementById('arahJ91ZuNL8Y2px8iYciYeHN8sfSh5eXH8') || 
-             document.getElementById('areaDiagnosticoTurma') || 
-             document.getElementById('resultadoDiagnostico') ||
-             document.getElementById('areaGraficoDiagnostico');
+  var area = document.getElementById('areaDiagnosticoTurma');
 
   if (!area) {
     console.error("❌ A área de resultado do diagnóstico NÃO foi encontrada no HTML!");
@@ -1681,6 +1679,8 @@ async function carregarDiagnosticoAluno() {
     if (area) area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px; background: #ffe6e6; border-radius: 8px;">❌ <strong>Erro:</strong> ' + e.message + '</p>';
   }
 }
+
+
 
 //xxxxx  FIM
 
@@ -2060,59 +2060,6 @@ function mudarAbaIA(aba) {
     }
   }
 
-  async function carregarTurmasDiagnostico() {
-  var selTurma = document.getElementById('selTurmaDiagnostico');
-  var selTurmaAluno = document.getElementById('selTurmaDiagAluno');
-  
-  if (selTurma.options.length > 1) return;
-  
-  try {
-    var r = await sbFetch('GET', '/rest/v1/turmas?select=id,nome&order=nome.asc');
-    var todasAsTurmas = await r.json();
-
-    let turmasPermitidasIds = [];
-    
-    const EMAIL_ADMIN_MASTER = 'jonasmatematico@yahoo.com.br';
-    
-    if (userEmail === EMAIL_ADMIN_MASTER) {
-        turmasPermitidasIds = todasAsTurmas.map(t => t.id);
-    } else {
-        var rPerfil = await sbFetch('GET', "/rest/v1/perfis?email=eq." + userEmail + "&select=turmas_id");
-        var perfilData = await rPerfil.json();
-        
-        if (perfilData && perfilData[0] && Array.isArray(perfilData[0].turmas_id)) {
-            turmasPermitidasIds = perfilData[0].turmas_id;
-        } else {
-            turmasPermitidasIds = []; 
-        }
-    }
-
-    var turmasFiltradas = todasAsTurmas.filter(function(t) {
-        return turmasPermitidasIds.includes(t.id);
-    });
-
-    var html = '<option value="">Selecione a turma...</option>';
-    
-    if (turmasFiltradas.length === 0) {
-        html += '<option value="" disabled>Nenhuma turma disponível para você</option>';
-    } else {
-        turmasFiltradas.forEach(function(t) { 
-            html += '<option value="' + t.id + '">' + t.nome + '</option>'; 
-        });
-    }
-
-    selTurma.innerHTML = html;
-    selTurmaAluno.innerHTML = html;
-    
-  } catch(e) { 
-    console.error("Erro ao carregar turmas:", e);
-    selTurma.innerHTML = '<option value="">Erro ao carregar</option>';
-    selTurmaAluno.innerHTML = '<option value="">Erro ao carregar</option>';
-  }
-}
-
-
-
 async function carregarProvasPorTurma() {
     var selTurma = document.getElementById('selTurmaDiagnostico');
     var selProva = document.getElementById('selProvaDiagnostico');
@@ -2201,259 +2148,9 @@ try {
   }
 
   async function carregarSelectsPlanilha() {
-    try {
-      var rt = await sbFetch('GET', '/rest/v1/turmas?select=id,nome&order=nome.asc');
-      var turmas = await rt.json();
-      document.getElementById('selTurmaPlanilha').innerHTML = '<option value="">Selecione...</option>' + turmas.map(function(t) { return '<option value="' + t.id + '">' + t.nome + '</option>'; }).join('');
-      var rp = await sbFetch('GET', '/rest/v1/avaliacoes?select=id,nome,modo_correcao&order=id.desc');
-      var provas = await rp.json();
-      document.getElementById('selProvaPlanilha').innerHTML = '<option value="">Selecione...</option>' + provas.map(function(p) { var tag = p.modo_correcao === 'aberta' ? ' (aberta)' : ' (objetiva)'; return '<option value="' + p.id + '">' + p.nome + tag + '</option>'; }).join('');
-    } catch(e) { console.error(e); }
-  }
-
-  async function gerarTabelaPlanilha() {
-    var turmaId = document.getElementById('selTurmaPlanilha').value;
-    var provaId = document.getElementById('selProvaPlanilha').value;
-    var area = document.getElementById('areaTabelaPlanilha');
-    if (!turmaId || !provaId) { toast('Selecione a turma e a prova!', 'error'); return; }
-    area.innerHTML = '<p style="text-align: center; color: #666;">⏳ Gerando tabela...</p>';
-    try {
-      var rAlunos = await sbFetch('GET', '/rest/v1/alunos?id_turma=eq.' + turmaId + '&select=id,nome_completo,numero_chamada&order=numero_chamada.asc');
-      var alunos = await rAlunos.json();
-      if (!Array.isArray(alunos) || alunos.length === 0) { area.innerHTML = '<p style="text-align: center; color: #dc3545;">️ Nenhum aluno encontrado nesta turma.</p>'; return; }
-      var rQuestoes = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + provaId + '&select=id,numero&order=numero.asc');
-      var questoes = await rQuestoes.json();
-      if (!Array.isArray(questoes)) questoes = [];
-      if (questoes.length === 0) { area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Nenhuma questão encontrada para esta prova.</p>'; return; }
-      var idsAlunos = alunos.map(function(a) { return a.id; }).join(',');
-      var rRespostas = await sbFetch('GET', '/rest/v1/respostas?id_avaliacao=eq.' + provaId + '&id_aluno=in.(' + idsAlunos + ')&select=id_aluno,id_questao,resposta_aluno,correta');
-      var respostas = await rRespostas.json();
-      if (!Array.isArray(respostas)) respostas = [];
-      var respostasPorAluno = {};
-      respostas.forEach(function(resp) {
-        var alunoId = resp.id_aluno;
-        if (!respostasPorAluno[alunoId]) respostasPorAluno[alunoId] = {};
-        respostasPorAluno[alunoId][resp.id_questao] = { resposta: resp.resposta_aluno || '', correta: resp.correta };
-      });
-      var html = '<div style="overflow-x: auto;"><table id="tabelaPlanilha" style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: Arial;">';
-      html += '<thead><tr style="background: #e0e0e0;"><th style="border: 1px solid #999; padding: 6px;">Nº</th><th style="border: 1px solid #999; padding: 6px;">Aluno</th><th style="border: 1px solid #999; padding: 6px;">Status</th>';
-      questoes.forEach(function(q) { html += '<th style="border: 1px solid #999; padding: 6px;">Q' + q.numero + '</th>'; });
-      html += '</tr></thead><tbody>';
-      alunos.forEach(function(aluno) {
-        var respostasAluno = respostasPorAluno[aluno.id] || {};
-        var temRespostas = Object.keys(respostasAluno).length > 0;
-        var status = temRespostas ? 'Corrigido' : 'Pendente';
-        var corStatus = temRespostas ? '#28a745' : '#ffc107';
-        html += '<tr><td style="border: 1px solid #ccc; padding: 4px; text-align: center;">' + (aluno.numero_chamada || '-') + '</td>';
-        html += '<td style="border: 1px solid #ccc; padding: 4px;">' + (aluno.nome_completo || 'Sem nome') + '</td>';
-        html += '<td style="border: 1px solid #ccc; padding: 4px; text-align: center; color: ' + corStatus + '; font-weight: bold;">' + status + '</td>';
-        questoes.forEach(function(q) {
-          var resp = respostasAluno[q.numero]; var respostaTexto = ''; var corFundo = '#fff';
-          if (resp) { respostaTexto = resp.resposta || (resp.correta ? '✓' : '✗'); corFundo = resp.correta ? '#d4edda' : (resp.resposta ? '#f8d7da' : '#fff'); }
-          html += '<td style="border: 1px solid #ccc; padding: 4px; text-align: center; background: ' + corFundo + ';">' + respostaTexto + '</td>';
-        });
-        html += '</tr>';
-      });
-      html += '</tbody></table></div>';
-      html += '<div style="display: flex; gap: 8px; margin-top: 12px;">';
-      html += '<button class="btn btn-primary" style="flex: 1; padding: 12px;" onclick="copiarParaPlanilha()"> COPIAR TUDO</button>';
-      html += '<button class="btn btn-secondary" style="flex: 1; padding: 12px;" onclick="copiarApenasRespostas()"> COPIAR APENAS RESPOSTAS</button></div>';
-      html += '<p style="font-size: 11px; color: #666; text-align: center; margin-top: 8px;">💡 Use o primeiro botão para planilhas novas. Use o segundo para colar apenas as respostas na planilha da escola.</p>';
-      area.innerHTML = html; toast('✅ Tabela gerada com sucesso! ' + alunos.length + ' alunos carregados.', 'success');
-    } catch(e) { console.error(e); area.innerHTML = '<p style="text-align: center; color: #dc3545;">❌ Erro: ' + e.message + '</p>'; }
-  }
-
-  function copiarParaPlanilha() {
-    var tabela = document.getElementById('tabelaPlanilha'); if (!tabela) { toast('Gere a tabela primeiro!', 'error'); return; }
-    var linhas = tabela.querySelectorAll('tr'); var textoTSV = '';
-    linhas.forEach(function(linha) {
-      var celulas = linha.querySelectorAll('th, td'); var valores = [];
-      celulas.forEach(function(celula) { valores.push(celula.innerText.replace(/\n/g, ' ').trim()); });
-      textoTSV += valores.join('\t') + '\n';
-    });
-    navigator.clipboard.writeText(textoTSV).then(function() { toast('✅ Tabela completa copiada! Cole no Google Sheets com Ctrl+V', 'success'); }).catch(function() {
-      var textarea = document.createElement('textarea'); textarea.value = textoTSV; document.body.appendChild(textarea); textarea.select(); document.execCommand('copy'); document.body.removeChild(textarea);
-      toast('✅ Tabela completa copiada!', 'success');
-    });
-  }
-
-  function copiarApenasRespostas() {
-    var tabela = document.getElementById('tabelaPlanilha'); if (!tabela) { toast('Gere a tabela primeiro!', 'error'); return; }
-    var linhas = tabela.querySelectorAll('tr'); var textoTSV = '';
-    var linhasDados = Array.from(linhas).slice(1);
-    linhasDados.forEach(function(linha) {
-      var celulas = linha.querySelectorAll('th, td'); var celulasRespostas = Array.from(celulas).slice(3); var valores = [];
-      celulasRespostas.forEach(function(celula) { valores.push(celula.innerText.replace(/\n/g, ' ').trim()); });
-      textoTSV += valores.join('\t') + '\n';
-    });
-    navigator.clipboard.writeText(textoTSV).then(function() { toast('✅ Respostas copiadas (sem cabeçalho)! Cole direto na célula da Q1.', 'success'); }).catch(function() {
-      var textarea = document.createElement('textarea'); textarea.value = textoTSV; document.body.appendChild(textarea); textarea.select(); document.execCommand('copy'); document.body.removeChild(textarea);
-      toast('✅ Respostas copiadas (sem cabeçalho)!', 'success');
-    });
-  }
-
-  async function carregarSelectsCorretor() {
-    try {
-      var rt = await sbFetch('GET', '/rest/v1/turmas?select=id,nome&order=nome.asc');
-      var turmas = await rt.json();
-      document.getElementById('selTurmaCorretor').innerHTML = '<option value="">Selecione...</option>' + turmas.map(function(t) { return '<option value="' + t.id + '">' + t.nome + '</option>'; }).join('');
-      var rp = await sbFetch('GET', '/rest/v1/avaliacoes?select=id,nome,modo_correcao&order=id.desc');
-      var provas = await rp.json();
-      document.getElementById('selProvaCorretor').innerHTML = '<option value="">Selecione...</option>' + provas.map(function(p) { var tag = p.modo_correcao === 'aberta' ? ' (aberta)' : ' (objetiva)'; return '<option value="' + p.id + '">' + p.nome + tag + '</option>'; }).join('');
-    } catch(e) { console.error(e); }
-  }
-
-  async function carregarAlunosCorretor() {
-    var turmaId = document.getElementById('selTurmaCorretor').value;
-    var provaId = document.getElementById('selProvaCorretor').value;
-    var selAluno = document.getElementById('selAlunoCorretor');
-    if (!turmaId || !provaId) { selAluno.innerHTML = '<option value="">Selecione a turma e prova primeiro...</option>'; return; }
-    selAluno.innerHTML = '<option value="">Carregando...</option>';
-    try {
-      var r = await sbFetch('GET', '/rest/v1/alunos?id_turma=eq.' + turmaId + '&select=id,nome_completo,numero_chamada&order=numero_chamada.asc');
-      var alunos = await r.json();
-      selAluno.innerHTML = '<option value="">Selecione o aluno...</option>' + alunos.map(function(a) { return '<option value="' + a.id + '">' + a.numero_chamada + '. ' + a.nome_completo + '</option>'; }).join('');
-    } catch(e) { selAluno.innerHTML = '<option value="">Erro ao carregar</option>'; }
-  }
-
-  async function carregarRespostasAluno() {
-    var alunoId = document.getElementById('selAlunoCorretor').value;
-    var provaId = document.getElementById('selProvaCorretor').value;
-    var area = document.getElementById('areaCorretorManual');
-    if (!alunoId || !provaId) { area.innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">Selecione o aluno.</p>'; return; }
-    area.innerHTML = '<p style="text-align: center; color: #666;">⏳ Carregando questões...</p>';
-    try {
-      var rQuestoes = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + provaId + '&select=id,numero,gabarito&order=numero.asc');
-      var questoes = await rQuestoes.json();
-      var rRespostas = await sbFetch('GET', '/rest/v1/respostas?id_aluno=eq.' + alunoId + '&id_avaliacao=eq.' + provaId + '&select=id_questao,resposta_aluno');
-      var respostasSalvas = await rRespostas.json();
-      
-      window.gabaritoAtual = {};
-      questoes.forEach(q => { if(q.gabarito) window.gabaritoAtual[q.id] = q.gabarito; });
-
-      if (questoes.length === 0) { area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Esta prova não tem questões objetivas.</p>'; return; }
-      var html = '<div style="background: #f8f9fa; padding: 16px; border-radius: 8px;"><h4 style="margin-bottom: 12px; color: #333;">Marque as respostas:</h4>';
-      questoes.forEach(function(q) {
-        var respSalva = respostasSalvas.find(function(r) { return String(r.id_questao) === String(q.id); });
-        var respostaAtual = respSalva ? respSalva.resposta_aluno : '';
-        html += '<div style="margin-bottom: 12px; padding: 8px; background: white; border-radius: 6px;"><strong style="color: #008080;">Questão ' + q.numero + ':</strong><br><div style="display: flex; gap: 8px; margin-top: 6px;">';
-        ['A', 'B', 'C', 'D', 'E'].forEach(function(letra) {
-          var checked = respostaAtual === letra ? 'checked' : '';
-          html += '<label style="display: flex; align-items: center; gap: 4px; cursor: pointer;"><input type="radio" name="q' + q.id + '" value="' + letra + '" ' + checked + '> ' + letra + '</label>';
-        });
-        html += '</div></div>';
-      });
-      html += '<button class="btn btn-primary" style="width: 100%; margin-top: 12px; padding: 12px;" onclick="salvarCorrecaoManual(' + alunoId + ', ' + provaId + ')">💾 SALVAR CORREÇÃO</button></div>';
-      area.innerHTML = html;
-    } catch(e) { console.error(e); area.innerHTML = '<p style="text-align: center; color: #dc3545;">❌ Erro: ' + e.message + '</p>'; }
-  }
-
-  async function salvarCorrecaoManual(alunoId, provaId) {
-    var questoesRadios = document.querySelectorAll('#areaCorretorManual input[type="radio"]');
-    var respostas = {};
-    questoesRadios.forEach(function(radio) {
-      if (radio.checked) {
-        var questaoId = parseInt(radio.name.replace('q', ''));
-        respostas[questaoId] = radio.value;
-      }
-    });
-    if (Object.keys(respostas).length === 0) { toast('Marque pelo menos uma resposta!', 'error'); return; }
-    try {
-      await sbFetch('DELETE', '/rest/v1/respostas?id_aluno=eq.' + alunoId + '&id_avaliacao=eq.' + provaId);
-      var linhas = Object.keys(respostas).map(function(questaoId) {
-        var gabaritoQuestao = window.gabaritoAtual[questaoId] || null;
-        var estaCorreta = (gabaritoQuestao && respostas[questaoId] === gabaritoQuestao);
-        
-        return { 
-          id_aluno: parseInt(alunoId), 
-          id_avaliacao: parseInt(provaId), 
-          id_questao: parseInt(questaoId), 
-          resposta_aluno: respostas[questaoId], 
-          correta: estaCorreta
-        };
-      });
-      var r = await sbFetch('POST', '/rest/v1/respostas', linhas);
-      if (r.ok) { toast('✅ Correção salva e auto-corrigida com sucesso!', 'success'); carregarRespostasAluno(); }
-      else { var erro = await r.json(); toast('Erro: ' + (erro.message || 'Falha ao salvar'), 'error'); }
-    } catch(e) { toast('Erro: ' + e.message, 'error'); }
-  }
-
-  async function gerarPlanoAula() {
-    var tema = document.getElementById('iaTemaAula').value.trim();
-    if (!tema) { toast('Digite o tema da aula!', 'error'); return; }
-    var btn = document.getElementById('btnPlanejarIA');
-    btn.textContent = ' Planejando...'; btn.disabled = true;
-    document.getElementById('iaResultadoPlanejar').innerHTML = '<p style="text-align:center; color:#666; padding: 20px;">🤖 A IA está montando seu plano de aula passo a passo...</p>';
-    try {
-      var r = await fetch(API_URL + '/api/gerar_plano_aula', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tema: tema, material: document.getElementById('iaMaterial').value, perfil_turma: document.getElementById('iaPerfilTurma').value, duracao: document.getElementById('iaDuracao').value })
-      });
-      var j = await r.json();
-      if (j.sucesso && j.plano) {
-        var p = j.plano; var html = '<div style="background:#f3f0ff; padding:20px; border-radius:8px; border:1px solid #d6bfff;">';
-        html += '<h4 style="color:#6f42c1; margin-bottom:8px;"> Objetivos de Aprendizagem:</h4><ul style="margin-bottom:16px; padding-left:20px;">';
-        (p.objetivos || []).forEach(o => html += '<li style="margin-bottom:4px;">' + o + '</li>'); html += '</ul>';
-        html += '<h4 style="color:#6f42c1; margin-bottom:8px;">⏱️ Passo a Passo da Aula:</h4>';
-        (p.passo_a_passo || []).forEach((etapa, idx) => {
-          html += '<div style="background:white; padding:12px; margin-bottom:10px; border-radius:6px; border-left:4px solid #6f42c1; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">';
-          html += '<strong style="color:#4A148C;">' + (etapa.tempo || '') + ' - ' + (etapa.etapa || 'Etapa ' + (idx+1)) + '</strong><br>';
-          html += '<span style="font-size:14px; color:#333; margin-top:4px; display:block;">' + (etapa.acao || '') + '</span></div>';
-        });
-        html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:16px;">';
-        html += '<div style="background:#FFF8E1; padding:12px; border-radius:6px; border-left:4px solid #FF6F00;"><h4 style="color:#E65100; margin:0 0 8px 0; font-size:14px;">📝 Avaliação:</h4><p style="font-size:13px; margin:0;">' + (p.avaliacao || '-') + '</p></div>';
-        html += '<div style="background:#E8F5E9; padding:12px; border-radius:6px; border-left:4px solid #2E7D32;"><h4 style="color:#2E7D32; margin:0 0 8px 0; font-size:14px;">🏠 Tarefa de Casa:</h4><p style="font-size:13px; margin:0;">' + (p.tarefa_casa || '-') + '</p></div></div>';
-        html += '<p style="text-align: center; color: #999; font-size: 11px; margin-top: 16px; font-style: italic;">Gerado por IA (' + (j.modelo || 'Gemini') + ')</p></div>';
-        document.getElementById('iaResultadoPlanejar').innerHTML = html; toast('Plano de aula gerado com sucesso!', 'success');
-      } else { toast('Erro: ' + (j.erro || 'Falha ao gerar plano'), 'error'); }
-    } catch(e) { toast('Erro de conexão com a IA', 'error'); }
-    finally { btn.textContent = ' GERAR PLANO DE AULA'; btn.disabled = false; }
-  }
-
-  function toggleAlternativas() {
-    var tipo = document.getElementById('iaTipoQuestao').value;
-    var grupo = document.getElementById('grupoNumAlternativas');
-    grupo.style.display = (tipo === 'objetiva') ? 'block' : 'none';
-  }
-
-async function carregarAlunosDiagAluno() {
-  var selAluno = document.getElementById('selAlunoDiagAluno');
-  var selProva = document.getElementById('selProvaDiagAluno');
-  var idTurma = document.getElementById('selTurmaDiagAluno').value;
-  var area = document.getElementById('areaGraficoDiagnosticoAluno');
-
-  selAluno.innerHTML = '<option value="">Carregando alunos...</option>';
-  selAluno.disabled = true;
-  selProva.innerHTML = '<option value="">Selecione o aluno primeiro</option>';
-  selProva.disabled = true;
-  area.innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">Selecione o aluno para ver as provas.</p>';
-
-  if (!idTurma) {
-    selAluno.innerHTML = '<option value="">Selecione a turma primeiro</option>';
-    return;
-  }
-
-  try {
-    var r = await sbFetch('GET', '/rest/v1/alunos?id_turma=eq.' + idTurma + '&select=id,nome_completo,numero_chamada&order=numero_chamada.asc');
-    var alunos = await r.json();
-
-    if (!Array.isArray(alunos) || alunos.length === 0) {
-      selAluno.innerHTML = '<option value="">Nenhum aluno nesta turma</option>';
-      return;
-    }
-
-    var html = '<option value="">Selecione o aluno...</option>';
-    alunos.forEach(function(a) { 
-      html += '<option value="' + a.id + '">' + a.numero_chamada + '. ' + a.nome_completo + '</option>'; 
-    });
-
-    selAluno.innerHTML = html;
-    selAluno.disabled = false;
-  } catch(e) {
-    console.error("Erro ao carregar alunos:", e);
-    selAluno.innerHTML = '<option value="">Erro ao carregar</option>';
-  }
-}
+       await carregarTurmasPermitidas('selTurmaPlanilha');
+       // (Mantenha o código de carregar provas que já existe abaixo, se houver)
+   }
 
 async function carregarProvasAluno() {
   var selProva = document.getElementById('selProvaDiagAluno');
@@ -2485,195 +2182,7 @@ async function carregarProvasAluno() {
   }
 }
     ///xxxxxxx
-async function carregarDiagnosticoAluno() {
-  var selAluno = document.getElementById('selAlunoDiagAluno');
-  var selProva = document.getElementById('selProvaDiagAluno');
-  var idAluno = selAluno.value;
-  var idProva = selProva.value;
-  var area = document.getElementById('areaGraficoDiagnosticoAluno');
 
-  if (!idAluno || !idProva) { 
-    area.innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">Selecione o aluno e a prova.</p>'; 
-    return; 
-  }
-
-  area.innerHTML = '<p style="text-align: center; color: #666;">⏳ Analisando desempenho do aluno...</p>';
-
-  try {
-    var rAluno = await sbFetch('GET', '/rest/v1/alunos?id=eq.' + idAluno + '&select=nome_completo,numero_chamada');
-    var alunoData = (await rAluno.json())[0];
-    var nomeAluno = alunoData ? (alunoData.numero_chamada + '. ' + alunoData.nome_completo) : 'Aluno';
-
-    var questoes = [];
-    var rQ = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor_codigo,habilidade,valor');
-    var qTemp = await rQ.json();
-    if (Array.isArray(qTemp) && qTemp.length > 0) { questoes = qTemp; }
-
-    if (questoes.length === 0) {
-      var rQA = await sbFetch('GET', '/rest/v1/questoes_abertas?id_avaliacao=eq.' + idProva + '&select=id,numero,descritor_codigo,habilidade,valor');
-      var qaTemp = await rQA.json();
-      if (Array.isArray(qaTemp) && qaTemp.length > 0) { questoes = qaTemp; }
-    }
-
-    if (questoes.length === 0) { 
-      area.innerHTML = '<p style="text-align: center; color: #dc3545;">️ Esta prova não possui questões registradas.</p>'; 
-      return; 
-    }
-
-    var rRespostas = await sbFetch('GET', '/rest/v1/respostas?id_avaliacao=eq.' + idProva + '&id_aluno=eq.' + idAluno + '&select=id_questao,correta,resposta_aluno');
-    var respostas = await rRespostas.json();
-    
-    if (!Array.isArray(respostas) || respostas.length === 0) { 
-      area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Este aluno ainda não corrigiu esta prova.</p>'; 
-      return; 
-    }
-    
-    var tipoEscolhido = document.getElementById('tipoAnaliseAluno').value; 
-    var tituloEixo = tipoEscolhido === 'habilidade' ? 'Habilidade (BNCC)' : 'Descritor (SAEB)';
-    
-    var notaMaxima = 0;
-    var notaAluno = 0;
-    questoes.forEach(q => { notaMaxima += (parseFloat(q.valor) || 1); });
-    
-    respostas.forEach(r => {
-      var questao = questoes.find(q => q.id == r.id_questao);
-      if (questao && (r.correta === true || r.correta === 'true' || r.correta === 1)) {
-        notaAluno += parseFloat(questao.valor) || 1;
-      }
-    });
-
-    var mapaAgrupado = {};
-
-    questoes.forEach(function(q) {
-      var chave = (tipoEscolhido === 'habilidade') ? (q.habilidade || q.descritor_codigo || '') : (q.descritor_codigo || q.habilidade || '');
-      chave = chave ? chave.trim() : 'Não classificado';
-      
-      if (!mapaAgrupado[chave]) {
-        mapaAgrupado[chave] = { 
-          total: 0, 
-          acertos: 0,
-          questoes_ids: []
-        };
-      }
-      mapaAgrupado[chave].total++; 
-      mapaAgrupado[chave].questoes_ids.push(q.id);
-    });
-
-    respostas.forEach(function(r) {
-      var questaoEncontrada = questoes.find(function(q) { return String(q.id) === String(r.id_questao); });
-      
-      if (questaoEncontrada) {
-        var chave = (tipoEscolhido === 'habilidade') ? (questaoEncontrada.habilidade || questaoEncontrada.descritor_codigo || '') : (questaoEncontrada.descritor_codigo || questaoEncontrada.habilidade || '');
-        chave = chave ? chave.trim() : 'Não classificado';
-        
-        if (r.correta === true || r.correta === 'true' || r.correta === 1) {
-          if (mapaAgrupado[chave]) {
-            mapaAgrupado[chave].acertos++;
-          }
-        }
-      }
-    });
-
-    var resultados = Object.keys(mapaAgrupado).map(function(chave) {
-      var dados = mapaAgrupado[chave];
-      var percentual = dados.total > 0 ? (dados.acertos / dados.total * 100) : 0;
-      return { 
-        chave: chave, 
-        total: dados.total, 
-        acertos: dados.acertos, 
-        percentual: percentual.toFixed(1) 
-      };
-    }).sort(function(a, b) { return a.percentual - b.percentual; });
-
-    console.log("DADOS DO GRÁFICO:", JSON.stringify(resultados));
-
-    var html = '';
-
-    html += '<div style="background: #e8f5e9; border-left: 5px solid #4CAF50; padding: 16px; border-radius: 6px; margin-bottom: 20px;">';
-    html += '<h3 style="color: #2E7D32; margin: 0 0 8px 0;">👤 Nota de ' + nomeAluno + ': ' + notaAluno.toFixed(1) + ' / ' + notaMaxima.toFixed(1) + '</h3>';
-    html += '<p style="margin: 0; font-size: 13px; color: #555;">Total de questões avaliadas: <b>' + respostas.length + '</b></p>';
-    html += '</div>';
-
-    html += '<h4 style="margin-bottom: 12px; color: #333; text-align:center;">📈 Desempenho Individual por ' + tituloEixo + '</h4>';
-    
-    html += '<div style="position: relative; height: 350px; width: 100%; max-width: 900px; margin: 0 auto;">';
-    html += '<canvas id="chartDiagnosticoAluno"></canvas>';
-    html += '</div>';
-
-    html += '<div style="margin-top: 20px; text-align: center;">';
-    html += '<button class="btn btn-primary" style="font-size: 16px; padding: 12px 24px;" onclick="abrirModalIntervencao(' + idAluno + ', ' + idProva + ')">🤖 GERAR PLANO DE INTERVENÇÃO PERSONALIZADO</button>';
-    html += '</div>';
-
-    area.innerHTML = html;
-
-    setTimeout(function() {
-        var ctx = document.getElementById('chartDiagnosticoAluno');
-        if (!ctx) return; 
-        
-        var chartCtx = ctx.getContext('2d');
-        
-        var labels = resultados.map(function(r) { return r.chave; });
-        var dataValues = resultados.map(function(r) { return parseFloat(r.percentual); });
-        
-        new Chart(chartCtx, {
-            type: 'radar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: '% de Acerto',
-                    data: dataValues,
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderColor: 'rgb(54, 162, 235)',
-                    pointBackgroundColor: dataValues.map(v => v < 50 ? '#dc3545' : (v < 70 ? '#ffc107' : '#28a745')),
-                    pointBorderColor: '#fff',
-                    pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: 'rgb(54, 162, 235)'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    r: {
-                        angleLines: { display: true, color: '#eee' },
-                        grid: { circular: true, color: '#ddd' },
-                        pointLabels: {
-                            font: { size: 11, weight: 'bold' },
-                            color: '#333'
-                        },
-                        ticks: {
-                            backdropColor: 'transparent',
-                            color: '#999',
-                            stepSize: 20,
-                            callback: function(value) { return value + "%"; }
-                        },
-                        suggestedMin: 0,
-                        suggestedMax: 100
-                    }
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                var perc = context.raw;
-                                var idx = context.dataIndex;
-                                var total = resultados[idx].total;
-                                var acertos = resultados[idx].acertos;
-                                return [perc + "% de acerto", "(" + acertos + " de " + total + " questões)"];
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }, 100);
-
-  } catch(e) {
-    console.error("Erro no diagnóstico do aluno:", e);
-    area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px; background: #ffe6e6; border-radius: 8px;">❌ <strong>Erro:</strong> ' + e.message + '</p>';
-  }
-}
 
 // ========================================================================
 // 🎯 SELETOR DE ALUNO PARA INTERVENÇÃO (a partir da Turma)
