@@ -2360,10 +2360,7 @@ async function carregarTurmasPermitidas(selectId) {
 // ========================================================================
 
 // 1. Diagnóstico (Turma e Aluno)
-async function carregarTurmasDiagnostico() {
-    await carregarTurmasPermitidas('selTurmaDiagnostico');
-    await carregarTurmasPermitidas('selTurmaDiagAluno');
-}
+
 
 // 2. Planilha
 async function carregarSelectsPlanilha() {
@@ -2463,11 +2460,6 @@ async function gerarPlanoAula() {
         btn.disabled = false; 
     }
 }
-
-
-
-
-//xxxxx  FIM
 
 
   function navegarPara(viewId, btn) {
@@ -2899,8 +2891,6 @@ async function carregarTurmasDiagnostico() {
     await carregarTurmasPermitidas('selTurmaDiagnostico');
     await carregarTurmasPermitidas('selTurmaDiagAluno');
 }
-    ///xxxxxxx
-
 
 // ========================================================================
 // 🎯 SELETOR DE ALUNO PARA INTERVENÇÃO (a partir da Turma)
