@@ -1342,7 +1342,11 @@ async function carregarProvasObj() {
     
     lista.innerHTML = data.map(function (p) {
       return '<div class="prova-item"><div class="prova-item-info"><strong>' + p.nome + '</strong><div class="prova-item-meta">' + p.numero_questoes + ' questões • ' + p.bimestre + 'º bimestre</div></div>' +
-        '<div style="display:flex;gap:6px;"><button class="btn btn-warn btn-sm" onclick="editarProvaObj(' + p.id + ')">✏️ Editar</button><button class="btn btn-danger btn-sm" onclick="excluirProvaObj(' + p.id + ')">🗑️</button></div></div>';
+        '<div style="display:flex;gap:6px;">' +
+        '<button class="btn btn-primary btn-sm" onclick="imprimirGabaritoObj(' + p.id + ')">🖨️ Gabarito</button>' +
+        '<button class="btn btn-warn btn-sm" onclick="editarProvaObj(' + p.id + ')">✏️ Editar</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="excluirProvaObj(' + p.id + ')">🗑️</button>' +
+        '</div></div>';
     }).join('');
   } catch (e) { lista.innerHTML = '<p style="color:#dc3545;text-align:center;padding:20px;">Falha de conexão.</p>'; }
 }
@@ -1680,6 +1684,787 @@ async function carregarDiagnosticoAluno() {
   }
 }
 
+// ========================================================================
+// 📋 PLANO DE RECUPERAÇÃO DA TURMA (CORRIGIDO E LIMPO)
+// ========================================================================
+async function gerarPlanoRecuperacao(idProva) {
+    var itens = window.itensRuinsAtual;
+    if (!itens || itens.length === 0) { toast('Não há itens com baixo desempenho para gerar plano.', 'error'); return; }
+    var qtd = prompt('Quantas atividades de recuperação você deseja gerar?', '3'); if (!qtd) return;
+    var ano = prompt('Para qual ano é o plano de recuperação?', '6'); if (!ano) return;
+    var componente = prompt('Qual a disciplina?', 'Matemática'); if (!componente) return;
+    var area = document.getElementById('areaPlanoRecuperacao');
+    area.innerHTML = '<div style="text-align: center; padding: 40px;"><p style="font-size: 18px; color: #6f42c1;"> A IA está criando o plano...</p><p style="color: #666; margin-top: 8px;">Gerando ' + qtd + ' atividades focadas nos descritor_codigoes/habilidades com menor desempenho</p></div>';
+    document.getElementById('modalRecuperacao').classList.add('active');
+    try {
+      var r = await fetch(API_BASE_URL + '/api/gerar_plano_recuperacao', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itens_ruins: itens.map(function(i) { return i.chave; }), tipo_analise: window.tipoAnaliseAtual === 'habilidade' ? 'Habilidade' : 'Descritor', ano: parseInt(ano), componente: componente, quantidade: parseInt(qtd) })
+      });
+      var j = await r.json();
+      if (j.sucesso && j.plano) {
+        var plano = j.plano; var html = '';
+        html += '<div style="background: linear-gradient(135deg, #6f42c1, #4A148C); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">';
+        html += '<h2 style="margin: 0 0 8px 0;">📋 ' + (plano.titulo || 'Plano de Recuperação Dirigida') + '</h2>';
+        html += '<p style="margin: 0; font-size: 14px; opacity: 0.95;">' + (plano.plano || plano.justificativa || '') + '</p>';
+        html += '<p style="margin: 8px 0 0 0; font-size: 12px; opacity: 0.8;">🎯 Foco: ' + itens.map(function(i) { return i.chave; }).join(', ') + '</p></div>';
+        if (plano.atividades && plano.atividades.length > 0) {
+          html += '<h3 style="color: #4A148C; margin-bottom: 12px;">📚 Atividades Sugeridas</h3>';
+          plano.atividades.forEach(function(atv, idx) {
+            html += '<div style="background: #f9f5ff; border-left: 4px solid #6f42c1; padding: 16px; margin-bottom: 12px; border-radius: 6px;">';
+            html += '<h4 style="color: #6f42c1; margin: 0 0 8px 0;">Atividade ' + (idx + 1) + ': ' + (atv.titulo || 'Sem título') + '</h4>';
+            if (atv.descricao) html += '<p style="margin: 0 0 8px 0; color: #333;"><strong>Como aplicar:</strong> ' + atv.descricao + '</p>';
+            if (atv.exemplo_pratico && atv.exemplo_pratico !== '-') html += '<p style="margin: 0; padding: 10px; background: white; border-radius: 4px; color: #555; font-style: italic;"><strong>💡 Exemplo:</strong> ' + atv.exemplo_pratico + '</p>';
+            html += '</div>';
+          });
+        }
+        if (plano.sugestoes && plano.sugestoes.length > 0) {
+          html += '<div style="background: #FFF8E1; padding: 16px; border-radius: 8px; border-left: 4px solid #FF6F00; margin-top: 16px;">';
+          html += '<h4 style="color: #E65100; margin: 0 0 8px 0;">💡 Sugestões Adicionais</h4><ul style="margin: 0; padding-left: 20px;">';
+          plano.sugestoes.forEach(function(s) { html += '<li style="margin-bottom: 4px;">' + s + '</li>'; });
+          html += '</ul></div>';
+        }
+        html += '<p style="text-align: center; color: #999; font-size: 11px; margin-top: 20px; font-style: italic;">Plano gerado por IA (modelo: ' + (j.modelo || 'Gemini') + ') em ' + new Date().toLocaleString('pt-BR') + '</p>';
+        area.innerHTML = html; toast('Plano de recuperação gerado com sucesso!', 'success');
+      } else { area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px;">❌ Erro: ' + (j.erro || 'Falha ao gerar plano') + '</p>'; toast('Erro ao gerar plano', 'error'); }
+    } catch(e) { console.error(e); area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px;">❌ Falha na conexão: ' + e.message + '</p>'; toast('Falha na conexão com a IA', 'error'); }
+  }
+
+  // ========================================================================
+// 📋 EXPORTAR PARA PLANILHA (BLINDADA E COM DETETIVE)
+// ========================================================================
+async function gerarTabelaPlanilha() {
+    console.log("🔍 [PLANILHA] Iniciando geração da tabela...");
+    
+    var turmaId = document.getElementById('selTurmaPlanilha').value;
+    var provaId = document.getElementById('selProvaPlanilha').value;
+    var area = document.getElementById('areaTabelaPlanilha');
+    
+    console.log("🔍 [PLANILHA] Turma ID:", turmaId, "| Prova ID:", provaId, "| Área encontrada:", !!area);
+
+    if (!turmaId || !provaId) { 
+        alert('⚠️ Por favor, selecione a turma e a prova antes de gerar a tabela!');
+        return; 
+    }
+    
+    if (!area) {
+        console.error("❌ [PLANILHA] Elemento 'areaTabelaPlanilha' NÃO encontrado no HTML!");
+        alert("Erro interno: Área de resultado não encontrada no HTML.");
+        return;
+    }
+
+    area.innerHTML = '<p style="text-align: center; color: #666;">⏳ Gerando tabela...</p>';
+    
+    try {
+        console.log("1️⃣ Buscando alunos...");
+        var rAlunos = await sbFetch('GET', '/rest/v1/alunos?id_turma=eq.' + turmaId + '&select=id,nome_completo,numero_chamada&order=numero_chamada.asc');
+        var alunos = await rAlunos.json();
+        
+        if (!Array.isArray(alunos) || alunos.length === 0) { 
+            area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Nenhum aluno encontrado nesta turma.</p>'; 
+            return; 
+        }
+        
+        console.log("2️⃣ Buscando questões da prova...");
+        // Busca questões objetivas (padrão para planilha de gabarito)
+        var rQuestoes = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + provaId + '&select=id,numero&order=numero.asc');
+        var questoes = await rQuestoes.json();
+        if (!Array.isArray(questoes)) questoes = [];
+        
+        if (questoes.length === 0) { 
+            area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Nenhuma questão (objetiva) encontrada para esta prova.</p>'; 
+            return; 
+        }
+        
+        console.log("3️⃣ Buscando respostas dos alunos...");
+        var idsAlunos = alunos.map(function(a) { return a.id; }).join(',');
+        var rRespostas = await sbFetch('GET', '/rest/v1/respostas?id_avaliacao=eq.' + provaId + '&id_aluno=in.(' + idsAlunos + ')&select=id_aluno,id_questao,resposta_aluno,correta');
+        var respostas = await rRespostas.json();
+        if (!Array.isArray(respostas)) respostas = [];
+        
+        console.log("4️⃣ Processando dados...");
+        var respostasPorAluno = {};
+        respostas.forEach(function(resp) {
+            var alunoId = resp.id_aluno;
+            if (!respostasPorAluno[alunoId]) respostasPorAluno[alunoId] = {};
+            // ✅ CORREÇÃO: Usar resp.id_questao para bater com o ID da questão
+            respostasPorAluno[alunoId][resp.id_questao] = { resposta: resp.resposta_aluno || '', correta: resp.correta };
+        });
+
+        console.log("5️⃣ Gerando HTML da tabela...");
+        var html = '<div style="overflow-x: auto;"><table id="tabelaPlanilha" style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: Arial;">';
+        html += '<thead><tr style="background: #e0e0e0;"><th style="border: 1px solid #999; padding: 6px;">Nº</th><th style="border: 1px solid #999; padding: 6px;">Aluno</th><th style="border: 1px solid #999; padding: 6px;">Status</th>';
+        questoes.forEach(function(q) { html += '<th style="border: 1px solid #999; padding: 6px;">Q' + q.numero + '</th>'; });
+        html += '</tr></thead><tbody>';
+        
+        alunos.forEach(function(aluno) {
+            var respostasAluno = respostasPorAluno[aluno.id] || {};
+            var temRespostas = Object.keys(respostasAluno).length > 0;
+            var status = temRespostas ? 'Corrigido' : 'Pendente';
+            var corStatus = temRespostas ? '#28a745' : '#ffc107';
+            
+            html += '<tr><td style="border: 1px solid #ccc; padding: 4px; text-align: center;">' + (aluno.numero_chamada || '-') + '</td>';
+            html += '<td style="border: 1px solid #ccc; padding: 4px;">' + (aluno.nome_completo || 'Sem nome') + '</td>';
+            html += '<td style="border: 1px solid #ccc; padding: 4px; text-align: center; color: ' + corStatus + '; font-weight: bold;">' + status + '</td>';
+            
+            questoes.forEach(function(q) {
+                // ✅ CORREÇÃO: Buscar pelo q.id (que é o id_questao do banco), não pelo q.numero
+                var resp = respostasAluno[q.id]; 
+                var respostaTexto = ''; 
+                var corFundo = '#fff';
+                
+                if (resp) { 
+                    respostaTexto = resp.resposta || (resp.correta ? '✓' : '✗'); 
+                    corFundo = resp.correta ? '#d4edda' : (resp.resposta ? '#f8d7da' : '#fff'); 
+                }
+                html += '<td style="border: 1px solid #ccc; padding: 4px; text-align: center; background: ' + corFundo + ';">' + respostaTexto + '</td>';
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+        
+        html += '<div style="display: flex; gap: 8px; margin-top: 12px;">';
+        html += '<button class="btn btn-primary" style="flex: 1; padding: 12px;" onclick="copiarParaPlanilha()">📋 COPIAR TUDO</button>';
+        html += '<button class="btn btn-secondary" style="flex: 1; padding: 12px;" onclick="copiarApenasRespostas()">📋 COPIAR APENAS RESPOSTAS</button></div>';
+        html += '<p style="font-size: 11px; color: #666; text-align: center; margin-top: 8px;">💡 Use o primeiro botão para planilhas novas. Use o segundo para colar apenas as respostas na planilha da escola.</p>';
+        
+        area.innerHTML = html; 
+        console.log("✅ [PLANILHA] Tabela gerada com sucesso!");
+        alert('✅ Tabela gerada com sucesso! ' + alunos.length + ' alunos carregados.');
+        
+    } catch(e) { 
+        console.error("❌ [PLANILHA] Erro ao gerar tabela:", e); 
+        area.innerHTML = '<p style="text-align: center; color: #dc3545;">❌ Erro: ' + e.message + '</p>'; 
+        alert("❌ Erro ao gerar tabela. Verifique o Console (F12) para detalhes.");
+    }
+}
+
+// ========================================================================
+// 📋 FUNÇÕES DE CÓPIA DA PLANILHA (RESTAURADAS E BLINDADAS)
+// ========================================================================
+
+function copiarParaPlanilha() {
+    console.log("🔍 [PLANILHA] Tentando copiar tabela completa...");
+    var tabela = document.getElementById('tabelaPlanilha'); 
+    
+    if (!tabela) { 
+        alert('⚠️ Gere a tabela primeiro antes de copiar!'); 
+        return; 
+    }
+    
+    var linhas = tabela.querySelectorAll('tr'); 
+    var textoTSV = '';
+    
+    linhas.forEach(function(linha) {
+        var celulas = linha.querySelectorAll('th, td'); 
+        var valores = [];
+        celulas.forEach(function(celula) { 
+            valores.push(celula.innerText.replace(/\n/g, ' ').trim()); 
+        });
+        textoTSV += valores.join('\t') + '\n';
+    });
+    
+    // Tenta o método moderno
+    navigator.clipboard.writeText(textoTSV).then(function() { 
+        alert('✅ Tabela completa copiada! Cole no Google Sheets ou Excel com Ctrl+V'); 
+    }).catch(function(err) {
+        console.warn("Fallback de cópia ativado:", err);
+        // Fallback para navegadores mais antigos ou restrições de segurança
+        var textarea = document.createElement('textarea'); 
+        textarea.value = textoTSV; 
+        document.body.appendChild(textarea); 
+        textarea.select(); 
+        document.execCommand('copy'); 
+        document.body.removeChild(textarea);
+        alert('✅ Tabela completa copiada!');
+    });
+}
+
+function copiarApenasRespostas() {
+    console.log("🔍 [PLANILHA] Tentando copiar apenas respostas...");
+    var tabela = document.getElementById('tabelaPlanilha'); 
+    
+    if (!tabela) { 
+        alert('⚠️ Gere a tabela primeiro antes de copiar!'); 
+        return; 
+    }
+    
+    var linhas = tabela.querySelectorAll('tr'); 
+    var textoTSV = '';
+    var linhasDados = Array.from(linhas).slice(1); // Pula a primeira linha (cabeçalho)
+    
+    linhasDados.forEach(function(linha) {
+        var celulas = linha.querySelectorAll('th, td'); 
+        // Pula as 3 primeiras colunas (Nº, Aluno, Status) e pega só as respostas das questões
+        var celulasRespostas = Array.from(celulas).slice(3); 
+        var valores = [];
+        celulasRespostas.forEach(function(celula) { 
+            valores.push(celula.innerText.replace(/\n/g, ' ').trim()); 
+        });
+        textoTSV += valores.join('\t') + '\n';
+    });
+    
+    // Tenta o método moderno
+    navigator.clipboard.writeText(textoTSV).then(function() { 
+        alert('✅ Apenas as respostas copiadas (sem cabeçalho)! Cole direto na célula da Q1 da sua planilha.'); 
+    }).catch(function(err) {
+        console.warn("Fallback de cópia ativado:", err);
+        // Fallback para navegadores mais antigos
+        var textarea = document.createElement('textarea'); 
+        textarea.value = textoTSV; 
+        document.body.appendChild(textarea); 
+        textarea.select(); 
+        document.execCommand('copy'); 
+        document.body.removeChild(textarea);
+        alert('✅ Apenas as respostas copiadas!');
+    });
+}
+
+// ========================================================================
+// ✏️ SEÇÃO: CORRETOR MANUAL DE PROVA (RESTAURADO E BLINDADO)
+// ========================================================================
+
+// 1. Carrega os selects iniciais (Turma e Prova)
+async function carregarSelectsCorretor() {
+    console.log("🔍 [CORRETOR] Carregando selects...");
+    await carregarTurmasPermitidas('selTurmaCorretor');
+    
+    try {
+        var rp = await sbFetch('GET', '/rest/v1/avaliacoes?select=id,nome,modo_correcao&order=id.desc');
+        var provas = await rp.json();
+        var selProva = document.getElementById('selProvaCorretor');
+        if(selProva) {
+            selProva.innerHTML = '<option value="">Selecione a prova...</option>' + provas.map(function(p) { 
+                var tag = p.modo_correcao === 'aberta' ? ' (aberta)' : ' (objetiva)'; 
+                return '<option value="' + p.id + '">' + p.nome + tag + '</option>'; 
+            }).join('');
+        }
+    } catch(e) { 
+        console.error("❌ [CORRETOR] Erro ao carregar provas:", e); 
+    }
+}
+
+// 2. Carrega os alunos quando a turma e a prova são selecionadas
+async function carregarAlunosCorretor() {
+    console.log("🔍 [CORRETOR] Carregando alunos...");
+    var turmaId = document.getElementById('selTurmaCorretor').value;
+    var provaId = document.getElementById('selProvaCorretor').value;
+    var selAluno = document.getElementById('selAlunoCorretor');
+    
+    if (!turmaId || !provaId) { 
+        selAluno.innerHTML = '<option value="">Selecione a turma e a prova primeiro...</option>'; 
+        document.getElementById('areaCorretorManual').innerHTML = '';
+        return; 
+    }
+    
+    selAluno.innerHTML = '<option value="">Carregando...</option>';
+    try {
+        var r = await sbFetch('GET', '/rest/v1/alunos?id_turma=eq.' + turmaId + '&select=id,nome_completo,numero_chamada&order=numero_chamada.asc');
+        var alunos = await r.json();
+        
+        selAluno.innerHTML = '<option value="">Selecione o aluno...</option>' + alunos.map(function(a) { 
+            return '<option value="' + a.id + '">' + (a.numero_chamada || '') + '. ' + (a.nome_completo || 'Sem nome') + '</option>'; 
+        }).join('');
+    } catch(e) { 
+        console.error("❌ [CORRETOR] Erro ao carregar alunos:", e); 
+        selAluno.innerHTML = '<option value="">Erro ao carregar</option>'; 
+    }
+}
+
+// 3. Carrega as questões e respostas do aluno selecionado
+async function carregarRespostasAluno() {
+    console.log("🔍 [CORRETOR] Carregando respostas do aluno...");
+    var alunoId = document.getElementById('selAlunoCorretor').value;
+    var provaId = document.getElementById('selProvaCorretor').value;
+    var area = document.getElementById('areaCorretorManual');
+    
+    if (!alunoId || !provaId) { 
+        area.innerHTML = '<p style="text-align: center; color: #999; font-style: italic;">Selecione o aluno e a prova.</p>'; 
+        return; 
+    }
+    
+    area.innerHTML = '<p style="text-align: center; color: #666;">⏳ Carregando questões...</p>';
+    try {
+        // Busca questões objetivas da prova
+        var rQuestoes = await sbFetch('GET', '/rest/v1/questoes?id_avaliacao=eq.' + provaId + '&select=id,numero,gabarito&order=numero.asc');
+        var questoes = await rQuestoes.json();
+        
+        // Busca respostas já salvas do aluno
+        var rRespostas = await sbFetch('GET', '/rest/v1/respostas?id_aluno=eq.' + alunoId + '&id_avaliacao=eq.' + provaId + '&select=id_questao,resposta_aluno');
+        var respostasSalvas = await rRespostas.json();
+        
+        // Guarda o gabarito em uma variável global para usar no salvamento
+        window.gabaritoAtual = {};
+        questoes.forEach(q => { if(q.gabarito) window.gabaritoAtual[q.id] = q.gabarito; });
+
+        if (questoes.length === 0) { 
+            area.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Esta prova não tem questões objetivas registradas.</p>'; 
+            return; 
+        }
+        
+        var html = '<div style="background: #f8f9fa; padding: 16px; border-radius: 8px;"><h4 style="margin-bottom: 12px; color: #333;">Marque as respostas:</h4>';
+        questoes.forEach(function(q) {
+            var respSalva = respostasSalvas.find(function(r) { return String(r.id_questao) === String(q.id); });
+            var respostaAtual = respSalva ? respSalva.resposta_aluno : '';
+            
+            html += '<div style="margin-bottom: 12px; padding: 8px; background: white; border-radius: 6px; border: 1px solid #eee;">';
+            html += '<strong style="color: #008080;">Questão ' + q.numero + ':</strong><br><div style="display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap;">';
+            
+            ['A', 'B', 'C', 'D', 'E'].forEach(function(letra) {
+                var checked = respostaAtual === letra ? 'checked' : '';
+                html += '<label style="display: flex; align-items: center; gap: 4px; cursor: pointer; padding: 4px 8px; background: #f0f0f0; border-radius: 4px;">';
+                html += '<input type="radio" name="q' + q.id + '" value="' + letra + '" ' + checked + ' style="width:auto; accent-color:#28a745;"> ' + letra;
+                html += '</label>';
+            });
+            html += '</div></div>';
+        });
+        
+        html += '<button class="btn btn-primary" style="width: 100%; margin-top: 12px; padding: 12px;" onclick="salvarCorrecaoManual(' + alunoId + ', ' + provaId + ')">💾 SALVAR CORREÇÃO</button></div>';
+        area.innerHTML = html;
+        
+    } catch(e) { 
+        console.error("❌ [CORRETOR] Erro ao carregar respostas:", e); 
+        area.innerHTML = '<p style="text-align: center; color: #dc3545;">❌ Erro: ' + e.message + '</p>'; 
+    }
+}
+
+// 4. Salva as correções manuais no banco de dados
+async function salvarCorrecaoManual(alunoId, provaId) {
+    console.log("🔍 [CORRETOR] Salvando correção...");
+    var questoesRadios = document.querySelectorAll('#areaCorretorManual input[type="radio"]');
+    var respostas = {};
+    
+    questoesRadios.forEach(function(radio) {
+        if (radio.checked) {
+            var questaoId = parseInt(radio.name.replace('q', ''));
+            respostas[questaoId] = radio.value;
+        }
+    });
+    
+    if (Object.keys(respostas).length === 0) { 
+        alert('⚠️ Marque pelo menos uma resposta antes de salvar!'); 
+        return; 
+    }
+    
+    try {
+        // 1. Deleta respostas antigas desse aluno nessa prova (para evitar duplicidade)
+        await sbFetch('DELETE', '/rest/v1/respostas?id_aluno=eq.' + alunoId + '&id_avaliacao=eq.' + provaId);
+        
+        // 2. Prepara as novas respostas
+        var linhas = Object.keys(respostas).map(function(questaoId) {
+            var gabaritoQuestao = window.gabaritoAtual[questaoId] || null;
+            var estaCorreta = (gabaritoQuestao && respostas[questaoId] === gabaritoQuestao);
+            
+            return { 
+                id_aluno: parseInt(alunoId), 
+                id_avaliacao: parseInt(provaId), 
+                id_questao: parseInt(questaoId), 
+                resposta_aluno: respostas[questaoId], 
+                correta: estaCorreta
+            };
+        });
+        
+        // 3. Insere as novas respostas
+        var r = await sbFetch('POST', '/rest/v1/respostas', linhas);
+        if (r.ok) { 
+            alert('✅ Correção salva e auto-corrigida com sucesso!'); 
+            carregarRespostasAluno(); // Recarrega a tela para mostrar o estado atual
+        } else { 
+            var erro = await r.json(); 
+            alert('❌ Erro ao salvar: ' + (erro.message || 'Falha desconhecida')); 
+        }
+    } catch(e) { 
+        console.error("❌ [CORRETOR] Erro ao salvar:", e); 
+        alert('❌ Erro: ' + e.message); 
+    }
+}
+
+// ========================================================================
+// 🔲 SEÇÃO: GERADOR DE QR CODES E CARTÕES (100% CORRIGIDO E BLINDADO)
+// ========================================================================
+
+// 1. Função para trocar as abas do QR Code (CORRIGIDA)
+function mudarAbaQR(aba) {
+    console.log("🔍 [QR] Mudando para aba:", aba);
+    
+    // Esconde todas as abas com segurança (evita erro de null)
+    ['abaQRProva', 'abaQRAluno', 'abaQRCartoes'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+    
+    // Remove a classe 'active' de todos os botões de aba
+    document.querySelectorAll('#view-qr .ia-tab').forEach(function(btn) {
+        btn.classList.remove('active');
+    });
+    
+    // Define o ID correto baseado na aba clicada
+    var idAlvo = '';
+    if (aba === 'prova') idAlvo = 'abaQRProva';
+    else if (aba === 'aluno') idAlvo = 'abaQRAluno';
+    else if (aba === 'cartoes') idAlvo = 'abaQRCartoes';
+    
+    // Mostra a aba alvo com segurança
+    var alvo = document.getElementById(idAlvo);
+    if (alvo) {
+        alvo.classList.remove('hidden');
+    }
+    
+    // Ativa o botão clicado (com proteção contra erro de event)
+    if (window.event && window.event.target) {
+        window.event.target.classList.add('active');
+    }
+    
+    // Limpa as áreas de resultado ao trocar de aba
+    var areaQR = document.getElementById('areaQR');
+    if (areaQR) areaQR.innerHTML = '';
+    
+    var areaCartoes = document.getElementById('areaCartoes');
+    if (areaCartoes) areaCartoes.innerHTML = '';
+}
+
+// 2. Gerar QR Code da Prova
+async function gerarQRProva() {
+    console.log("🔍 [QR] Gerando QR da prova...");
+    var provaId = document.getElementById('selProvaQR').value;
+    var area = document.getElementById('areaQR');
+    
+    if (!provaId) { alert('⚠️ Selecione uma prova primeiro!'); return; }
+    
+    var r = await sbFetch('GET', '/rest/v1/avaliacoes?id=eq.' + provaId + '&select=nome');
+    var dados = await r.json();
+    var nomeProva = dados[0] ? dados[0].nome : 'Prova ' + provaId;
+    
+    var qrData = 'OMRPROVA:' + provaId;
+    var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(qrData);
+    
+    area.innerHTML = `
+        <div style="text-align: center; padding: 20px;">
+            <h3 style="color: #333; margin-bottom: 16px;">📋 ${nomeProva}</h3>
+            <img src="${qrUrl}" alt="QR Code da Prova" style="border: 2px solid #008080; border-radius: 8px; padding: 10px; background: white;">
+            <br><br>
+            <a href="${qrUrl}" download="qr_prova_${provaId}.png" class="btn btn-primary">📥 Baixar QR Code</a>
+        </div>
+    `;
+}
+
+// 3. Carregar alunos quando a turma é selecionada (PARA ABA ALUNO)
+async function carregarAlunosQR() {
+    console.log(" [QR] Carregando alunos...");
+    var turmaId = document.getElementById('selTurmaQR').value;
+    var selAluno = document.getElementById('selAlunoQR');
+    
+    if (!selAluno) {
+        console.error("❌ [QR] Elemento 'selAlunoQR' não encontrado no HTML!");
+        return;
+    }
+    
+    if (!turmaId) { 
+        selAluno.innerHTML = '<option value="">Selecione a turma primeiro</option>'; 
+        return; 
+    }
+    
+    selAluno.innerHTML = '<option value="">Carregando...</option>';
+    try {
+        var r = await sbFetch('GET', '/rest/v1/alunos?id_turma=eq.' + turmaId + '&select=id,nome_completo,numero_chamada&order=numero_chamada.asc');
+        var alunos = await r.json();
+        
+        selAluno.innerHTML = '<option value="">Selecione o aluno...</option>' + alunos.map(function(a) { 
+            return '<option value="' + a.id + '">' + (a.numero_chamada || '') + '. ' + (a.nome_completo || 'Sem nome') + '</option>'; 
+        }).join('');
+    } catch(e) { 
+        console.error("❌ [QR] Erro ao carregar alunos:", e); 
+        selAluno.innerHTML = '<option value="">Erro ao carregar</option>'; 
+    }
+}
+
+//  NOVA: Carregar alunos para a aba CARTÕES (quando necessário)
+async function carregarAlunosCartoes() {
+    console.log("🔍 [QR] Carregando alunos para cartões...");
+    // Esta função é chamada internamente por gerarCartoes(), não precisa de select
+}
+
+// 4. Gerar QR Code do Aluno
+async function gerarQRAluno() {
+    console.log("🔍 [QR] Gerando QR do aluno...");
+    var alunoId = document.getElementById('selAlunoQR').value;
+    var provaId = document.getElementById('selProvaQRAluno').value;
+    var area = document.getElementById('areaQR');
+    
+    if (!alunoId) { alert('⚠️ Selecione um aluno primeiro!'); return; }
+    
+    var rAluno = await sbFetch('GET', '/rest/v1/alunos?id=eq.' + alunoId + '&select=nome_completo,numero_chamada');
+    var dadosAluno = (await rAluno.json())[0];
+    var nomeAluno = dadosAluno ? (dadosAluno.numero_chamada + '. ' + dadosAluno.nome_completo) : 'Aluno';
+    
+    var qrData = provaId ? 'OMRALUNO:' + provaId + ':' + alunoId : 'OMRCARD:' + alunoId;
+    var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(qrData);
+    
+    area.innerHTML = `
+        <div style="text-align: center; padding: 20px;">
+            <h3 style="color: #333; margin-bottom: 16px;">👤 ${nomeAluno}</h3>
+            <p style="color: #666; font-size: 14px;">${provaId ? 'Vinculado à Prova' : 'QR Genérico do Aluno'}</p>
+            <img src="${qrUrl}" alt="QR Code do Aluno" style="border: 2px solid #667eea; border-radius: 8px; padding: 10px; background: white; margin: 16px 0;">
+            <br>
+            <a href="${qrUrl}" download="qr_aluno_${alunoId}.png" class="btn btn-primary">📥 Baixar QR Code</a>
+        </div>
+    `;
+}
+
+// 5. Gerar Cartões para Impressão (Turma Inteira)
+async function gerarCartoes() {
+    console.log("🔍 [QR] Gerando cartões da turma...");
+    var turmaId = document.getElementById('selTurmaCartoes').value;
+    var provaId = document.getElementById('selProvaCartoes').value;
+    var area = document.getElementById('areaCartoes');
+    
+    if (!turmaId) { alert('⚠️ Selecione uma turma primeiro!'); return; }
+    
+    area.innerHTML = '<p style="text-align: center; color: #666; grid-column: 1/-1;">⏳ Gerando cartões...</p>';
+    
+    try {
+        var rTurma = await sbFetch('GET', '/rest/v1/turmas?id=eq.' + turmaId + '&select=nome');
+        var dadosTurma = (await rTurma.json())[0];
+        var nomeTurma = dadosTurma ? dadosTurma.nome : 'Turma';
+        
+        var rAlunos = await sbFetch('GET', '/rest/v1/alunos?id_turma=eq.' + turmaId + '&select=id,nome_completo,numero_chamada&order=numero_chamada.asc');
+        var alunos = await rAlunos.json();
+        
+        if (!alunos || alunos.length === 0) {
+            area.innerHTML = '<p style="text-align: center; color: #dc3545; grid-column: 1/-1;">⚠️ Nenhum aluno nesta turma.</p>';
+            return;
+        }
+        
+        var html = '';
+        alunos.forEach(function(a) {
+            var qrData = provaId ? 'OMRALUNO:' + provaId + ':' + a.id : 'OMRCARD:' + a.id;
+            var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(qrData);
+            
+            html += `
+                <div style="background: white; padding: 16px; border-radius: 8px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #eee; page-break-inside: avoid;">
+                    <img src="${qrUrl}" alt="QR" style="width: 120px; height: 120px; margin-bottom: 8px;">
+                    <div style="font-size: 14px; font-weight: 600; color: #333;">${a.numero_chamada || ''}. ${a.nome_completo || 'Sem nome'}</div>
+                    <div style="font-size: 12px; color: #666; margin-top: 4px;">${nomeTurma}</div>
+                    ${provaId ? '<div style="font-size: 11px; color: #008080; margin-top: 2px;">Prova Vinculada</div>' : ''}
+                </div>
+            `;
+        });
+        
+        html += `<div style="grid-column: 1/-1; text-align: center; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="window.print()">🖨️ IMPRIMIR CARTÕES</button>
+                 </div>`;
+                 
+        area.innerHTML = html;
+        
+    } catch(e) {
+        console.error("❌ [QR] Erro ao gerar cartões:", e);
+        area.innerHTML = '<p style="text-align: center; color: #dc3545; grid-column: 1/-1;">❌ Erro: ' + e.message + '</p>';
+    }
+}
+
+// ========================================================================
+// 🔲 INICIALIZAÇÃO DA ABA QR CODES (CORRIGIDA)
+// ========================================================================
+async function carregarSelectsQR() {
+    console.log("🔍 [QR] Inicializando selects...");
+    
+    // Carrega apenas as turmas permitidas ao professor
+    await carregarTurmasPermitidas('selTurmaQR');
+    await carregarTurmasPermitidas('selTurmaCartoes');
+    
+    // Carrega as provas
+    try {
+        var rp = await sbFetch('GET', '/rest/v1/avaliacoes?select=id,nome,modo_correcao&order=id.desc');
+        var provas = await rp.json();
+        
+        var selProvaQR = document.getElementById('selProvaQR');
+        if (selProvaQR) {
+            selProvaQR.innerHTML = provas.map(function (p) {
+                var tag = p.modo_correcao === 'aberta' ? ' (aberta)' : ' (múltipla escolha)';
+                return '<option value="' + p.id + '">' + p.nome + tag + '</option>';
+            }).join('');
+        }
+        
+        var selProvaCartoes = document.getElementById('selProvaCartoes');
+        if (selProvaCartoes) {
+            selProvaCartoes.innerHTML = '<option value="">Nenhuma (QR genérico)</option>' + 
+                provas.map(function (p) {
+                    return '<option value="' + p.id + '">' + p.nome + '</option>';
+                }).join('');
+        }
+        
+        var selProvaQRAluno = document.getElementById('selProvaQRAluno');
+        if (selProvaQRAluno) {
+            selProvaQRAluno.innerHTML = '<option value="">Nenhuma (QR genérico)</option>' + 
+                provas.map(function (p) {
+                    return '<option value="' + p.id + '">' + p.nome + '</option>';
+                }).join('');
+        }
+        
+    } catch (e) {
+        console.error("❌ [QR] Erro ao carregar provas:", e);
+    }
+}
+
+  // ========================================================================
+// 🏫 SUPER FUNÇÃO: CARREGAR APENAS TURMAS PERMITIDAS AO PROFESSOR
+// ========================================================================
+async function carregarTurmasPermitidas(selectId) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">Carregando turmas...</option>';
+
+    try {
+        // 1. Busca TODAS as turmas do sistema
+        const rTurmas = await sbFetch('GET', '/rest/v1/turmas?select=id,nome&order=nome.asc');
+        const todasTurmas = await rTurmas.json();
+
+        let turmasPermitidas = [];
+
+        // 2. Se for o Admin Master, libera TUDO
+        if (userEmail === EMAIL_ADMIN_MASTER) {
+            turmasPermitidas = todasTurmas;
+        } 
+        // 3. Se for professor comum, filtra pelo perfil dele
+        else {
+            const rPerfil = await sbFetch('GET', `/rest/v1/perfis?email=eq.${userEmail}&select=turmas_id`);
+            const perfilData = await rPerfil.json();
+
+            if (perfilData && perfilData[0] && Array.isArray(perfilData[0].turmas_id)) {
+                const idsPermitidos = perfilData[0].turmas_id;
+                // Filtra apenas as turmas cujo ID está na lista do professor
+                turmasPermitidas = todasTurmas.filter(t => idsPermitidos.includes(t.id));
+            }
+        }
+
+        // 4. Preenche o menu (select) na tela
+        select.innerHTML = '<option value="">Selecione a turma...</option>';
+        
+        if (turmasPermitidas.length === 0) {
+            select.innerHTML += '<option value="" disabled>Nenhuma turma vinculada ao seu perfil</option>';
+        } else {
+            turmasPermitidas.forEach(t => {
+                select.innerHTML += `<option value="${t.id}">${t.nome}</option>`;
+            });
+        }
+
+    } catch (e) {
+        console.error("Erro ao carregar turmas permitidas:", e);
+        select.innerHTML = '<option value="">Erro ao carregar</option>';
+    }
+}
+
+// ========================================================================
+// 🔄 ATALHOS PARA OS MENUS DO SISTEMA
+// ========================================================================
+
+// 1. Diagnóstico (Turma e Aluno)
+async function carregarTurmasDiagnostico() {
+    await carregarTurmasPermitidas('selTurmaDiagnostico');
+    await carregarTurmasPermitidas('selTurmaDiagAluno');
+}
+
+// 2. Planilha
+async function carregarSelectsPlanilha() {
+    await carregarTurmasPermitidas('selTurmaPlanilha');
+    // Mantém o carregamento de provas se já existir no seu código
+    try {
+        var rp = await sbFetch('GET', '/rest/v1/avaliacoes?select=id,nome,modo_correcao&order=id.desc');
+        var provas = await rp.json();
+        var selProva = document.getElementById('selProvaPlanilha');
+        if(selProva) {
+            selProva.innerHTML = '<option value="">Selecione...</option>' + provas.map(function(p) { 
+                var tag = p.modo_correcao === 'aberta' ? ' (aberta)' : ' (objetiva)'; 
+                return '<option value="' + p.id + '">' + p.nome + tag + '</option>'; 
+            }).join('');
+        }
+    } catch(e) { console.error(e); }
+}
+
+// 3. Corretor Manual
+async function carregarSelectsCorretor() {
+    await carregarTurmasPermitidas('selTurmaCorretor');
+    try {
+        var rp = await sbFetch('GET', '/rest/v1/avaliacoes?select=id,nome,modo_correcao&order=id.desc');
+        var provas = await rp.json();
+        var selProva = document.getElementById('selProvaCorretor');
+        if(selProva) {
+            selProva.innerHTML = '<option value="">Selecione...</option>' + provas.map(function(p) { 
+                var tag = p.modo_correcao === 'aberta' ? ' (aberta)' : ' (objetiva)'; 
+                return '<option value="' + p.id + '">' + p.nome + tag + '</option>'; 
+            }).join('');
+        }
+    } catch(e) { console.error(e); }
+}
+
+// ========================================================================
+// 🤖 FUNÇÃO RESTAURADA: MOSTRAR/ESCONDER ALTERNATIVAS
+// ========================================================================
+function toggleAlternativas() {
+    var tipo = document.getElementById('iaTipoQuestao').value;
+    var grupo = document.getElementById('grupoNumAlternativas');
+    if (grupo) {
+        grupo.style.display = (tipo === 'objetiva') ? 'block' : 'none';
+    }
+}
+
+// ========================================================================
+// 🤖 FUNÇÃO RESTAURADA: GERAR PLANO DE AULA
+// ========================================================================
+async function gerarPlanoAula() {
+    var tema = document.getElementById('iaTemaAula').value.trim();
+    if (!tema) { toast('Digite o tema da aula!', 'error'); return; }
+    
+    var btn = document.getElementById('btnPlanejarIA');
+    btn.textContent = '⏳ Planejando...'; 
+    btn.disabled = true;
+    
+    document.getElementById('iaResultadoPlanejar').innerHTML = '<p style="text-align:center; color:#666; padding: 20px;">🤖 A IA está montando seu plano de aula...</p>';
+    
+    try {
+        var r = await fetch(API_BASE_URL + '/api/gerar_plano_aula', {
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                tema: tema, 
+                material: document.getElementById('iaMaterial').value, 
+                perfil_turma: document.getElementById('iaPerfilTurma').value, 
+                duracao: document.getElementById('iaDuracao').value 
+            })
+        });
+        var j = await r.json();
+        
+        if (j.sucesso && j.plano) {
+            var p = j.plano; 
+            var html = '<div style="background:#f3f0ff; padding:20px; border-radius:8px; border:1px solid #d6bfff;">';
+            html += '<h4 style="color:#6f42c1; margin-bottom:8px;">🎯 Objetivos de Aprendizagem:</h4><ul style="margin-bottom:16px; padding-left:20px;">';
+            (p.objetivos || []).forEach(o => html += '<li style="margin-bottom:4px;">' + o + '</li>'); 
+            html += '</ul>';
+            html += '<h4 style="color:#6f42c1; margin-bottom:8px;">️ Passo a Passo da Aula:</h4>';
+            (p.passo_a_passo || []).forEach((etapa, idx) => {
+                html += '<div style="background:white; padding:12px; margin-bottom:10px; border-radius:6px; border-left:4px solid #6f42c1; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">';
+                html += '<strong style="color:#4A148C;">' + (etapa.tempo || '') + ' - ' + (etapa.etapa || 'Etapa ' + (idx+1)) + '</strong><br>';
+                html += '<span style="font-size:14px; color:#333; margin-top:4px; display:block;">' + (etapa.acao || '') + '</span></div>';
+            });
+            html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:16px;">';
+            html += '<div style="background:#FFF8E1; padding:12px; border-radius:6px; border-left:4px solid #FF6F00;"><h4 style="color:#E65100; margin:0 0 8px 0; font-size:14px;">📝 Avaliação:</h4><p style="font-size:13px; margin:0;">' + (p.avaliacao || '-') + '</p></div>';
+            html += '<div style="background:#E8F5E9; padding:12px; border-radius:6px; border-left:4px solid #2E7D32;"><h4 style="color:#2E7D32; margin:0 0 8px 0; font-size:14px;">🏠 Tarefa de Casa:</h4><p style="font-size:13px; margin:0;">' + (p.tarefa_casa || '-') + '</p></div></div>';
+            html += '<p style="text-align: center; color: #999; font-size: 11px; margin-top: 16px; font-style: italic;">Gerado por IA</p></div>';
+            document.getElementById('iaResultadoPlanejar').innerHTML = html; 
+            toast('Plano de aula gerado com sucesso!', 'success');
+        } else { 
+            toast('Erro: ' + (j.erro || 'Falha ao gerar plano'), 'error'); 
+        }
+    } catch(e) { 
+        toast('Erro de conexão com a IA: ' + e.message, 'error'); 
+    } finally { 
+        btn.textContent = '📚 GERAR PLANO DE AULA'; 
+        btn.disabled = false; 
+    }
+}
+
+
 
 
 //xxxxx  FIM
@@ -1837,7 +2622,7 @@ function mudarAbaIA(aba) {
     var container = document.getElementById('iaListaHabilidades');
     container.innerHTML = '<p style="text-align:center; color:#666;">Carregando...</p>';
     try {
-      var url = API_URL + '/api/matriz?fonte=' + fonte + '&ano=' + ano + '&disciplina=' + encodeURIComponent(disciplina);
+      var url = API_BASE_URL + '/api/matriz?fonte=' + fonte + '&ano=' + ano + '&disciplina=' + encodeURIComponent(disciplina);
       var r = await fetch(url);
       var j = await r.json();
       if (j.sucesso && j.itens) {
@@ -1861,7 +2646,7 @@ function mudarAbaIA(aba) {
         dificuldade: document.getElementById('iaDificuldade').value, contexto: document.getElementById('iaContexto').value, 
         valor_padrao: 2.0, tipo: document.getElementById('iaTipoQuestao').value, num_alternativas: parseInt(document.getElementById('iaNumAlternativas').value)
       };
-      var r = await fetch(API_URL + '/api/gerar_questoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      var r = await fetch(API_BASE_URL + '/api/gerar_questoes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       var j = await r.json();
       if (j.sucesso && j.questoes) {
         var html = '<h4 style="margin-bottom:8px;">Questões Geradas:</h4>';
@@ -1926,7 +2711,7 @@ function mudarAbaIA(aba) {
     var btn = document.getElementById('btnIdentificarIA'); btn.textContent = '⏳ Identificando...'; btn.disabled = true;
     try {
       var payload = { texto: texto, fonte: document.getElementById('iaFonte').value, componente: document.getElementById('disciplina').value, ano: parseInt(document.getElementById('iaAno').value) };
-      var r = await fetch(API_URL + '/api/identificar_habilidade', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      var r = await fetch(API_BASE_URL + '/api/identificar_habilidade', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       var j = await r.json();
       if (j.sucesso && j.resultados) {
         var html = '<h4 style="margin-bottom:8px;">Habilidades Identificadas:</h4>';
@@ -1980,34 +2765,6 @@ function mudarAbaIA(aba) {
     document.getElementById('qrImg').src = url;
     document.getElementById('qrLink').href = url;
     document.getElementById('modalQR').classList.add('active');
-  }
-
-  async function carregarSelectsQR() {
-    try {
-      var rt = await sbFetch('GET', '/rest/v1/turmas?select=id,nome&order=nome.asc');
-      var turmas = await rt.json();
-      var rp = await sbFetch('GET', '/rest/v1/avaliacoes?select=id,nome,modo_correcao&order=id.desc');
-      var provas = await rp.json();
-      document.getElementById('selTurmaQR').innerHTML = turmas.map(function (t) { return '<option value="' + t.id + '">' + t.nome + '</option>'; }).join('');
-      document.getElementById('selProvaQR').innerHTML = provas.map(function (p) {
-        var tag = p.modo_correcao === 'aberta' ? ' (aberta)' : ' (múltipla escolha)';
-        return '<option value="' + p.id + '">' + p.nome + tag + '</option>';
-      }).join('');
-      carregarAlunosQR();
-    } catch (e) { /* silencioso */ }
-  }
-
-  async function carregarAlunosQR() {
-    var turmaId = document.getElementById('selTurmaQR').value;
-    var lista = document.getElementById('alunosQRLista');
-    if (!lista) return;
-    if (!turmaId) { lista.innerHTML = ''; return; }
-    var r = await sbFetch('GET', '/rest/v1/alunos?id_turma=eq.' + turmaId + '&select=id,nome_completo,numero_chamada&order=numero_chamada.asc');
-    var alunos = await r.json();
-    lista.innerHTML = alunos.map(function (a) {
-      return '<div class="prova-item"><div class="prova-item-info"><strong>' + a.numero_chamada + '. ' + a.nome_completo + '</strong></div>' +
-        '<button class="btn btn-primary btn-sm" onclick="mostrarQRAluno(parseInt(document.getElementById(\'selProvaQR\').value), ' + a.id + ', \'' + String(a.nome_completo).replace(/'/g, '') + '\')">🔲</button></div>';
-    }).join('');
   }
 
   async function imprimirFolhaProva() {
@@ -2104,54 +2861,6 @@ try {
 }
 }
 
-  async function gerarPlanoRecuperacao(idProva) {
-    var itens = window.itensRuinsAtual;
-    if (!itens || itens.length === 0) { toast('Não há itens com baixo desempenho para gerar plano.', 'error'); return; }
-    var qtd = prompt('Quantas atividades de recuperação você deseja gerar?', '3'); if (!qtd) return;
-    var ano = prompt('Para qual ano é o plano de recuperação?', '6'); if (!ano) return;
-    var componente = prompt('Qual a disciplina?', 'Matemática'); if (!componente) return;
-    var area = document.getElementById('areaPlanoRecuperacao');
-    area.innerHTML = '<div style="text-align: center; padding: 40px;"><p style="font-size: 18px; color: #6f42c1;"> A IA está criando o plano...</p><p style="color: #666; margin-top: 8px;">Gerando ' + qtd + ' atividades focadas nos descritor_codigoes/habilidades com menor desempenho</p></div>';
-    document.getElementById('modalRecuperacao').classList.add('active');
-    try {
-      var r = await fetch(API_URL + '/api/gerar_plano_recuperacao', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itens_ruins: itens.map(function(i) { return i.chave; }), tipo_analise: window.tipoAnaliseAtual === 'habilidade' ? 'Habilidade' : 'Descritor', ano: parseInt(ano), componente: componente, quantidade: parseInt(qtd) })
-      });
-      var j = await r.json();
-      if (j.sucesso && j.plano) {
-        var plano = j.plano; var html = '';
-        html += '<div style="background: linear-gradient(135deg, #6f42c1, #4A148C); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">';
-        html += '<h2 style="margin: 0 0 8px 0;">📋 ' + (plano.titulo || 'Plano de Recuperação Dirigida') + '</h2>';
-        html += '<p style="margin: 0; font-size: 14px; opacity: 0.95;">' + (plano.plano || plano.justificativa || '') + '</p>';
-        html += '<p style="margin: 8px 0 0 0; font-size: 12px; opacity: 0.8;">🎯 Foco: ' + itens.map(function(i) { return i.chave; }).join(', ') + '</p></div>';
-        if (plano.atividades && plano.atividades.length > 0) {
-          html += '<h3 style="color: #4A148C; margin-bottom: 12px;">📚 Atividades Sugeridas</h3>';
-          plano.atividades.forEach(function(atv, idx) {
-            html += '<div style="background: #f9f5ff; border-left: 4px solid #6f42c1; padding: 16px; margin-bottom: 12px; border-radius: 6px;">';
-            html += '<h4 style="color: #6f42c1; margin: 0 0 8px 0;">Atividade ' + (idx + 1) + ': ' + (atv.titulo || 'Sem título') + '</h4>';
-            if (atv.descricao) html += '<p style="margin: 0 0 8px 0; color: #333;"><strong>Como aplicar:</strong> ' + atv.descricao + '</p>';
-            if (atv.exemplo_pratico && atv.exemplo_pratico !== '-') html += '<p style="margin: 0; padding: 10px; background: white; border-radius: 4px; color: #555; font-style: italic;"><strong>💡 Exemplo:</strong> ' + atv.exemplo_pratico + '</p>';
-            html += '</div>';
-          });
-        }
-        if (plano.sugestoes && plano.sugestoes.length > 0) {
-          html += '<div style="background: #FFF8E1; padding: 16px; border-radius: 8px; border-left: 4px solid #FF6F00; margin-top: 16px;">';
-          html += '<h4 style="color: #E65100; margin: 0 0 8px 0;">💡 Sugestões Adicionais</h4><ul style="margin: 0; padding-left: 20px;">';
-          plano.sugestoes.forEach(function(s) { html += '<li style="margin-bottom: 4px;">' + s + '</li>'; });
-          html += '</ul></div>';
-        }
-        html += '<p style="text-align: center; color: #999; font-size: 11px; margin-top: 20px; font-style: italic;">Plano gerado por IA (modelo: ' + (j.modelo || 'Gemini') + ') em ' + new Date().toLocaleString('pt-BR') + '</p>';
-        area.innerHTML = html; toast('Plano de recuperação gerado com sucesso!', 'success');
-      } else { area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px;">❌ Erro: ' + (j.erro || 'Falha ao gerar plano') + '</p>'; toast('Erro ao gerar plano', 'error'); }
-    } catch(e) { console.error(e); area.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px;">❌ Falha na conexão: ' + e.message + '</p>'; toast('Falha na conexão com a IA', 'error'); }
-  }
-
-  async function carregarSelectsPlanilha() {
-       await carregarTurmasPermitidas('selTurmaPlanilha');
-       // (Mantenha o código de carregar provas que já existe abaixo, se houver)
-   }
-
 async function carregarProvasAluno() {
   var selProva = document.getElementById('selProvaDiagAluno');
   var idAluno = document.getElementById('selAlunoDiagAluno').value;
@@ -2180,6 +2889,15 @@ async function carregarProvasAluno() {
     console.error("Erro ao carregar provas:", e);
     selProva.innerHTML = '<option value="">Erro ao carregar</option>';
   }
+}
+
+// ========================================================================
+// 🔄 FUNÇÃO DE INICIALIZAÇÃO DO DIAGNÓSTICO (RESTAURADA)
+// ========================================================================
+async function carregarTurmasDiagnostico() {
+    // Chama a Super Função que criamos para preencher apenas as turmas permitidas
+    await carregarTurmasPermitidas('selTurmaDiagnostico');
+    await carregarTurmasPermitidas('selTurmaDiagAluno');
 }
     ///xxxxxxx
 
