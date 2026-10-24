@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Correção Rápida - OMR</title>
+    <style>
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #f3f4f6; margin: 0; padding: 20px; color: #1f2937; }
+        
+        .container { max-width: 500px; margin: 0 auto; text-align: center; }
+        h2 { color: #4f46e5; margin-bottom: 8px; }
+        p { color: #6b7280; margin-bottom: 24px; font-size: 15px; }
+
+        /* Botão da Câmera Estilizado */
+        .camera-btn {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            background-color: #4f46e5; color: white; padding: 16px 24px;
+            border-radius: 12px; font-size: 18px; font-weight: 600;
+            cursor: pointer; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+            transition: transform 0.1s;
+        }
+        .camera-btn:active { transform: scale(0.98); }
+        
+        /* Preview da Imagem */
+        #previewContainer { display: none; margin-top: 20px; }
+        #imagePreview { 
+            width: 100%; max-height: 300px; object-fit: contain; 
+            border-radius: 12px; border: 2px solid #e5e7eb; background: #fff;
+        }
+
+        /* Botão de Enviar */
+        .btn-enviar {
+            width: 100%; margin-top: 16px; padding: 16px;
+            background-color: #10b981; color: white; border: none;
+            border-radius: 12px; font-size: 16px; font-weight: 600;
+            cursor: pointer; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+        }
+        .btn-enviar:disabled { background-color: #9ca3af; cursor: not-allowed; }
+
+        /* Card de Resultado */
+        #resultado { 
+            display: none; margin-top: 24px; padding: 20px; 
+            background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; 
+            text-align: left;
+        }
+        #resultado h3 { color: #065f46; margin-top: 0; display: flex; align-items: center; gap: 8px; }
+        .stat { display: flex; justify-content: space-between; margin: 8px 0; font-size: 16px; }
+        .stat strong { color: #065f46; }
+
+        .btn-reiniciar {
+            width: 100%; margin-top: 16px; padding: 14px;
+            background-color: #ffffff; color: #4f46e5; border: 2px solid #4f46e5;
+            border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📸 Correção Rápida</h2>
+    <p>Aponte a câmera para o gabarito garantindo que o QR Code esteja visível.</p>
+
+    <!-- Input que abre a câmera traseira nativa do celular -->
+    <label class="camera-btn">
+        <input type="file" id="fotoInput" accept="image/*" capture="environment" hidden>
+        📷 Tirar Foto do Gabarito
+    </label>
+
+    <div id="previewContainer">
+        <img id="imagePreview" alt="Preview do gabarito">
+        <button id="btnEnviar" class="btn-enviar">🚀 Enviar para Correção</button>
+    </div>
+
+    <div id="resultado">
+        <h3>✅ Correção Concluída!</h3>
+        <div class="stat"><span>Nota Final:</span> <strong id="resNota">-</strong></div>
+        <div class="stat"><span>Acertos:</span> <strong id="resAcertos">-</strong></div>
+        <div class="stat"><span>Total de Questões:</span> <strong id="resTotal">-</strong></div>
+        <button class="btn-reiniciar" onclick="location.reload()">🔄 Corrigir Próxima Prova</button>
+    </div>
+</div>
+
+<script>
+    const fotoInput = document.getElementById('fotoInput');
+    const previewContainer = document.getElementById('previewContainer');
+    const imagePreview = document.getElementById('imagePreview');
+    const btnEnviar = document.getElementById('btnEnviar');
+    const resultadoDiv = document.getElementById('resultado');
+
+    let base64Image = '';
+
+    // Quando o professor tira a foto
+    fotoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                base64Image = event.target.result;
+                imagePreview.src = base64Image;
+                previewContainer.style.display = 'block';
+                resultadoDiv.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Quando clica em Enviar
+    btnEnviar.addEventListener('click', async function() {
+        btnEnviar.textContent = '⏳ Processando (Lendo QR + OMR)...';
+        btnEnviar.disabled = true;
+
+        try {
+            // Substitua pela URL real do seu backend no Render
+            const API_URL = 'https://omr-sistema-api.onrender.com/corrigir'; 
+            
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fotoBase64: base64Image })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && (data.sucesso || data.nota_final !== undefined)) {
+                document.getElementById('resNota').textContent = data.nota_final || data.nota || 'N/A';
+                document.getElementById('resAcertos').textContent = data.acertos || 'N/A';
+                document.getElementById('resTotal').textContent = data.total_questoes || 'N/A';
+                
+                previewContainer.style.display = 'none';
+                resultadoDiv.style.display = 'block';
+            } else {
+                alert('❌ Erro: ' + (data.erro || 'Falha na correção. Tente uma foto mais nítida.'));
+            }
+        } catch (error) {
+            console.error(error);
+            alert('❌ Erro de conexão com o servidor. Verifique sua internet.');
+        } finally {
+            btnEnviar.textContent = '🚀 Enviar para Correção';
+            btnEnviar.disabled = false;
+        }
+    });
+</script>
+
+</body>
+</html>

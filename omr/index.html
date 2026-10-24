@@ -484,6 +484,36 @@
         <div id="areaQR"></div>
         <div id="areaCartoes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;"></div>
       </div>
+      
+      <!-- CONTAINER DE CAPTURA DE IMAGEM -->
+<div class="card" style="margin-top: 20px; border: 2px dashed #008080; background: #f0fdfa;">
+    <h3 style="color: #008080; text-align: center;">📸 Escanear Cartão-Resposta</h3>
+    <p style="text-align: center; font-size: 14px; color: #666; margin-bottom: 16px;">
+        Aponte a câmera para o cartão preenchido e tire a foto.
+    </p>
+
+    <!-- O SEGREDO ESTÁ AQUI: accept="image/*" capture="environment" força a câmera traseira no celular -->
+    <input type="file" id="inputCamera" accept="image/*" capture="environment" style="display: none;" onchange="previewImagem(this)">
+    
+    <button class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 16px;" onclick="document.getElementById('inputCamera').click()">
+        📷 ABRIR CÂMERA / ESCOLHER FOTO
+    </button>
+
+    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO (O professor vê a foto antes de enviar) -->
+    <div id="areaPreview" style="display: none; text-align: center; margin-top: 16px;">
+        <img id="imgPreview" src="" alt="Prévia da foto" style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 2px solid #ddd;">
+        <br>
+        <button class="btn btn-success" style="width: 100%; margin-top: 12px; padding: 14px;" onclick="enviarImagemParaCorrecao()">
+            ✅ ENVIAR PARA CORREÇÃO AUTOMÁTICA
+        </button>
+        <button class="btn btn-secondary" style="width: 100%; margin-top: 8px;" onclick="limparImagem()">
+            🗑️ Cancelar e Tirar Outra
+        </button>
+    </div>
+
+    <!-- ÁREA DE RESULTADO DA IA -->
+    <div id="areaResultadoCorrecao" style="margin-top: 16px;"></div>
+</div>
     </div>
 
     <!-- VIEW: GESTÃO -->
@@ -3753,6 +3783,93 @@ document.addEventListener('DOMContentLoaded', function() {
     carregarAvaliacoes();
     carregarTurmas();
 });
+
+// ========================================================================
+// 📸 FUNÇÕES DE CAPTURA E ENVIO DE IMAGEM (PWA)
+// ========================================================================
+
+let arquivoImagemSelecionada = null;
+
+function previewImagem(input) {
+    if (input.files && input.files[0]) {
+        arquivoImagemSelecionada = input.files[0];
+        var reader = new FileReader();
+        
+        reader.onload = function(e) {
+            document.getElementById('imgPreview').src = e.target.result;
+            document.getElementById('areaPreview').style.display = 'block';
+            document.getElementById('areaResultadoCorrecao').innerHTML = ''; // Limpa resultados anteriores
+        }
+        
+        reader.readAsDataURL(arquivoImagemSelecionada);
+    }
+}
+
+function limparImagem() {
+    document.getElementById('inputCamera').value = '';
+    document.getElementById('areaPreview').style.display = 'none';
+    arquivoImagemSelecionada = null;
+}
+
+async function enviarImagemParaCorrecao() {
+    if (!arquivoImagemSelecionada) {
+        alert('⚠️ Nenhuma imagem selecionada!');
+        return;
+    }
+
+    // Pega os IDs da turma, prova e aluno (ajuste os IDs dos selects conforme seu HTML)
+    var idProva = document.getElementById('selProvaCorretor') ? document.getElementById('selProvaCorretor').value : null;
+    var idAluno = document.getElementById('selAlunoCorretor') ? document.getElementById('selAlunoCorretor').value : null;
+
+    if (!idProva) {
+        alert('⚠️ Por favor, selecione a Prova antes de enviar a imagem.');
+        return;
+    }
+
+    var areaResultado = document.getElementById('areaResultadoCorrecao');
+    areaResultado.innerHTML = '<p style="text-align:center; color:#008080; font-weight:bold;">⏳ Processando imagem com IA... Aguarde.</p>';
+
+    // Prepara os dados para enviar (FormData é obrigatório para arquivos)
+    var formData = new FormData();
+    formData.append('imagem', arquivoImagemSelecionada);
+    if (idProva) formData.append('id_avaliacao', idProva);
+    if (idAluno) formData.append('id_aluno', idAluno);
+
+    try {
+        // Envia para o seu backend Python no Render
+        var response = await fetch(API_BASE_URL + '/api/processar_imagem_omr', {
+            method: 'POST',
+            body: formData // Não coloque 'Content-Type': 'application/json' aqui! O FormData cuida disso.
+        });
+
+        var data = await response.json();
+
+        if (data.sucesso) {
+            // SUCESSO: Mostra o resultado que o Python devolveu
+            var html = '<div style="background:#d4edda; padding:16px; border-radius:8px; border-left:5px solid #28a745;">';
+            html += '<h4 style="color:#155724; margin-top:0;">✅ Correção Concluída!</h4>';
+            html += '<p><strong>Nota:</strong> ' + (data.nota || 'Calculando...') + '</p>';
+            html += '<p><strong>Acertos:</strong> ' + (data.acertos || 0) + ' de ' + (data.total_questoes || '?') + '</p>';
+            
+            // Se o Python devolver as questões marcadas, mostra aqui:
+            if (data.detalhes) {
+                html += '<details style="margin-top:10px;"><summary style="cursor:pointer; color:#155724;">Ver detalhes das marcações</summary>';
+                html += '<pre style="background:white; padding:10px; border-radius:4px; font-size:12px;">' + JSON.stringify(data.detalhes, null, 2) + '</pre></details>';
+            }
+            html += '</div>';
+            areaResultado.innerHTML = html;
+            
+            // Opcional: Limpar a imagem após sucesso
+            // limparImagem(); 
+        } else {
+            areaResultado.innerHTML = '<div style="background:#f8d7da; padding:16px; border-radius:8px; color:#721c24; text-align:center;">❌ Erro: ' + (data.erro || 'Falha no processamento') + '</div>';
+        }
+
+    } catch (e) {
+        console.error("Erro ao enviar imagem:", e);
+        areaResultado.innerHTML = '<div style="background:#f8d7da; padding:16px; border-radius:8px; color:#721c24; text-align:center;">❌ Falha na conexão com o servidor.</div>';
+    }
+}
 
 </script>
 
