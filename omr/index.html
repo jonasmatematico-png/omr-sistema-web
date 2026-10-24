@@ -160,8 +160,8 @@
       <button class="btn-logout" onclick="sair()">Sair</button>
     </div>
   </div>
-
   <div class="content">
+    
     <!-- VIEW: PROVAS ABERTAS -->
     <div id="view-provas" class="view active">
       <h2>📝 Provas Abertas (Dissertativas)</h2>
@@ -378,6 +378,35 @@
         <div id="areaDiagnosticoTurma"></div>
         <div id="areaGraficoDiagnosticoAluno"></div>
       </div>
+      <!-- CONTAINER DE CAPTURA DE IMAGEM -->
+<div class="card" style="margin-top: 20px; border: 2px dashed #008080; background: #f0fdfa;">
+    <h3 style="color: #008080; text-align: center;">📸 Escanear Cartão-Resposta</h3>
+    <p style="text-align: center; font-size: 14px; color: #666; margin-bottom: 16px;">
+        Aponte a câmera para o cartão preenchido e tire a foto.
+    </p>
+
+    <!-- O SEGREDO ESTÁ AQUI: accept="image/*" capture="environment" força a câmera traseira no celular -->
+    <input type="file" id="inputCamera" accept="image/*" capture="environment" style="display: none;" onchange="previewImagem(this)">
+    
+    <button class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 16px;" onclick="document.getElementById('inputCamera').click()">
+        📷 ABRIR CÂMERA / ESCOLHER FOTO
+    </button>
+
+    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO (O professor vê a foto antes de enviar) -->
+    <div id="areaPreview" style="display: none; text-align: center; margin-top: 16px;">
+        <img id="imgPreview" src="" alt="Prévia da foto" style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 2px solid #ddd;">
+        <br>
+        <button class="btn btn-success" style="width: 100%; margin-top: 12px; padding: 14px;" onclick="enviarImagemParaCorrecao()">
+            ✅ ENVIAR PARA CORREÇÃO AUTOMÁTICA
+        </button>
+        <button class="btn btn-secondary" style="width: 100%; margin-top: 8px;" onclick="limparImagem()">
+            🗑️ Cancelar e Tirar Outra
+        </button>
+    </div>
+
+    <!-- ÁREA DE RESULTADO DA IA -->
+    <div id="areaResultadoCorrecao" style="margin-top: 16px;"></div>
+</div>
     </div>
 
     <!-- VIEW: PLANILHA -->
@@ -479,41 +508,10 @@
           <button class="btn btn-primary" style="width: 100%;" onclick="gerarCartoes()">🖨️ GERAR CARTÕES</button>
         </div>
       </div>
-      
       <div class="card">
         <div id="areaQR"></div>
         <div id="areaCartoes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;"></div>
       </div>
-      
-      <!-- CONTAINER DE CAPTURA DE IMAGEM -->
-<div class="card" style="margin-top: 20px; border: 2px dashed #008080; background: #f0fdfa;">
-    <h3 style="color: #008080; text-align: center;">📸 Escanear Cartão-Resposta</h3>
-    <p style="text-align: center; font-size: 14px; color: #666; margin-bottom: 16px;">
-        Aponte a câmera para o cartão preenchido e tire a foto.
-    </p>
-
-    <!-- O SEGREDO ESTÁ AQUI: accept="image/*" capture="environment" força a câmera traseira no celular -->
-    <input type="file" id="inputCamera" accept="image/*" capture="environment" style="display: none;" onchange="previewImagem(this)">
-    
-    <button class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 16px;" onclick="document.getElementById('inputCamera').click()">
-        📷 ABRIR CÂMERA / ESCOLHER FOTO
-    </button>
-
-    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO (O professor vê a foto antes de enviar) -->
-    <div id="areaPreview" style="display: none; text-align: center; margin-top: 16px;">
-        <img id="imgPreview" src="" alt="Prévia da foto" style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 2px solid #ddd;">
-        <br>
-        <button class="btn btn-success" style="width: 100%; margin-top: 12px; padding: 14px;" onclick="enviarImagemParaCorrecao()">
-            ✅ ENVIAR PARA CORREÇÃO AUTOMÁTICA
-        </button>
-        <button class="btn btn-secondary" style="width: 100%; margin-top: 8px;" onclick="limparImagem()">
-            🗑️ Cancelar e Tirar Outra
-        </button>
-    </div>
-
-    <!-- ÁREA DE RESULTADO DA IA -->
-    <div id="areaResultadoCorrecao" style="margin-top: 16px;"></div>
-</div>
     </div>
 
     <!-- VIEW: GESTÃO -->
@@ -546,7 +544,6 @@
         </div>
         <button class="btn btn-success" style="width: 100%;" onclick="cadastrarProfessorViaAPI()">🚀 CADASTRAR PROFESSOR</button>
       </div>
-
       <div class="card">
         <h3>Usuários Cadastrados</h3>
         <div id="listaUsuariosGestao"></div>
