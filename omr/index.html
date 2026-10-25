@@ -152,6 +152,7 @@
     <div class="menu-item" onclick="navegarPara('view-corretor', this)">✏️ Corretor Manual</div>
     <div class="menu-item" onclick="navegarPara('view-qr', this)">🔲 QR Codes</div>
     <div class="menu-item" onclick="navegarPara('view-gestao', this)" style="display:none;">👥 Gestão</div>
+    <div class="menu-item" onclick="navegarPara('view-camera', this)">📷 Câmera</div>
     <div class="sidebar-footer">
       <div class="user-info">
         <div class="user-avatar" id="userAvatar">U</div>
@@ -345,7 +346,6 @@
           </div>
           <button class="btn btn-primary" style="width: 100%;" onclick="carregarDiagnosticoTurma()">📊 GERAR DIAGNÓSTICO DA TURMA</button>
         </div>
-        
         <div id="abaDiagAluno" class="hidden">
           <div class="form-row">
             <div class="form-group">
@@ -373,44 +373,13 @@
           <button class="btn btn-primary" style="width: 100%;" onclick="carregarDiagnosticoAluno()">📊 GERAR DIAGNÓSTICO DO ALUNO</button>
         </div>
       </div>
-
       <div class="card">
         <div id="areaDiagnosticoTurma"></div>
         <div id="areaGraficoDiagnosticoAluno"></div>
       </div>
-      #---
-      <!-- CONTAINER DE CAPTURA DE IMAGEM -->
-<div class="card" style="margin-top: 20px; border: 2px dashed #008080; background: #f0fdfa;">
-    <h3 style="color: #008080; text-align: center;">📸 Escanear Cartão-Resposta</h3>
-    <p style="text-align: center; font-size: 14px; color: #666; margin-bottom: 16px;">
-        Aponte a câmera para o cartão preenchido e tire a foto.
-    </p>
-
-    <!-- O SEGREDO ESTÁ AQUI: accept="image/*" capture="environment" força a câmera traseira no celular -->
-    <input type="file" id="inputCamera" accept="image/*" capture="environment" style="display: none;" onchange="previewImagem(this)">
-    
-    <button class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 16px;" onclick="document.getElementById('inputCamera').click()">
-        📷 ABRIR CÂMERA / ESCOLHER FOTO
-    </button>
-
-    <!-- ÁREA DE PRÉ-VISUALIZAÇÃO (O professor vê a foto antes de enviar) -->
-    <div id="areaPreview" style="display: none; text-align: center; margin-top: 16px;">
-        <img id="imgPreview" src="" alt="Prévia da foto" style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 2px solid #ddd;">
-        <br>
-        <button class="btn btn-success" style="width: 100%; margin-top: 12px; padding: 14px;" onclick="enviarImagemParaCorrecao()">
-            ✅ ENVIAR PARA CORREÇÃO AUTOMÁTICA
-        </button>
-        <button class="btn btn-secondary" style="width: 100%; margin-top: 8px;" onclick="limparImagem()">
-            🗑️ Cancelar e Tirar Outra
-        </button>
-    </div>
-#---
-    <!-- ÁREA DE RESULTADO DA IA -->
-    <div id="areaResultadoCorrecao" style="margin-top: 16px;"></div>
-</div>
     </div>
 
-    <!-- VIEW: PLANILHA -->
+      <!-- VIEW: PLANILHA -->   
     <div id="view-planilha" class="view">
       <h2>📋 Exportar para Planilha</h2>
       <div class="card">
@@ -427,34 +396,36 @@
         <button class="btn btn-primary" style="width: 100%;" onclick="gerarTabelaPlanilha()">📊 GERAR TABELA</button>
       </div>
       <div class="card">
-        <div id="areaTabelaPlanilha"></div>
+        <div id="areaTabelaPlanilha">
+        </div>
       </div>
     </div>
 
     <!-- VIEW: CORRETOR MANUAL -->
     <div id="view-corretor" class="view">
-      <h2>✏️ Corretor Manual de Prova</h2>
-      <div class="card">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Turma</label>
-            <select id="selTurmaCorretor" onchange="carregarAlunosCorretor()"></select>
+        <h2>✏️ Corretor Manual de Prova</h2>
+        <div class="card">
+          <div class="form-row">
+           <div class="form-group">
+              <label>Turma</label>
+              <select id="selTurmaCorretor" onchange="carregarAlunosCorretor()"></select>
+            </div>
+            <div class="form-group">
+              <label>Prova</label>
+              <select id="selProvaCorretor" onchange="carregarAlunosCorretor()"></select>
+            </div>
           </div>
           <div class="form-group">
-            <label>Prova</label>
-            <select id="selProvaCorretor" onchange="carregarAlunosCorretor()"></select>
+            <label>Aluno</label>
+            <select id="selAlunoCorretor" onchange="carregarRespostasAluno()"></select>
           </div>
         </div>
-        <div class="form-group">
-          <label>Aluno</label>
-          <select id="selAlunoCorretor" onchange="carregarRespostasAluno()"></select>
+        <div class="card">
+          <div id="areaCorretorManual">
+          </div>
         </div>
-      </div>
-      <div class="card">
-        <div id="areaCorretorManual"></div>
-      </div>
     </div>
-
+    
     <!-- VIEW: QR CODES -->
     <div id="view-qr" class="view">
       <h2>🔲 Gerador de QR Codes</h2>
@@ -464,7 +435,6 @@
           <button class="ia-tab" onclick="mudarAbaQR('aluno')">QR do Aluno</button>
           <button class="ia-tab" onclick="mudarAbaQR('cartoes')">Cartões</button>
         </div>
-        
         <div id="abaQRProva">
           <div class="form-group">
             <label>Prova</label>
@@ -472,7 +442,6 @@
           </div>
           <button class="btn btn-primary" style="width: 100%;" onclick="gerarQRProva()">🔲 GERAR QR CODE</button>
         </div>
-        
         <div id="abaQRAluno" class="hidden">
           <div class="form-row">
             <div class="form-group">
@@ -492,7 +461,6 @@
           </div>
           <button class="btn btn-primary" style="width: 100%;" onclick="gerarQRAluno()">🔲 GERAR QR CODE</button>
         </div>
-        
         <div id="abaQRCartoes" class="hidden">
           <div class="form-row">
             <div class="form-group">
@@ -551,6 +519,65 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- VIEW: FOTO PROVAS -->
+    <div id="view-camera" class="view active">
+      <h2>📷 Câmera</h2>
+          <div class="card"></div>
+            <!-- CONTAINER DE CAPTURA DE IMAGEM -->
+            <div class="card" style="margin-top: 20px; border: 2px dashed #008080; background: #f0fdfa;">
+              <h3 style="color: #008080; text-align: center;">📸 Escanear Cartão-Resposta</h3>
+              <p style="text-align: center; font-size: 14px; color: #666; margin-bottom: 16px;">
+                  Aponte a câmera para o cartão preenchido e tire a foto.
+              </p>
+
+              <!-- O SEGREDO ESTÁ AQUI: accept="image/*" capture="environment" força a câmera traseira no celular -->
+              <input type="file" id="inputCamera" accept="image/*" capture="environment" style="display: none;" onchange="previewImagem(this)">
+    
+              <button class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 16px;" onclick="document.getElementById('inputCamera').click()">
+                📷 ABRIR CÂMERA / ESCOLHER FOTO
+              </button>
+
+              <!-- ÁREA DE PRÉ-VISUALIZAÇÃO (O professor vê a foto antes de enviar) -->
+              <div id="areaPreview" style="display: none; text-align: center; margin-top: 16px;">
+                  <img id="imgPreview" src="" alt="Prévia da foto" style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 2px solid #ddd;">
+                  <br>
+                  <button class="btn btn-success" style="width: 100%; margin-top: 12px; padding: 14px;" onclick="enviarImagemParaCorrecao()">
+                      ✅ ENVIAR PARA CORREÇÃO AUTOMÁTICA
+                  </button>
+                  <button class="btn btn-secondary" style="width: 100%; margin-top: 8px;" onclick="limparImagem()">
+                      🗑️ Cancelar e Tirar Outra
+                  </button>
+                </div>
+    
+
+              <!-- ÁREA DE RESULTADO DA IA -->
+              <div id="areaResultadoCorrecao" style="margin-top: 16px;"></div>
+            </div>
+          </div>
+          
+    </div>
+    
+
+    <div class="card" style="border: 3px solid #28a745; margin-top: 20px; background: #f0fff4;">
+    <h3 style="color: #28a745; text-align: center;">📸 Corretor Inteligente por Foto (com QR Code)</h3>
+    <p style="text-align: center; font-size: 14px; color: #666;">
+        Tire foto da folha do aluno (com QR code visível). O sistema identifica automaticamente a prova e o aluno.
+    </p>
+
+    <input type="file" id="inputFotoQR" accept="image/*" capture="environment" style="display: none;" onchange="processarFotoComQR(this)">
+    
+    <button class="btn btn-success" style="width: 100%; padding: 16px; font-size: 16px;" onclick="document.getElementById('inputFotoQR').click()">
+        📷 TIRAR FOTO DA FOLHA
+    </button>
+
+    <div id="areaProcessamento" style="display: none; text-align: center; margin-top: 16px;">
+        <img id="imgPreviewQR" style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 2px solid #ddd;">
+        <p id="statusLeitura" style="margin-top: 10px; font-weight: bold; color: #28a745;">⏳ Lendo QR Code...</p>
+    </div>
+
+    <div id="areaResultadoCorrecao" style="margin-top: 16px;"></div>
 </div>
 
 <!-- FAB IA -->
@@ -3867,6 +3894,104 @@ async function enviarImagemParaCorrecao() {
         console.error("Erro ao enviar imagem:", e);
         areaResultado.innerHTML = '<div style="background:#f8d7da; padding:16px; border-radius:8px; color:#721c24; text-align:center;">❌ Falha na conexão com o servidor.</div>';
     }
+}
+
+// ========================================================================
+// 📸 CORREÇÃO INTELIGENTE POR FOTO (COM QR CODE)
+// ========================================================================
+
+async function processarFotoComQR(input) {
+    if (!input.files || !input.files[0]) return;
+
+    var arquivo = input.files[0];
+    var reader = new FileReader();
+
+    reader.onload = async function(e) {
+        var imgData = e.target.result;
+        document.getElementById('imgPreviewQR').src = imgData;
+        document.getElementById('areaProcessamento').style.display = 'block';
+        document.getElementById('areaResultadoCorrecao').innerHTML = '';
+        document.getElementById('statusLeitura').textContent = '⏳ Lendo QR Code...';
+
+        // Cria um canvas para processar a imagem
+        var img = new Image();
+        img.onload = async function() {
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            // Lê o QR Code da imagem
+            var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            var qrCode = jsQR(imageData.data, imageData.width, imageData.height);
+
+            if (qrCode) {
+                document.getElementById('statusLeitura').textContent = '✅ QR Code encontrado! Processando...';
+                console.log('QR Code lido:', qrCode.data);
+
+                // Envia a imagem + dados do QR para o backend
+                await enviarParaCorrecaoAutomatica(arquivo, qrCode.data);
+            } else {
+                document.getElementById('statusLeitura').textContent = '❌ QR Code não encontrado. Tente outra foto.';
+                document.getElementById('statusLeitura').style.color = '#dc3545';
+            }
+        };
+        img.src = imgData;
+    };
+
+    reader.readAsDataURL(arquivo);
+}
+
+async function enviarParaCorrecaoAutomatica(arquivoImagem, dadosQR) {
+    var areaResultado = document.getElementById('areaResultadoCorrecao');
+    areaResultado.innerHTML = '<p style="text-align:center; color:#28a745;">🤖 Enviando para correção automática...</p>';
+
+    var formData = new FormData();
+    formData.append('imagem', arquivoImagem);
+    formData.append('qr_data', dadosQR); // Envia o conteúdo do QR code
+
+    try {
+        var response = await fetch(API_BASE_URL + '/api/corrigir_por_foto_qr', {
+            method: 'POST',
+            body: formData
+        });
+
+        var data = await response.json();
+
+        if (data.sucesso) {
+            var html = '<div style="background:#d4edda; padding:16px; border-radius:8px; border-left:5px solid #28a745;">';
+            html += '<h4 style="margin-top:0; color:#155724;">✅ Correção Concluída!</h4>';
+            html += '<p><strong>Aluno:</strong> ' + (data.nome_aluno || 'Identificado pelo QR') + '</p>';
+            html += '<p><strong>Prova:</strong> ' + (data.nome_prova || 'Identificada pelo QR') + '</p>';
+            html += '<p><strong>Nota:</strong> ' + data.nota + ' / ' + data.nota_maxima + '</p>';
+            html += '<p><strong>Acertos:</strong> ' + data.acertos + ' de ' + data.total_questoes + '</p>';
+            
+            if (data.detalhes && data.detalhes.length > 0) {
+                html += '<details style="margin-top:10px;"><summary style="cursor:pointer; color:#155724;">Ver detalhes das questões</summary>';
+                html += '<ul style="font-size:13px; margin-top:8px;">';
+                data.detalhes.forEach(function(q) {
+                    var cor = q.correta ? '#28a745' : '#dc3545';
+                    html += '<li style="color:' + cor + ';">Questão ' + q.numero + ': ' + (q.correta ? '✅ Correta' : '❌ Errada') + '</li>';
+                });
+                html += '</ul></details>';
+            }
+            
+            html += '<button class="btn btn-primary" style="margin-top:12px; width:100%;" onclick="salvarCorrecaoAutomatica(' + data.id_aluno + ', ' + data.id_prova + ')">💾 SALVAR NO SISTEMA</button>';
+            html += '</div>';
+            areaResultado.innerHTML = html;
+        } else {
+            areaResultado.innerHTML = '<div style="background:#f8d7da; padding:16px; border-radius:8px; color:#721c24; text-align:center;">❌ Erro: ' + data.erro + '</div>';
+        }
+    } catch (e) {
+        console.error("Erro ao enviar:", e);
+        areaResultado.innerHTML = '<div style="background:#f8d7da; padding:16px; border-radius:8px; color:#721c24; text-align:center;">❌ Falha na conexão com o servidor.</div>';
+    }
+}
+
+function salvarCorrecaoAutomatica(idAluno, idProva) {
+    // Aqui você pode adicionar a lógica para salvar no Supabase
+    alert('✅ Correção salva com sucesso! (Função a ser implementada)');
 }
 
 </script>
