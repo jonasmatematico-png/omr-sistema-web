@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Correção Rápida - OMR</title>
+    
+    <!-- 🆕 BIBLIOTECA PARA LER QR CODE EM TEMPO REAL -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+    <style>
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #f3f4f6; margin: 0; padding: 20px; color: #1f2937; }
+       
+        .container { max-width: 500px; margin: 0 auto; text-align: center; }
+        h2 { color: #4f46e5; margin-bottom: 8px; }
+        p { color: #6b7280; margin-bottom: 24px; font-size: 15px; }
+
+        /* 🆕 Estilos da Câmera Contínua */
+        #cameraContainer { display: block; margin-bottom: 20px; }
+        #cameraVideo {
+            width: 100%; max-height: 400px; object-fit: cover;
+            border-radius: 12px; border: 3px solid #4f46e5; background: #000;
+        }
+        .btn-camera {
+            display: block; align-items: center; justify-content: center; gap: 10px;
+            background-color: #4f46e5; color: white; padding: 16px 24px;
+            border-radius: 12px; font-size: 18px; font-weight: 600; border: none;
+            cursor: pointer; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+            transition: transform 0.1s; width: 100%; margin-top: 10px;
+        }
+        .btn-camera:active { transform: scale(0.98); }
+        .btn-parar { background-color: #ef4444; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3); }
+
+        /* Preview da Imagem */
+        #previewContainer { display: none; margin-top: 20px; }
+        #imagePreview {
+            width: 100%; max-height: 300px; object-fit: contain;
+            border-radius: 12px; border: 2px solid #e5e7eb; background: #fff;
+        }
+
+        /* Botão de Enviar */
+        .btn-enviar {
+            width: 100%; margin-top: 16px; padding: 16px;
+            background-color: #10b981; color: white; border: none;
+            border-radius: 12px; font-size: 16px; font-weight: 600;
+            cursor: pointer; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+        }
+        .btn-enviar:disabled { background-color: #9ca3af; cursor: not-allowed; }
+
+        /* Card de Resultado */
+        #resultado {
+            display: none; margin-top: 24px; padding: 20px;
+            background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px;
+            text-align: left;
+        }
+        #resultado h3 { color: #065f46; margin-top: 0; display: flex; align-items: center; gap: 8px; }
+        .stat { display: flex; justify-content: space-between; margin: 8px 0; font-size: 16px; }
+        .stat strong { color: #065f46; }
+
+        .btn-reiniciar {
+            width: 100%; margin-top: 16px; padding: 14px;
+            background-color: #ffffff; color: #4f46e5; border: 2px solid #4f46e5;
+            border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;
+        }
+        
+        #statusLeitura {
+            margin-top: 10px; font-weight: bold; color: #4f46e5; font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📸 Correção Rápida Inteligente</h2>
+    <p>Aponte a câmera para o QR Code. O sistema detectará e tirará a foto automaticamente.</p>
+
+    <!-- 🆕 ÁREA DA CÂMERA CONTÍNUA -->
+    <div id="cameraContainer">
+        <video id="cameraVideo" autoplay playsinline muted></video>
+        <canvas id="cameraCanvas" style="display: none;"></canvas>
+        <p id="statusLeitura">Câmera desligada.</p>
+        <button id="btnIniciar" class="btn-camera" onclick="iniciarCamera()">📷 INICIAR CÂMERA</button>
+        <button id="btnParar" class="btn-camera btn-parar" onclick="pararCamera()" style="display: none;">⏹️ PARAR CÂMERA</button
+    </div>
+
+    <!-- PREVIEW (Aparece após detectar o QR) -->
+    <div id="previewContainer">
+        <p style="color: #065f46; font-weight: bold;">✅ QR Code Detectado! Revise a foto:</p>
+        <img id="imagePreview" alt="Preview do gabarito">
+        <p id="qrDadosEncontrados" style="font-size: 12px; color: #6b7280; word-break: break-all;"></p>
+        <button id="btnEnviar" class="btn-enviar">🚀 Enviar para Correção</button>
+    </div>
+
+    <!-- RESULTADO -->
+    <div id="resultado">
+        <h3>✅ Correção Concluída!</h3>
+        <div class="stat"><span>Nota Final:</span> <strong id="resNota">-</strong></div>
+        <div class="stat"><span>Acertos:</span> <strong id="resAcertos">-</strong></div>
+        <div class="stat"><span>Total de Questões:</span> <strong id="resTotal">-</strong></div>
+        <button class="btn-reiniciar" onclick="location.reload()">🔄 Corrigir Próxima Prova</button>
+    </div>
+</div>
+
+<script>
+    // Variáveis da Câmera
+    let videoStream = null;
+    let isScanning = false;
+    let base64Image = '';
+    let qrDataEncontrada = '';
+
+    const video = document.getElementById('cameraVideo');
+    const canvas = document.getElementById('cameraCanvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const statusLeitura = document.getElementById('statusLeitura');
+
+    // 1. INICIAR CÂMERA
+    async function iniciarCamera() {
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "environment" } // Força câmera traseira no celular
+            });
+            video.srcObject = videoStream;
+            isScanning = true;
+            
+            document.getElementById('btnIniciar').style.display = 'none';
+            document.getElementById('btnParar').style.display = 'flex';
+            statusLeitura.textContent = '⏳ Buscando QR Code... Aponte para a folha.';
+            statusLeitura.style.color = '#4f46e5';
+
+            video.onloadedmetadata = () => {
+                requestAnimationFrame(tick);
+            };
+        } catch (err) {
+            console.error("Erro ao acessar câmera:", err);
+            statusLeitura.textContent = '❌ Erro: Permita o acesso à câmera.';
+            statusLeitura.style.color = '#ef4444';
+        }
+    }
+
+    // 2. PARAR CÂMERA
+    function pararCamera() {
+        isScanning = false;
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+        }
+        document.getElementById('btnIniciar').style.display = 'flex';
+        document.getElementById('btnParar').style.display = 'none';
+        statusLeitura.textContent = 'Câmera desligada.';
+        statusLeitura.style.color = '#6b7280';
+    }
+
+    // 3. LOOP DE LEITURA (30x por segundo)
+    function tick() {
+        if (!isScanning) return;
+
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+
+            if (code) {
+    console.log("✅ QR Code detectado:", code.data);
+    
+    // 🎯 QR CODE ENCONTRADO!
+    isScanning = false;
+    
+    qrDataEncontrada = code.data;
+    base64Image = canvas.toDataURL('image/jpeg', 0.8);
+    
+    // MOSTRAR FEEDBACK IMEDIATO
+    statusLeitura.innerHTML = '✅ QR Code encontrado!<br><small style="font-size:12px;">' + code.data + '</small>';
+    statusLeitura.style.color = '#10b981';
+    
+    // Tocar bip
+    tocarBip();
+    
+    // Parar câmera após 1 segundo (para o professor ver a mensagem)
+    setTimeout(() => {
+        pararCamera();
+        
+        // Mostrar preview
+        document.getElementById('imagePreview').src = base64Image;
+        document.getElementById('qrDadosEncontrados').textContent = 'Dados do QR: ' + qrDataEncontrada;
+        document.getElementById('cameraContainer').style.display = 'none';
+        document.getElementById('previewContainer').style.display = 'block';
+    }, 1000);
+    
+    return; // Sai da função tick
+}
+
+    // 4. SOM DE BIP
+    function tocarBip() {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.value = 800;
+        gainNode.gain.value = 0.1;
+        oscillator.start();
+        setTimeout(() => oscillator.stop(), 150);
+    }
+
+    // 5. ENVIAR PARA O BACKEND
+    document.getElementById('btnEnviar').addEventListener('click', async function() {
+        const btnEnviar = document.getElementById('btnEnviar');
+        btnEnviar.textContent = '⏳ Processando (Lendo QR + OMR)...';
+        btnEnviar.disabled = true;
+
+        try {
+            // ⚠️ ATENÇÃO: Ajuste esta URL para a rota correta do seu backend no Render
+            const API_URL = 'https://omr-sistema-api.onrender.com/api/corrigir_por_foto_qr';
+           
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                // Enviamos a imagem E os dados do QR que já lemos no frontend
+                body: JSON.stringify({ 
+                    fotoBase64: base64Image,
+                    qr_data: qrDataEncontrada 
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && (data.sucesso || data.nota !== undefined)) {
+                document.getElementById('resNota').textContent = data.nota || data.nota_final || 'N/A';
+                document.getElementById('resAcertos').textContent = data.acertos || 'N/A';
+                document.getElementById('resTotal').textContent = data.total_questoes || 'N/A';
+               
+                document.getElementById('previewContainer').style.display = 'none';
+                document.getElementById('resultado').style.display = 'block';
+            } else {
+                alert('❌ Erro: ' + (data.erro || 'Falha na correção. Tente uma foto mais nítida.'));
+                btnEnviar.textContent = '🚀 Tentar Enviar Novamente';
+                btnEnviar.disabled = false;
+            }
+        } catch (error) {
+            console.error(error);
+            alert('❌ Erro de conexão com o servidor. Verifique sua internet.');
+            btnEnviar.textContent = '🚀 Tentar Enviar Novamente';
+            btnEnviar.disabled = false;
+        }
+    });
+</script>
+
+</body>
+</html>
