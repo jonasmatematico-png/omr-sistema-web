@@ -306,57 +306,77 @@
 
     // --- DADOS E ENVIO ---
     function parseQRCode(qrData) {
-        const partes = qrData.split(':');
-        if (partes.length === 3 && partes[0] === 'OMRALUNO') {
-            return { tipo: partes[0], id_aluno: parseInt(partes[1]), id_prova: parseInt(partes[2]) };
-        }
-        return null;
+    const partes = qrData.split(':');
+    if (partes.length === 3 && partes[0] === 'OMRALUNO') {
+        return {
+            tipo: partes[0],
+            numero_chamada: parseInt(partes[1]),  // ← MUDANÇA AQUI
+            id_prova: parseInt(partes[2])
+        };
     }
+    return null;
+}
 
     async function irParaRevisao() {
-        if (!dadosQR) {
-            alert('❌ Erro: QR Code da 1ª página não foi lido corretamente.');
-            return;
-        }
+    if (!dadosQR) {
+        alert('❌ Erro: QR Code da 1ª página não foi lido corretamente.');
+        return;
+    }
 
-        const btnRevisao = document.querySelector('#listaPaginasContainer .btn-enviar');
-        btnRevisao.textContent = '⏳ Carregando dados...';
-        btnRevisao.disabled = true;
+    console.log(' Buscando dados do aluno:', dadosQR.id_aluno);
+    console.log('🔍 ID Prova:', dadosQR.id_prova);
 
-        try {
-            const API_URL = window.location.origin;
-            const response = await fetch(API_URL + '/api/dados_aluno/' + dadosQR.id_aluno);
-            const data = await response.json();
+    const btnRevisao = document.querySelector('#listaPaginasContainer .btn-enviar');
+    btnRevisao.textContent = '⏳ Carregando dados...';
+    btnRevisao.disabled = true;
 
-            if (data.sucesso) {
-                document.getElementById('revNome').textContent = data.nome_completo;
-                document.getElementById('revNumero').textContent = data.numero_chamada;
-                document.getElementById('revTurma').textContent = data.nome_turma;
-            } else {
-                document.getElementById('revNome').textContent = 'Aluno ' + dadosQR.id_aluno;
-                document.getElementById('revNumero').textContent = '-';
-                document.getElementById('revTurma').textContent = '-';
-            }
-            
-            document.getElementById('revProva').textContent = dadosQR.id_prova;
-            document.getElementById('revPaginas').textContent = fotosCapturadas.length;
+    try {
+        // VERIFIQUE SE ESTA URL ESTÁ CORRETA (seu backend no Render)
+        const API_URL = 'https://SEU-BACKEND-NO-RENDER.onrender.com'; // ← MUDE AQUI!
+        const urlCompleta = API_URL + '/api/dados_aluno/' + dadosQR.id_aluno;
+        
+        console.log('🔍 Fazendo request para:', urlCompleta);
+        
+        const response = await fetch(urlCompleta);
+        const data = await response.json();
 
-            document.getElementById('listaPaginasContainer').style.display = 'none';
-            document.getElementById('revisaoContainer').style.display = 'block';
-        } catch (error) {
-            console.error('Erro:', error);
-            document.getElementById('revNome').textContent = 'Aluno ' + dadosQR.id_aluno;
+        console.log('📡 Resposta do backend:', data);
+
+        if (data.sucesso) {
+            document.getElementById('revNome').textContent = data.nome_completo || 'Nome não encontrado';
+            document.getElementById('revNumero').textContent = data.numero_chamada || '-';
+            document.getElementById('revTurma').textContent = data.nome_turma || '-';
+        } else {
+            console.error(' Erro na resposta:', data.erro);
+            document.getElementById('revNome').textContent = 'Aluno ' + dadosQR.id_aluno + ' (não encontrado)';
             document.getElementById('revNumero').textContent = '-';
             document.getElementById('revTurma').textContent = '-';
-            document.getElementById('revProva').textContent = dadosQR.id_prova;
-            document.getElementById('revPaginas').textContent = fotosCapturadas.length;
-            document.getElementById('listaPaginasContainer').style.display = 'none';
-            document.getElementById('revisaoContainer').style.display = 'block';
-        } finally {
-            btnRevisao.textContent = '✅ Revisar e Enviar';
-            btnRevisao.disabled = false;
+            alert('⚠️ Aviso: ' + data.erro);
         }
+        
+        document.getElementById('revProva').textContent = dadosQR.id_prova;
+        document.getElementById('revPaginas').textContent = fotosCapturadas.length;
+
+        document.getElementById('listaPaginasContainer').style.display = 'none';
+        document.getElementById('revisaoContainer').style.display = 'block';
+    } catch (error) {
+        console.error('❌ ERRO DE CONEXÃO:', error);
+        alert('❌ Erro de conexão com o backend:\n' + error.message + '\n\nVerifique se a URL do backend está correta!');
+        
+        // Mostra dados básicos mesmo sem conexão
+        document.getElementById('revNome').textContent = 'Aluno ' + dadosQR.id_aluno;
+        document.getElementById('revNumero').textContent = '-';
+        document.getElementById('revTurma').textContent = '-';
+        document.getElementById('revProva').textContent = dadosQR.id_prova;
+        document.getElementById('revPaginas').textContent = fotosCapturadas.length;
+        
+        document.getElementById('listaPaginasContainer').style.display = 'none';
+        document.getElementById('revisaoContainer').style.display = 'block';
+    } finally {
+        btnRevisao.textContent = '✅ Revisar e Enviar';
+        btnRevisao.disabled = false;
     }
+}
 
     function voltarParaLista() {
         document.getElementById('revisaoContainer').style.display = 'none';
