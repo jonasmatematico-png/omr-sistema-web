@@ -116,27 +116,66 @@
 
     // 1. INICIAR CÂMERA
     async function iniciarCamera() {
-        try {
-            videoStream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "environment" } // Força câmera traseira no celular
-            });
-            video.srcObject = videoStream;
-            isScanning = true;
-            
-            document.getElementById('btnIniciar').style.display = 'none';
-            document.getElementById('btnParar').style.display = 'flex';
-            statusLeitura.textContent = '⏳ Buscando QR Code... Aponte para a folha.';
-            statusLeitura.style.color = '#4f46e5';
-
-            video.onloadedmetadata = () => {
-                requestAnimationFrame(tick);
-            };
-        } catch (err) {
-            console.error("Erro ao acessar câmera:", err);
-            statusLeitura.textContent = '❌ Erro: Permita o acesso à câmera.';
-            statusLeitura.style.color = '#ef4444';
+    console.log("🎥 Tentando iniciar câmera...");
+    statusLeitura.textContent = '⏳ Solicitando permissão da câmera...';
+    statusLeitura.style.color = '#4f46e5';
+    
+    try {
+        // Verifica se o navegador suporta
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error('Seu navegador não suporta acesso à câmera');
         }
+        
+        console.log("📱 Solicitando getUserMedia...");
+        videoStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: "environment",
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            },
+            audio: false
+        });
+        
+        console.log("✅ Câmera obtida com sucesso!");
+        video.srcObject = videoStream;
+        isScanning = true;
+        
+        document.getElementById('btnIniciar').style.display = 'none';
+        document.getElementById('btnParar').style.display = 'flex';
+        statusLeitura.textContent = ' Câmera ativa! Aponte para o QR Code...';
+        statusLeitura.style.color = '#10b981';
+
+        video.onloadedmetadata = () => {
+            console.log("📹 Vídeo carregado, iniciando loop de leitura...");
+            requestAnimationFrame(tick);
+        };
+        
+    } catch (err) {
+        console.error("❌ ERRO AO ACESSAR CÂMERA:", err);
+        console.error("❌ Nome do erro:", err.name);
+        console.error(" Mensagem:", err.message);
+        
+        let mensagemErro = '❌ Erro ao acessar câmera: ';
+        
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            mensagemErro += 'Permissão negada. Verifique as configurações do navegador.';
+        } else if (err.name === 'NotFoundError') {
+            mensagemErro += 'Câmera não encontrada no dispositivo.';
+        } else if (err.name === 'NotReadableError') {
+            mensagemErro += 'Câmera já está em uso por outro aplicativo.';
+        } else if (err.name === 'OverconstrainedError') {
+            mensagemErro += 'Câmera não suporta as configurações solicitadas.';
+        } else {
+            mensagemErro += err.message;
+        }
+        
+        statusLeitura.innerHTML = mensagemErro + '<br><small style="font-size:11px;">Veja o console para detalhes</small>';
+        statusLeitura.style.color = '#ef4444';
+        
+        // Mostra o erro completo em um alerta (para debug)
+        alert('Erro: ' + err.name + '\n' + err.message);
     }
+}
 
     // 2. PARAR CÂMERA
     function pararCamera() {
