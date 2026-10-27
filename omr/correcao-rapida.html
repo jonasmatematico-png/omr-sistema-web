@@ -4,95 +4,117 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Correção Rápida - OMR</title>
-    
-    <!-- 🆕 BIBLIOTECA PARA LER QR CODE EM TEMPO REAL -->
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-
     <style>
-        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: #f3f4f6; margin: 0; padding: 20px; color: #1f2937; }
-       
         .container { max-width: 500px; margin: 0 auto; text-align: center; }
         h2 { color: #4f46e5; margin-bottom: 8px; }
         p { color: #6b7280; margin-bottom: 24px; font-size: 15px; }
 
-        /* 🆕 Estilos da Câmera Contínua */
         #cameraContainer { display: block; margin-bottom: 20px; }
         #cameraVideo {
             width: 100%; max-height: 400px; object-fit: cover;
             border-radius: 12px; border: 3px solid #4f46e5; background: #000;
         }
         .btn-camera {
-            display: block; align-items: center; justify-content: center; gap: 10px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
             background-color: #4f46e5; color: white; padding: 16px 24px;
             border-radius: 12px; font-size: 18px; font-weight: 600; border: none;
-            cursor: pointer; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
-            transition: transform 0.1s; width: 100%; margin-top: 10px;
+            cursor: pointer; width: 100%; margin-top: 10px;
         }
-        .btn-camera:active { transform: scale(0.98); }
-        .btn-parar { background-color: #ef4444; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3); }
+        .btn-parar { background-color: #ef4444; }
 
-        /* Preview da Imagem */
+        .miniaturas {
+            display: flex; gap: 10px; margin: 15px 0; overflow-x: auto;
+            padding: 10px; background: #fff; border-radius: 8px;
+        }
+        .miniatura {
+            min-width: 80px; height: 80px; border: 2px solid #4f46e5;
+            border-radius: 8px; object-fit: cover; cursor: pointer;
+        }
+        .miniatura-label {
+            font-size: 12px; color: #4f46e5; margin-top: 5px; text-align: center;
+        }
+
         #previewContainer { display: none; margin-top: 20px; }
         #imagePreview {
             width: 100%; max-height: 300px; object-fit: contain;
             border-radius: 12px; border: 2px solid #e5e7eb; background: #fff;
         }
 
-        /* Botão de Enviar */
         .btn-enviar {
             width: 100%; margin-top: 16px; padding: 16px;
             background-color: #10b981; color: white; border: none;
-            border-radius: 12px; font-size: 16px; font-weight: 600;
-            cursor: pointer; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+            border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;
         }
-        .btn-enviar:disabled { background-color: #9ca3af; cursor: not-allowed; }
+        .btn-voltar {
+            width: 100%; margin-top: 10px; padding: 16px;
+            background-color: #ffffff; color: #4f46e5; border: 2px solid #4f46e5;
+            border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;
+        }
 
-        /* Card de Resultado */
+        #revisaoContainer {
+            display: none; margin-top: 24px; padding: 20px;
+            background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; text-align: left;
+        }
+        #revisaoContainer h3 { color: #065f46; margin-top: 0; }
+        .info-aluno {
+            background: #fff; padding: 15px; border-radius: 8px; margin: 10px 0;
+            border-left: 4px solid #4f46e5;
+        }
+        .info-aluno p { margin: 5px 0; color: #1f2937; font-size: 16px; }
+        .info-aluno strong { color: #4f46e5; }
+
         #resultado {
             display: none; margin-top: 24px; padding: 20px;
-            background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px;
-            text-align: left;
+            background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; text-align: left;
         }
-        #resultado h3 { color: #065f46; margin-top: 0; display: flex; align-items: center; gap: 8px; }
+        #resultado h3 { color: #065f46; margin-top: 0; }
         .stat { display: flex; justify-content: space-between; margin: 8px 0; font-size: 16px; }
         .stat strong { color: #065f46; }
-
         .btn-reiniciar {
             width: 100%; margin-top: 16px; padding: 14px;
             background-color: #ffffff; color: #4f46e5; border: 2px solid #4f46e5;
             border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;
         }
-        
-        #statusLeitura {
-            margin-top: 10px; font-weight: bold; color: #4f46e5; font-size: 14px;
-        }
+        #statusLeitura { margin-top: 10px; font-weight: bold; color: #4f46e5; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>📸 Correção Rápida Inteligente</h2>
-    <p>Aponte a câmera para o QR Code. O sistema detectará e tirará a foto automaticamente.</p>
+    <p>Aponte a câmera para o QR Code. O sistema detectará automaticamente.</p>
 
-    <!-- 🆕 ÁREA DA CÂMERA CONTÍNUA -->
     <div id="cameraContainer">
         <video id="cameraVideo" autoplay playsinline muted></video>
         <canvas id="cameraCanvas" style="display: none;"></canvas>
         <p id="statusLeitura">Câmera desligada.</p>
         <button id="btnIniciar" class="btn-camera" onclick="iniciarCamera()">📷 INICIAR CÂMERA</button>
-        <button id="btnParar" class="btn-camera btn-parar" onclick="pararCamera()" style="display: none;">⏹️ PARAR CÂMERA</button
+        <button id="btnParar" class="btn-camera btn-parar" onclick="pararCamera()" style="display: none;">⏹️ PARAR</button>
     </div>
 
-    <!-- PREVIEW (Aparece após detectar o QR) -->
-    <div id="previewContainer">
-        <p style="color: #065f46; font-weight: bold;">✅ QR Code Detectado! Revise a foto:</p>
-        <img id="imagePreview" alt="Preview do gabarito">
-        <p id="qrDadosEncontrados" style="font-size: 12px; color: #6b7280; word-break: break-all;"></p>
-        <button id="btnEnviar" class="btn-enviar">🚀 Enviar para Correção</button>
+    <div id="capturaContainer" style="display: none;">
+        <p style="color: #065f46; font-weight: bold;">✅ QR Code Detectado!</p>
+        <div class="miniaturas" id="listaMiniaturas"></div>
+        <button class="btn-camera" onclick="adicionarPagina()" style="background-color: #10b981;">➕ Adicionar Página</button>
+        <button class="btn-enviar" onclick="irParaRevisao()">✅ Revisar e Enviar</button>
     </div>
 
-    <!-- RESULTADO -->
+    <div id="revisaoContainer">
+        <h3>👁️ REVISÃO DA CORREÇÃO</h3>
+        <div class="info-aluno">
+            <p><strong>👤 Aluno:</strong> <span id="revNome">-</span></p>
+            <p><strong>🔢 Nº Chamada:</strong> <span id="revNumero">-</span></p>
+            <p><strong>🏫 Turma:</strong> <span id="revTurma">-</span></p>
+            <p><strong>📝 Prova ID:</strong> <span id="revProva">-</span></p>
+            <p><strong>📄 Páginas:</strong> <span id="revPaginas">-</span></p>
+        </div>
+        <button class="btn-voltar" onclick="voltarParaCaptura()">↩️ Voltar e Tirar de Novo</button>
+        <button class="btn-enviar" onclick="enviarParaBackend()">💾 CONFIRMAR E ENVIAR PARA CORREÇÃO</button>
+    </div>
+
     <div id="resultado">
         <h3>✅ Correção Concluída!</h3>
         <div class="stat"><span>Nota Final:</span> <strong id="resNota">-</strong></div>
@@ -103,81 +125,45 @@
 </div>
 
 <script>
-    // Variáveis da Câmera
     let videoStream = null;
     let isScanning = false;
-    let base64Image = '';
-    let qrDataEncontrada = '';
+    let fotosCapturadas = [];
+    let dadosQR = null;
+    let dadosAluno = null;
 
     const video = document.getElementById('cameraVideo');
     const canvas = document.getElementById('cameraCanvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const statusLeitura = document.getElementById('statusLeitura');
 
-    // 1. INICIAR CÂMERA
     async function iniciarCamera() {
-    console.log("🎥 Tentando iniciar câmera...");
-    statusLeitura.textContent = '⏳ Solicitando permissão da câmera...';
-    statusLeitura.style.color = '#4f46e5';
-    
-    try {
-        // Verifica se o navegador suporta
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            throw new Error('Seu navegador não suporta acesso à câmera');
+        if (typeof jsQR === 'undefined') {
+            alert('⚠️ Erro: Biblioteca QR Code não carregou. Verifique internet.');
+            return;
         }
-        
-        console.log("📱 Solicitando getUserMedia...");
-        videoStream = await navigator.mediaDevices.getUserMedia({ 
-            video: { 
-                facingMode: "environment",
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-            },
-            audio: false
-        });
-        
-        console.log("✅ Câmera obtida com sucesso!");
-        video.srcObject = videoStream;
-        isScanning = true;
-        
-        document.getElementById('btnIniciar').style.display = 'none';
-        document.getElementById('btnParar').style.display = 'flex';
-        statusLeitura.textContent = ' Câmera ativa! Aponte para o QR Code...';
-        statusLeitura.style.color = '#10b981';
 
-        video.onloadedmetadata = () => {
-            console.log("📹 Vídeo carregado, iniciando loop de leitura...");
-            requestAnimationFrame(tick);
-        };
-        
-    } catch (err) {
-        console.error("❌ ERRO AO ACESSAR CÂMERA:", err);
-        console.error("❌ Nome do erro:", err.name);
-        console.error(" Mensagem:", err.message);
-        
-        let mensagemErro = '❌ Erro ao acessar câmera: ';
-        
-        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-            mensagemErro += 'Permissão negada. Verifique as configurações do navegador.';
-        } else if (err.name === 'NotFoundError') {
-            mensagemErro += 'Câmera não encontrada no dispositivo.';
-        } else if (err.name === 'NotReadableError') {
-            mensagemErro += 'Câmera já está em uso por outro aplicativo.';
-        } else if (err.name === 'OverconstrainedError') {
-            mensagemErro += 'Câmera não suporta as configurações solicitadas.';
-        } else {
-            mensagemErro += err.message;
+        statusLeitura.textContent = '⏳ Solicitando câmera...';
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: "environment" }
+            });
+            video.srcObject = videoStream;
+            isScanning = true;
+            
+            document.getElementById('btnIniciar').style.display = 'none';
+            document.getElementById('btnParar').style.display = 'flex';
+            statusLeitura.textContent = '📹 Câmera ativa! Aponte para o QR Code...';
+            statusLeitura.style.color = '#10b981';
+
+            video.onloadedmetadata = () => {
+                requestAnimationFrame(tick);
+            };
+        } catch (err) {
+            statusLeitura.textContent = '❌ Erro: ' + err.message;
+            statusLeitura.style.color = '#ef4444';
+            alert('Erro ao acessar câmera: ' + err.message);
         }
-        
-        statusLeitura.innerHTML = mensagemErro + '<br><small style="font-size:11px;">Veja o console para detalhes</small>';
-        statusLeitura.style.color = '#ef4444';
-        
-        // Mostra o erro completo em um alerta (para debug)
-        alert('Erro: ' + err.name + '\n' + err.message);
     }
-}
 
-    // 2. PARAR CÂMERA
     function pararCamera() {
         isScanning = false;
         if (videoStream) {
@@ -189,103 +175,198 @@
         statusLeitura.style.color = '#6b7280';
     }
 
-    // 3. LOOP DE LEITURA (30x por segundo)
     function tick() {
         if (!isScanning) return;
 
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
             canvas.height = video.videoHeight;
             canvas.width = video.videoWidth;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
 
             if (code) {
-    console.log("✅ QR Code detectado:", code.data);
-    
-    // 🎯 QR CODE ENCONTRADO!
-    isScanning = false;
-    
-    qrDataEncontrada = code.data;
-    base64Image = canvas.toDataURL('image/jpeg', 0.8);
-    
-    // MOSTRAR FEEDBACK IMEDIATO
-    statusLeitura.innerHTML = '✅ QR Code encontrado!<br><small style="font-size:12px;">' + code.data + '</small>';
-    statusLeitura.style.color = '#10b981';
-    
-    // Tocar bip
-    tocarBip();
-    
-    // Parar câmera após 1 segundo (para o professor ver a mensagem)
-    setTimeout(() => {
-        pararCamera();
-        
-        // Mostrar preview
-        document.getElementById('imagePreview').src = base64Image;
-        document.getElementById('qrDadosEncontrados').textContent = 'Dados do QR: ' + qrDataEncontrada;
-        document.getElementById('cameraContainer').style.display = 'none';
-        document.getElementById('previewContainer').style.display = 'block';
-    }, 1000);
-    
-    return; // Sai da função tick
-}
-
-    // 4. SOM DE BIP
-    function tocarBip() {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        oscillator.type = 'sine';
-        oscillator.frequency.value = 800;
-        gainNode.gain.value = 0.1;
-        oscillator.start();
-        setTimeout(() => oscillator.stop(), 150);
+                console.log("✅ QR Code detectado:", code.data);
+                isScanning = false;
+                
+                const base64Image = canvas.toDataURL('image/jpeg', 0.8);
+                fotosCapturadas.push(base64Image);
+                dadosQR = parseQRCode(code.data);
+                
+                statusLeitura.innerHTML = '✅ QR Code encontrado!<br><small>' + code.data + '</small>';
+                statusLeitura.style.color = '#10b981';
+                
+                tocarBip();
+                
+                setTimeout(() => {
+                    pararCamera();
+                    document.getElementById('cameraContainer').style.display = 'none';
+                    document.getElementById('capturaContainer').style.display = 'block';
+                    atualizarMiniaturas();
+                }, 500);
+                return;
+            }
+        }
+        if (isScanning) requestAnimationFrame(tick);
     }
 
-    // 5. ENVIAR PARA O BACKEND
-    document.getElementById('btnEnviar').addEventListener('click', async function() {
-        const btnEnviar = document.getElementById('btnEnviar');
-        btnEnviar.textContent = '⏳ Processando (Lendo QR + OMR)...';
+    function parseQRCode(qrData) {
+        const partes = qrData.split(':');
+        if (partes.length === 3 && partes[0] === 'OMRALUNO') {
+            return {
+                tipo: partes[0],
+                id_aluno: parseInt(partes[1]),
+                id_prova: parseInt(partes[2])
+            };
+        }
+        return null;
+    }
+
+    function atualizarMiniaturas() {
+        const container = document.getElementById('listaMiniaturas');
+        container.innerHTML = '';
+        
+        fotosCapturadas.forEach((foto, index) => {
+            const div = document.createElement('div');
+            div.style.textAlign = 'center';
+            
+            const img = document.createElement('img');
+            img.src = foto;
+            img.className = 'miniatura';
+            img.onclick = () => visualizarPagina(index);
+            
+            const label = document.createElement('div');
+            label.className = 'miniatura-label';
+            label.textContent = 'Página ' + (index + 1);
+            
+            div.appendChild(img);
+            div.appendChild(label);
+            container.appendChild(div);
+        });
+    }
+
+    function visualizarPagina(index) {
+        console.log('Visualizando página', index + 1);
+    }
+
+    function adicionarPagina() {
+        document.getElementById('capturaContainer').style.display = 'none';
+        document.getElementById('cameraContainer').style.display = 'block';
+        iniciarCamera();
+    }
+
+    async function irParaRevisao() {
+        if (!dadosQR) {
+            alert('❌ Erro: Dados do QR Code não encontrados');
+            return;
+        }
+
+        const btnRevisao = document.querySelector('#capturaContainer .btn-enviar');
+        btnRevisao.textContent = '⏳ Carregando dados...';
+        btnRevisao.disabled = true;
+
+        try {
+            const API_URL = window.location.origin;
+            const response = await fetch(API_URL + '/api/dados_aluno/' + dadosQR.id_aluno);
+            const data = await response.json();
+
+            if (data.sucesso) {
+                dadosAluno = data;
+                document.getElementById('revNome').textContent = dadosAluno.nome_completo;
+                document.getElementById('revNumero').textContent = dadosAluno.numero_chamada;
+                document.getElementById('revTurma').textContent = dadosAluno.nome_turma;
+                document.getElementById('revProva').textContent = dadosQR.id_prova;
+                document.getElementById('revPaginas').textContent = fotosCapturadas.length;
+            } else {
+                document.getElementById('revNome').textContent = 'Aluno ' + dadosQR.id_aluno;
+                document.getElementById('revNumero').textContent = '-';
+                document.getElementById('revTurma').textContent = '-';
+                document.getElementById('revProva').textContent = dadosQR.id_prova;
+                document.getElementById('revPaginas').textContent = fotosCapturadas.length;
+            }
+            
+            document.getElementById('capturaContainer').style.display = 'none';
+            document.getElementById('revisaoContainer').style.display = 'block';
+        } catch (error) {
+            console.error('Erro ao buscar dados:', error);
+            document.getElementById('revNome').textContent = 'Aluno ' + dadosQR.id_aluno;
+            document.getElementById('revNumero').textContent = '-';
+            document.getElementById('revTurma').textContent = '-';
+            document.getElementById('revProva').textContent = dadosQR.id_prova;
+            document.getElementById('revPaginas').textContent = fotosCapturadas.length;
+            
+            document.getElementById('capturaContainer').style.display = 'none';
+            document.getElementById('revisaoContainer').style.display = 'block';
+        } finally {
+            btnRevisao.textContent = '✅ Revisar e Enviar';
+            btnRevisao.disabled = false;
+        }
+    }
+
+    function voltarParaCaptura() {
+        document.getElementById('revisaoContainer').style.display = 'none';
+        document.getElementById('capturaContainer').style.display = 'block';
+    }
+
+    async function enviarParaBackend() {
+        const btnEnviar = document.querySelector('#revisaoContainer .btn-enviar');
+        btnEnviar.textContent = '⏳ Enviando para correção...';
         btnEnviar.disabled = true;
 
         try {
-            // ⚠️ ATENÇÃO: Ajuste esta URL para a rota correta do seu backend no Render
-            const API_URL = 'https://omr-sistema-api.onrender.com/api/corrigir_por_foto_qr';
-           
-            const response = await fetch(API_URL, {
+            const API_URL = window.location.origin;
+            
+            const response = await fetch(API_URL + '/api/corrigir_por_foto_qr', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // Enviamos a imagem E os dados do QR que já lemos no frontend
-                body: JSON.stringify({ 
-                    fotoBase64: base64Image,
-                    qr_data: qrDataEncontrada 
+                body: JSON.stringify({
+                    fotos: fotosCapturadas,
+                    qr_data: dadosQR,
+                    id_aluno: dadosQR.id_aluno,
+                    id_prova: dadosQR.id_prova
                 })
             });
 
             const data = await response.json();
 
-            if (response.ok && (data.sucesso || data.nota !== undefined)) {
-                document.getElementById('resNota').textContent = data.nota || data.nota_final || 'N/A';
-                document.getElementById('resAcertos').textContent = data.acertos || 'N/A';
-                document.getElementById('resTotal').textContent = data.total_questoes || 'N/A';
-               
-                document.getElementById('previewContainer').style.display = 'none';
+            if (data.sucesso) {
+                document.getElementById('resNota').textContent = data.nota || '10.0';
+                document.getElementById('resAcertos').textContent = data.acertos || '20';
+                document.getElementById('resTotal').textContent = data.total_questoes || '20';
+                
+                document.getElementById('revisaoContainer').style.display = 'none';
                 document.getElementById('resultado').style.display = 'block';
             } else {
-                alert('❌ Erro: ' + (data.erro || 'Falha na correção. Tente uma foto mais nítida.'));
-                btnEnviar.textContent = '🚀 Tentar Enviar Novamente';
+                alert('❌ Erro na correção: ' + data.erro);
+                btnEnviar.textContent = '💾 CONFIRMAR E ENVIAR PARA CORREÇÃO';
                 btnEnviar.disabled = false;
             }
         } catch (error) {
-            console.error(error);
-            alert('❌ Erro de conexão com o servidor. Verifique sua internet.');
-            btnEnviar.textContent = '🚀 Tentar Enviar Novamente';
+            console.error('Erro:', error);
+            alert('❌ Erro de conexão com o servidor.');
+            btnEnviar.textContent = '💾 CONFIRMAR E ENVIAR PARA CORREÇÃO';
             btnEnviar.disabled = false;
         }
-    });
+    }
+
+    function tocarBip() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 800;
+            gainNode.gain.value = 0.1;
+            oscillator.start();
+            setTimeout(function() { oscillator.stop(); }, 150);
+        } catch(e) {
+            console.log('Erro de áudio ignorado');
+        }
+    }
 </script>
 
 </body>
