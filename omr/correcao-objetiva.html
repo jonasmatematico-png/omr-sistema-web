@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Correção Objetiva (OMR)</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: #f5f5f5; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 500px; margin: 0 auto; text-align: center; }
+        h2 { color: #008080; margin-bottom: 8px; }
+        p { color: #666; margin-bottom: 24px; font-size: 15px; }
+
+        #cameraContainer { display: block; margin-bottom: 20px; }
+        #cameraVideo {
+            width: 100%; max-height: 400px; object-fit: cover;
+            border-radius: 12px; border: 3px solid #008080; background: #000;
+        }
+        .btn {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            padding: 16px 24px; border-radius: 12px; font-size: 18px; font-weight: 600;
+            border: none; cursor: pointer; width: 100%; margin: 8px 0;
+        }
+        .btn-primary { background-color: #008080; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-warning { background-color: #f59e0b; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+
+        #previewContainer, #resultadoContainer { display: none; margin-top: 20px; }
+        #imagemPreview {
+            width: 100%; max-height: 300px; object-fit: contain;
+            border-radius: 12px; border: 2px solid #ddd; background: #fff; margin-bottom: 15px;
+        }
+
+        .card-resultado {
+            background: #fff; padding: 20px; border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: left;
+        }
+        .resumo-nota {
+            background: linear-gradient(135deg, #008080 0%, #006666 100%);
+            color: white; padding: 24px; border-radius: 16px;
+            margin: 20px 0; text-align: center;
+        }
+        .resumo-nota .nota-grande { font-size: 56px; font-weight: bold; margin: 8px 0; }
+        .resumo-nota .nota-label { font-size: 14px; opacity: 0.95; }
+        
+        .info-row { display: flex; justify-content: space-between; margin: 12px 0; padding-bottom: 8px; border-bottom: 1px solid #eee; }
+        .info-label { font-weight: 600; color: #008080; }
+
+        #overlayProcessando {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); z-index: 2000;
+            align-items: center; justify-content: center;
+        }
+        .processando-card {
+            background: white; padding: 32px; border-radius: 16px; text-align: center; max-width: 300px;
+        }
+        .spinner {
+            width: 48px; height: 48px; border: 4px solid #e5e7eb;
+            border-top-color: #008080; border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .modo-fila-toggle {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px; background: #e0f7fa; border-radius: 8px;
+            margin: 12px 0; cursor: pointer; border: 1px solid #008080;
+        }
+        .modo-fila-toggle input[type="checkbox"] { width: 20px; height: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📝 Correção Objetiva (OMR)</h2>
+    <p>Aponte a câmera para o QR Code da folha de respostas.</p>
+
+    <div class="modo-fila-toggle" onclick="toggleModoFila()">
+        <input type="checkbox" id="chkModoFila">
+        <label for="chkModoFila" style="cursor: pointer; flex: 1;">
+            <strong>🔄 Modo Fila</strong><br>
+            <small>Após salvar, volta automaticamente para o próximo</small>
+        </label>
+    </div>
+
+    <!-- CÂMERA -->
+    <div id="cameraContainer">
+        <video id="cameraVideo" autoplay playsinline muted></video>
+        <canvas id="cameraCanvas" style="display: none;"></canvas>
+        <p id="statusLeitura" style="margin-top: 10px; font-weight: bold; color: #008080;">Câmera desligada.</p>
+
+        <button id="btnIniciar" class="btn btn-primary" onclick="iniciarCamera()">📷 INICIAR CÂMERA</button>
+        <button id="btnTirar" class="btn btn-warning" onclick="tirarFoto()" style="display: none;">📸 TIRAR FOTO DO GABARITO</button>
+        <button id="btnParar" class="btn btn-danger" onclick="pararCamera()" style="display: none;">⏹️ PARAR</button>
+    </div>
+
+    <!-- PREVIEW DA FOTO -->
+    <div id="previewContainer">
+        <p style="color: #008080; font-weight: bold;">Foto capturada. O que deseja fazer?</p>
+        <img id="imagemPreview" alt="Preview do Gabarito">
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-danger" onclick="descartarFoto()" style="flex: 1;">🗑️ Descartar</button>
+            <button class="btn btn-success" onclick="enviarParaBackend()" style="flex: 1;">✅ PROCESSAR</button>
+        </div>
+    </div>
+
+    <!-- RESULTADO -->
+    <div id="resultadoContainer">
+        <div class="card-resultado">
+            <h3 style="color: #008080; margin-top: 0; text-align: center;">✅ Leitura Concluída</h3>
+            
+            <div class="info-row">
+                <span class="info-label">👤 Aluno:</span>
+                <span id="resNome">-</span>
+            </div>
+            <div class="info-row" style="border: none;">
+                <span class="info-label">📝 Prova:</span>
+                <span id="resProva">-</span>
+            </div>
+
+            <div class="resumo-nota">
+                <div class="nota-label">Nota Final</div>
+                <div class="nota-grande" id="resNota">0.0</div>
+                <div class="nota-label" id="resAcertos">0 acertos de 0 questões</div>
+            </div>
+
+            <div class="info-row" style="border: none; align-items: center;">
+                <span class="info-label">Ajuste manual da nota (se necessário):</span>
+                <input type="number" id="inputNotaManual" step="0.1" style="width: 80px; padding: 8px; border: 2px solid #008080; border-radius: 6px; text-align: center; font-weight: bold; font-size: 16px;">
+            </div>
+
+            <button class="btn btn-success" onclick="salvarCorrecao()" style="margin-top: 16px;">💾 SALVAR NO SISTEMA</button>
+            <button class="btn btn-secondary" onclick="location.reload()" style="margin-top: 8px;">↩️ Voltar ao Início</button>
+        </div>
+    </div>
+</div>
+
+<!-- OVERLAY PROCESSANDO -->
+<div id="overlayProcessando">
+    <div class="processando-card">
+        <div class="spinner"></div>
+        <h3 style="margin: 0 0 8px; color: #333;">🤖 Lendo Gabarito...</h3>
+        <p style="margin: 0; color: #666; font-size: 14px;">Aguardando resposta do servidor.</p>
+    </div>
+</div>
+
+<script>
+    let videoStream = null;
+    let isScanning = false;
+    let qrDetectado = null;
+    let fotoBase64 = null;
+    let modoFila = false;
+    let dadosCorrecao = null;
+
+    const video = document.getElementById('cameraVideo');
+    const canvas = document.getElementById('cameraCanvas');
+    const statusLeitura = document.getElementById('statusLeitura');
+
+    function toggleModoFila() {
+        modoFila = document.getElementById('chkModoFila').checked;
+    }
+
+    async function iniciarCamera() {
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            video.srcObject = videoStream;
+            
+            document.getElementById('btnIniciar').style.display = 'none';
+            document.getElementById('btnParar').style.display = 'flex';
+            statusLeitura.textContent = '🔍 Buscando QR Code...';
+            isScanning = true;
+            video.onloadedmetadata = () => requestAnimationFrame(tick);
+        } catch (err) {
+            statusLeitura.textContent = '❌ Erro: ' + err.message;
+            alert('Erro ao acessar câmera: ' + err.message);
+        }
+    }
+
+    function pararCamera() {
+        isScanning = false;
+        if (videoStream) videoStream.getTracks().forEach(track => track.stop());
+        document.getElementById('btnIniciar').style.display = 'flex';
+        document.getElementById('btnTirar').style.display = 'none';
+        document.getElementById('btnParar').style.display = 'none';
+        statusLeitura.textContent = 'Câmera desligada.';
+    }
+
+    function tick() {
+        if (!isScanning) return;
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+
+            if (code) {
+                const partes = code.data.split(':');
+                // Aceita OMRALUNO:PROVA:ALUNO ou OMRALUNO:ALUNO (se a prova for selecionada depois)
+                if (partes[0].trim() === 'OMRALUNO' && partes.length >= 2) {
+                    qrDetectado = {
+                        id_prova: parseInt(partes[1].trim()) || null,
+                        id_aluno: parseInt(partes[2] ? partes[2].trim() : partes[1].trim())
+                    };
+                    isScanning = false;
+                    statusLeitura.innerHTML = '✅ <strong>QR Code Detectado!</strong><br><small>Enquadre o cartão-resposta e clique abaixo</small>';
+                    statusLeitura.style.color = '#28a745';
+                    document.getElementById('btnIniciar').style.display = 'none';
+                    document.getElementById('btnTirar').style.display = 'flex';
+                    document.getElementById('btnParar').style.display = 'flex';
+                    tocarBip();
+                }
+            }
+        }
+        if (isScanning) requestAnimationFrame(tick);
+    }
+
+    function tirarFoto() {
+        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Comprime um pouco para enviar mais rápido (0.8 = 80% de qualidade)
+        fotoBase64 = canvas.toDataURL('image/jpeg', 0.8);
+        tocarBip();
+        pararCamera();
+        
+        document.getElementById('cameraContainer').style.display = 'none';
+        document.getElementById('previewContainer').style.display = 'block';
+        document.getElementById('imagemPreview').src = fotoBase64;
+    }
+
+    function descartarFoto() {
+        fotoBase64 = null;
+        qrDetectado = null;
+        document.getElementById('previewContainer').style.display = 'none';
+        document.getElementById('cameraContainer').style.display = 'block';
+        iniciarCamera();
+    }
+
+    async function enviarParaBackend() {
+        if (!qrDetectado || !fotoBase64) return;
+        
+        document.getElementById('overlayProcessando').style.display = 'flex';
+        
+        try {
+            const API_URL = 'https://omr-sistema-api.onrender.com';
+            
+            // ✅ CHAMANDO A ROTA CORRETA: processar_imagem_omr
+            const response = await fetch(API_URL + '/api/processar_imagem_omr', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id_aluno: qrDetectado.id_aluno,
+                    id_avaliacao: qrDetectado.id_prova,
+                    imagem: fotoBase64
+                })
+            });
+
+            const data = await response.json();
+            document.getElementById('overlayProcessando').style.display = 'none';
+
+            if (data.sucesso) {
+                dadosCorrecao = data;
+                mostrarResultado(data);
+            } else {
+                alert('❌ Erro na leitura do gabarito: ' + data.erro);
+            }
+        } catch (error) {
+            document.getElementById('overlayProcessando').style.display = 'none';
+            console.error('Erro:', error);
+            alert('❌ Erro de conexão com o servidor.');
+        }
+    }
+
+    function mostrarResultado(data) {
+        document.getElementById('previewContainer').style.display = 'none';
+        document.getElementById('resultadoContainer').style.display = 'block';
+        
+        document.getElementById('resNome').textContent = data.nome_aluno || 'Aluno ID: ' + qrDetectado.id_aluno;
+        document.getElementById('resProva').textContent = data.nome_prova || 'Prova ID: ' + qrDetectado.id_prova;
+        
+        document.getElementById('resNota').textContent = data.nota_final.toFixed(1);
+        document.getElementById('resAcertos').textContent = data.acertos + ' acertos de ' + data.total_questoes + ' questões';
+        
+        // Preenche o campo manual com a nota sugerida
+        document.getElementById('inputNotaManual').value = data.nota_final.toFixed(1);
+    }
+
+    async function salvarCorrecao() {
+        if (!dadosCorrecao) return;
+        
+        // Usa a nota manual se o professor alterou, senão usa a da leitura OMR
+        const notaFinal = parseFloat(document.getElementById('inputNotaManual').value) || dadosCorrecao.nota_final;
+        
+        const btnSalvar = document.querySelector('#resultadoContainer .btn-success');
+        btnSalvar.textContent = '⏳ Salvando...';
+        btnSalvar.disabled = true;
+
+        try {
+            const API_URL = 'https://omr-sistema-api.onrender.com';
+            
+            // CHAMANDO EXATAMENTE A ROTA QUE VOCÊ ME MOSTROU!
+            const response = await fetch(API_URL + '/api/salvar_correcao_omr', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id_aluno: qrDetectado.id_aluno,
+                    id_avaliacao: qrDetectado.id_avaliacao, // <-- Nome correto para o seu backend
+                    nota_final: notaFinal,
+                    detalhes_respostas: dadosCorrecao.detalhes_respostas || [] // <-- Envia o detalhe de cada questão
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.sucesso) {
+                alert('✅ ' + (data.mensagem || 'Nota salva com sucesso no Supabase!'));
+                if (modoFila) {
+                    location.reload(); // Volta para o início para o próximo aluno
+                } else {
+                    btnSalvar.textContent = '✅ SALVO!';
+                }
+            } else {
+                alert('❌ Erro ao salvar: ' + data.erro);
+                btnSalvar.textContent = '💾 SALVAR NO SISTEMA';
+                btnSalvar.disabled = false;
+            }
+        } catch (error) {
+            alert('❌ Erro de conexão ao salvar.');
+            btnSalvar.textContent = '💾 SALVAR NO SISTEMA';
+            btnSalvar.disabled = false;
+        }
+    }
+
+    function calcularNivel(nota, totalQuestoes) {
+        // Lógica de porcentagem para o nível SAEB (assumindo nota máxima 10 ou proporcional)
+        // Se a prova vale 10, usa a nota direta. Se vale mais, ajusta a proporção.
+        const notaMaximaPossivel = totalQuestoes; // Simplificação: 1 ponto por questão
+        const porcentagem = (nota / notaMaximaPossivel) * 10;
+        
+        if (porcentagem >= 8) return 'Avançado';
+        if (porcentagem >= 6) return 'Adequado';
+        if (porcentagem >= 4) return 'Básico';
+        return 'Abaixo do Básico';
+    }
+
+    function tocarBip() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 800;
+            gainNode.gain.value = 0.1;
+            oscillator.start();
+            setTimeout(() => oscillator.stop(), 150);
+        } catch(e) {}
+    }
+</script>
+
+</body>
+</html>
