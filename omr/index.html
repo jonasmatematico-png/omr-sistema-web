@@ -151,8 +151,9 @@
     <div class="menu-item" onclick="navegarPara('view-planilha', this)">📋 Planilha</div>
     <div class="menu-item" onclick="navegarPara('view-corretor', this)">✏️ Corretor Manual</div>
     <div class="menu-item" onclick="navegarPara('view-qr', this)">🔲 QR Codes</div>
+    <div class="menu-item" onclick="navegarPara('view-correcao-rapida', this)" style="background: #e0f7fa; border-left-color: #008080; color: #008080; font-weight: 600;">📱 Correção Rápida (Mobile)</div>
     <div class="menu-item" onclick="navegarPara('view-gestao', this)" style="display:none;">👥 Gestão</div>
-    <div class="menu-item" onclick="navegarPara('view-camera', this)">📷 Câmera</div>
+    
     <div class="sidebar-footer">
       <div class="user-info">
         <div class="user-avatar" id="userAvatar">U</div>
@@ -518,66 +519,44 @@
         <div id="listaUsuariosGestao"></div>
       </div>
     </div>
+    <!-- VIEW: CORREÇÃO RÁPIDA MOBILE -->
+    <div id="view-correcao-rapida" class="view">
+      <h2>📱 Correção Rápida Inteligente</h2>
+      
+      <div class="card" style="border: 3px solid #008080; background: #f0fdfa; text-align: center;">
+        <h3 style="color: #008080; margin-bottom: 16px;"> Corretor Mobile com IA</h3>
+        <p style="font-size: 15px; color: #666; margin-bottom: 20px; line-height: 1.6;">
+          Acesse a versão otimizada para celular com:<br>
+          ✅ Leitura automática de QR Code<br>
+          ✅ Captura de múltiplas páginas<br>
+          ✅ Correção por IA (Gemini)<br>
+          ✅ Sugestão de notas e justificativas<br>
+          ✅ Salvamento automático no banco
+        </p>
+        
+        <a href="correcao-rapida.html" target="_blank" class="btn btn-success" style="width: 100%; padding: 18px; font-size: 18px; font-weight: bold; text-decoration: none; display: inline-block; box-shadow: 0 4px 12px rgba(0,128,128,0.3); margin-bottom: 16px;">
+          📱 ABRIR CORRETOR RÁPIDO
+        </a>
+        
+        <p style="font-size: 13px; color: #888; margin-top: 12px;">
+          💡 <strong>Dica:</strong> Abra este link no celular para usar a câmera com qualidade máxima!
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>📋 Como Usar</h3>
+        <ol style="line-height: 2; color: #555; padding-left: 20px;">
+          <li>Abra o <strong>Corretor Rápido</strong> no celular</li>
+          <li>Aponte a câmera para o <strong>QR Code</strong> da prova</li>
+          <li>Tire fotos de <strong>todas as páginas</strong></li>
+          <li>Clique em <strong>"Revisar e Enviar"</strong></li>
+          <li>A <strong>IA analisa</strong> as respostas e sugere notas</li>
+          <li><strong>Confirme ou edite</strong> as notas</li>
+          <li>Clique em <strong>"Salvar"</strong> - pronto!</li>
+        </ol>
+      </div>
+    </div>
   </div>
-</div>
-
-<!-- VIEW: FOTO PROVAS -->
-    <div id="view-camera" class="view active">
-      <h2>📷 Câmera</h2>
-          <div class="card"></div>
-            <!-- CONTAINER DE CAPTURA DE IMAGEM -->
-            <div class="card" style="margin-top: 20px; border: 2px dashed #008080; background: #f0fdfa;">
-              <h3 style="color: #008080; text-align: center;">📸 Escanear Cartão-Resposta</h3>
-              <p style="text-align: center; font-size: 14px; color: #666; margin-bottom: 16px;">
-                  Aponte a câmera para o cartão preenchido e tire a foto.
-              </p>
-
-              <!-- O SEGREDO ESTÁ AQUI: accept="image/*" capture="environment" força a câmera traseira no celular -->
-              <input type="file" id="inputCamera" accept="image/*" capture="environment" style="display: none;" onchange="previewImagem(this)">
-    
-              <button class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 16px;" onclick="document.getElementById('inputCamera').click()">
-                📷 ABRIR CÂMERA / ESCOLHER FOTO
-              </button>
-
-              <!-- ÁREA DE PRÉ-VISUALIZAÇÃO (O professor vê a foto antes de enviar) -->
-              <div id="areaPreview" style="display: none; text-align: center; margin-top: 16px;">
-                  <img id="imgPreview" src="" alt="Prévia da foto" style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 2px solid #ddd;">
-                  <br>
-                  <button class="btn btn-success" style="width: 100%; margin-top: 12px; padding: 14px;" onclick="enviarImagemParaCorrecao()">
-                      ✅ ENVIAR PARA CORREÇÃO AUTOMÁTICA
-                  </button>
-                  <button class="btn btn-secondary" style="width: 100%; margin-top: 8px;" onclick="limparImagem()">
-                      🗑️ Cancelar e Tirar Outra
-                  </button>
-                </div>
-    
-
-              <!-- ÁREA DE RESULTADO DA IA -->
-              <div id="areaResultadoCorrecao" style="margin-top: 16px;"></div>
-            </div>
-          </div>
-          
-    </div>
-    
-
-    <div class="card" style="border: 3px solid #28a745; margin-top: 20px; background: #f0fff4;">
-    <h3 style="color: #28a745; text-align: center;">📸 Corretor Inteligente por Foto (com QR Code)</h3>
-    <p style="text-align: center; font-size: 14px; color: #666;">
-        Tire foto da folha do aluno (com QR code visível). O sistema identifica automaticamente a prova e o aluno.
-    </p>
-
-    <input type="file" id="inputFotoQR" accept="image/*" capture="environment" style="display: none;" onchange="processarFotoComQR(this)">
-    
-    <button class="btn btn-success" style="width: 100%; padding: 16px; font-size: 16px;" onclick="document.getElementById('inputFotoQR').click()">
-        📷 TIRAR FOTO DA FOLHA
-    </button>
-
-    <div id="areaProcessamento" style="display: none; text-align: center; margin-top: 16px;">
-        <img id="imgPreviewQR" style="max-width: 100%; max-height: 300px; border-radius: 8px; border: 2px solid #ddd;">
-        <p id="statusLeitura" style="margin-top: 10px; font-weight: bold; color: #28a745;">⏳ Lendo QR Code...</p>
-    </div>
-
-    <div id="areaResultadoCorrecao" style="margin-top: 16px;"></div>
 </div>
 
 <!-- FAB IA -->
