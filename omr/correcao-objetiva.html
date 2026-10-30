@@ -18,25 +18,25 @@
             border-radius: 12px; border: 3px solid #008080; background: #000;
         }
         
-        /* MOLDAURA DE ENQUADRAMENTO */
+        /* MOLDAURA DE ENQUADRAMENTO (Formato Retangular Horizontal) */
         #molduraEnquadramento {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 80%;
-            height: 60%;
-            border: 4px dashed rgba(255, 255, 255, 0.8);
+            width: 90%;
+            height: 45%;
+            border: 3px dashed rgba(255, 255, 255, 0.8);
             border-radius: 12px;
             pointer-events: none;
             transition: all 0.3s ease;
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
         }
         
         #molduraEnquadramento.alinhado {
             border-color: #00ff00;
             border-style: solid;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.6), 0 0 0 9999px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.6), 0 0 0 9999px rgba(0, 0, 0, 0.5);
             animation: pulsar 1s ease-in-out infinite;
         }
         
@@ -139,7 +139,7 @@
         
         <p id="statusLeitura" style="margin-top: 10px; font-weight: bold; color: #008080; display: none;">Câmera desligada.</p>
 
-        <button id="btnIniciar" class="btn btn-primary" onclick="iniciarCamera()"> INICIAR CÂMERA</button>
+        <button id="btnIniciar" class="btn btn-primary" onclick="iniciarCamera()">📷 INICIAR CÂMERA</button>
         <button id="btnTirar" class="btn btn-warning" onclick="tirarFotoManual()" style="display: none;">📸 CAPTURAR MANUALMENTE</button>
         <button id="btnParar" class="btn btn-danger" onclick="pararCamera()" style="display: none;">⏹️ PARAR</button>
     </div>
@@ -205,9 +205,6 @@
     let capturaAutomaticaAtiva = true;
 
     // 🌍 URL DO BACKEND (Declare apenas UMA vez aqui no topo)
-    // Para testar no PC local use: 'http://192.168.3.20:10000'
-    // Para produção (celular/render) use: 'https://omr-sistema-api.onrender.com'
-
     const API_URL = 'https://omr-sistema-api.onrender.com';
 
     const video = document.getElementById('cameraVideo');
@@ -253,6 +250,7 @@
         }
     }
 
+    // ✅ FUNÇÃO ÚNICA E CORRIGIDA (Formato Retangular Horizontal)
     function adicionarFrameGuia() {
         const existente = document.getElementById('frameGuia');
         if (existente) existente.remove();
@@ -264,89 +262,48 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 85%;
-            height: 60%;
+            width: 90%;
+            height: 45%;
             border: 3px solid #00ff00;
             border-radius: 12px;
             box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
             pointer-events: none;
             z-index: 100;
             animation: pulsarFrame 2s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         `;
         
+        // Texto de instrução DENTRO do frame
+        const texto = document.createElement('div');
+        texto.style.cssText = `
+            color: #00ff00;
+            font-weight: bold;
+            font-size: 14px;
+            text-align: center;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 12px;
+            border-radius: 8px;
+            pointer-events: none;
+        `;
+        texto.innerText = '📐 Alinhe o gabarito na HORIZONTAL aqui dentro';
+        frame.appendChild(texto);
+        
+        // Cantos destacados
         const cantos = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
         cantos.forEach(pos => {
             const canto = document.createElement('div');
             canto.style.cssText = `position: absolute; width: 30px; height: 30px; border: 4px solid #00ff00;`;
-            if (pos === 'top-left') canto.style.cssText += 'top: -3px; left: -3px; border-right: 0; border-bottom: 0;';
-            else if (pos === 'top-right') canto.style.cssText += 'top: -3px; right: -3px; border-left: 0; border-bottom: 0;';
-            else if (pos === 'bottom-left') canto.style.cssText += 'bottom: -3px; left: -3px; border-right: 0; border-top: 0;';
-            else if (pos === 'bottom-right') canto.style.cssText += 'bottom: -3px; right: -3px; border-left: 0; border-top: 0;';
+            if (pos === 'top-left') canto.style.cssText += 'top: -3px; left: -3px; border-right: 0; border-bottom: 0; border-top-left-radius: 12px;';
+            else if (pos === 'top-right') canto.style.cssText += 'top: -3px; right: -3px; border-left: 0; border-bottom: 0; border-top-right-radius: 12px;';
+            else if (pos === 'bottom-left') canto.style.cssText += 'bottom: -3px; left: -3px; border-right: 0; border-top: 0; border-bottom-left-radius: 12px;';
+            else if (pos === 'bottom-right') canto.style.cssText += 'bottom: -3px; right: -3px; border-left: 0; border-top: 0; border-bottom-right-radius: 12px;';
             frame.appendChild(canto);
         });
         
         const style = document.createElement('style');
         style.textContent = `@keyframes pulsarFrame { 0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.02); } }`;
-        document.head.appendChild(style);
-        
-        document.getElementById('cameraContainer').appendChild(frame);
-    }
-
-    function adicionarFrameGuia() {
-        // Remove se já existir
-        const existente = document.getElementById('frameGuia');
-        if (existente) existente.remove();
-        
-        // Cria o frame guia
-        const frame = document.createElement('div');
-        frame.id = 'frameGuia';
-        frame.style.cssText = `
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 85%;
-            height: 60%;
-            border: 3px solid #00ff00;
-            border-radius: 12px;
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
-            pointer-events: none;
-            z-index: 100;
-            animation: pulsarFrame 2s ease-in-out infinite;
-        `;
-        
-        // Adiciona cantos destacados
-        const cantos = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
-        cantos.forEach(pos => {
-            const canto = document.createElement('div');
-            canto.style.cssText = `
-                position: absolute;
-                width: 30px;
-                height: 30px;
-                border: 4px solid #00ff00;
-            `;
-            
-            if (pos === 'top-left') {
-                canto.style.cssText += 'top: -3px; left: -3px; border-right: 0; border-bottom: 0;';
-            } else if (pos === 'top-right') {
-                canto.style.cssText += 'top: -3px; right: -3px; border-left: 0; border-bottom: 0;';
-            } else if (pos === 'bottom-left') {
-                canto.style.cssText += 'bottom: -3px; left: -3px; border-right: 0; border-top: 0;';
-            } else if (pos === 'bottom-right') {
-                canto.style.cssText += 'bottom: -3px; right: -3px; border-left: 0; border-top: 0;';
-            }
-            
-            frame.appendChild(canto);
-        });
-        
-        // Adiciona CSS da animação
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes pulsarFrame {
-                0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
-                50% { opacity: 1; transform: translate(-50%, -50%) scale(1.02); }
-            }
-        `;
         document.head.appendChild(style);
         
         document.getElementById('cameraContainer').appendChild(frame);
@@ -383,16 +340,13 @@
                     const qrCentroY = code.location.topLeftCorner.y + 
                                      (code.location.bottomLeftCorner.y - code.location.topLeftCorner.y) / 2;
                     
-                    const molduraRect = moldura.getBoundingClientRect();
-                    const videoRect = video.getBoundingClientRect();
-                    
                     // Converte coordenadas do QR para percentual da tela
                     const qrXPercent = (qrCentroX / canvas.width) * 100;
                     const qrYPercent = (qrCentroY / canvas.height) * 100;
                     
-                    // Moldura está centralizada (50%, 50%) com 80% largura e 60% altura
-                    const dentroMoldura = (qrXPercent > 10 && qrXPercent < 90 && 
-                                          qrYPercent > 20 && qrYPercent < 80);
+                    // Moldura está centralizada (50%, 50%) com 90% largura e 45% altura
+                    const dentroMoldura = (qrXPercent > 5 && qrXPercent < 95 && 
+                                          qrYPercent > 27.5 && qrYPercent < 72.5);
                     
                     if (dentroMoldura) {
                         // QR está bem posicionado!
@@ -471,28 +425,24 @@
             return;
         }
         
-        // Mostra a tela de "Processando..."
         document.getElementById('overlayProcessando').style.display = 'flex';
         
         try {
-            // Usa a API_URL que declaramos no TOPO do arquivo
             const response = await fetch(API_URL + '/api/processar_imagem_omr', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     id_aluno: qrDetectado.id_aluno,
-                    id_avaliacao: qrDetectado.id_prova, // O backend espera este nome
+                    id_avaliacao: qrDetectado.id_prova,
                     imagem: fotoBase64
                 })
             });
 
             const data = await response.json();
-            
-            // Esconde a tela de "Processando..."
             document.getElementById('overlayProcessando').style.display = 'none';
 
             if (data.sucesso) {
-                dadosCorrecao = data; // Salva os dados para usar no passo seguinte
+                dadosCorrecao = data;
                 mostrarResultado(data);
             } else {
                 alert('❌ Erro na leitura do gabarito: ' + data.erro);
@@ -516,7 +466,6 @@
         
         document.getElementById('inputNotaManual').value = data.nota_final.toFixed(1);
         
-        // Mostra imagem processada
         if (data.imagem_processada) {
             let divImg = document.getElementById('divImagemProcessada');
             
@@ -527,9 +476,9 @@
                 divImg.innerHTML = `
                     <h4 style="color: #008080; margin: 0 0 10px 0;">🔍 Gabarito Processado</h4>
                     <p style="font-size: 12px; color: #666; margin: 0 0 10px 0;">
-                        🟢 Verde = Acerto |  Vermelho = Erro | 🟡 Amarelo = Bolinha Detectada
+                        🟢 Verde = Acerto | 🔴 Vermelho = Erro | 🟡 Amarelo = Bolinha Detectada
                     </p>
-                    <img id="imgProcessada" style="width: 100%; max-width: 500px; border: 3px solid #008080; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+                    <img id="imgProcessada" style="width: auto; max-width: 100%; height: auto; border: 3px solid #008080; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); display: block; margin: 0 auto;">
                 `;
                 document.getElementById('resultadoContainer').appendChild(divImg);
             }
@@ -544,17 +493,15 @@
             return;
         }
         
-        // Pega a nota do campo manual ou usa a calculada automaticamente
         const notaFinal = parseFloat(document.getElementById('inputNotaManual').value) || dadosCorrecao.nota_final;
         
         const btnSalvar = document.querySelector('#resultadoContainer .btn-success');
-        const textoOriginal = btnSalvar.textContent; // Guarda o texto original para restaurar se der erro
+        const textoOriginal = btnSalvar.textContent;
         
         btnSalvar.textContent = '⏳ Salvando...';
         btnSalvar.disabled = true;
 
         try {
-            // Usa a API_URL que declaramos no TOPO do arquivo
             const response = await fetch(API_URL + '/api/salvar_correcao_omr', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -572,7 +519,6 @@
                 alert('✅ ' + (data.mensagem || 'Nota salva com sucesso no sistema!'));
                 
                 if (modoFila) {
-                    // Se estiver no modo fila, recarrega a página para o próximo aluno
                     location.reload();
                 } else {
                     btnSalvar.textContent = '✅ SALVO!';
