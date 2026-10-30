@@ -204,6 +204,12 @@
     let tempoAlinhado = 0;
     let capturaAutomaticaAtiva = true;
 
+    // 🌍 URL DO BACKEND (Declare apenas UMA vez aqui no topo)
+    // Para testar no PC local use: 'http://192.168.3.20:10000'
+    // Para produção (celular/render) use: 'https://omr-sistema-api.onrender.com'
+
+    const API_URL ='https://omr-sistema-api.onrender.com';
+
     const video = document.getElementById('cameraVideo');
     const canvas = document.getElementById('cameraCanvas');
     const moldura = document.getElementById('molduraEnquadramento');
@@ -215,27 +221,137 @@
 
     async function iniciarCamera() {
         try {
-            videoStream = await navigator.mediaDevices.getUserMedia({ 
-                video: { 
+            const constraints = {
+                video: {
                     facingMode: "environment",
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 }
-                } 
-            });
+                    width: { ideal: 1920, min: 1280 },
+                    height: { ideal: 1080, min: 720 },
+                    advanced: [
+                        { focusMode: "continuous" },
+                        { width: 1920 },
+                        { height: 1080 }
+                    ]
+                }
+            };
+
+            videoStream = await navigator.mediaDevices.getUserMedia(constraints);
             video.srcObject = videoStream;
             
             document.getElementById('btnIniciar').style.display = 'none';
             document.getElementById('btnParar').style.display = 'flex';
             document.getElementById('btnTirar').style.display = 'flex';
             textoEnquadramento.style.display = 'block';
+            textoEnquadramento.textContent = '📐 Alinhe o gabarito DENTRO do retângulo verde';
             
             isScanning = true;
-            video.onloadedmetadata = () => requestAnimationFrame(tick);
+            video.onloadedmetadata = () => {
+                adicionarFrameGuia();
+                requestAnimationFrame(tick);
+            };
         } catch (err) {
             alert('Erro ao acessar câmera: ' + err.message);
         }
     }
 
+    function adicionarFrameGuia() {
+        const existente = document.getElementById('frameGuia');
+        if (existente) existente.remove();
+        
+        const frame = document.createElement('div');
+        frame.id = 'frameGuia';
+        frame.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            height: 60%;
+            border: 3px solid #00ff00;
+            border-radius: 12px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+            pointer-events: none;
+            z-index: 100;
+            animation: pulsarFrame 2s ease-in-out infinite;
+        `;
+        
+        const cantos = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+        cantos.forEach(pos => {
+            const canto = document.createElement('div');
+            canto.style.cssText = `position: absolute; width: 30px; height: 30px; border: 4px solid #00ff00;`;
+            if (pos === 'top-left') canto.style.cssText += 'top: -3px; left: -3px; border-right: 0; border-bottom: 0;';
+            else if (pos === 'top-right') canto.style.cssText += 'top: -3px; right: -3px; border-left: 0; border-bottom: 0;';
+            else if (pos === 'bottom-left') canto.style.cssText += 'bottom: -3px; left: -3px; border-right: 0; border-top: 0;';
+            else if (pos === 'bottom-right') canto.style.cssText += 'bottom: -3px; right: -3px; border-left: 0; border-top: 0;';
+            frame.appendChild(canto);
+        });
+        
+        const style = document.createElement('style');
+        style.textContent = `@keyframes pulsarFrame { 0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.02); } }`;
+        document.head.appendChild(style);
+        
+        document.getElementById('cameraContainer').appendChild(frame);
+    }
+
+    function adicionarFrameGuia() {
+        // Remove se já existir
+        const existente = document.getElementById('frameGuia');
+        if (existente) existente.remove();
+        
+        // Cria o frame guia
+        const frame = document.createElement('div');
+        frame.id = 'frameGuia';
+        frame.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            height: 60%;
+            border: 3px solid #00ff00;
+            border-radius: 12px;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            z-index: 100;
+            animation: pulsarFrame 2s ease-in-out infinite;
+        `;
+        
+        // Adiciona cantos destacados
+        const cantos = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+        cantos.forEach(pos => {
+            const canto = document.createElement('div');
+            canto.style.cssText = `
+                position: absolute;
+                width: 30px;
+                height: 30px;
+                border: 4px solid #00ff00;
+            `;
+            
+            if (pos === 'top-left') {
+                canto.style.cssText += 'top: -3px; left: -3px; border-right: 0; border-bottom: 0;';
+            } else if (pos === 'top-right') {
+                canto.style.cssText += 'top: -3px; right: -3px; border-left: 0; border-bottom: 0;';
+            } else if (pos === 'bottom-left') {
+                canto.style.cssText += 'bottom: -3px; left: -3px; border-right: 0; border-top: 0;';
+            } else if (pos === 'bottom-right') {
+                canto.style.cssText += 'bottom: -3px; right: -3px; border-left: 0; border-top: 0;';
+            }
+            
+            frame.appendChild(canto);
+        });
+        
+        // Adiciona CSS da animação
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulsarFrame {
+                0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+                50% { opacity: 1; transform: translate(-50%, -50%) scale(1.02); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        document.getElementById('cameraContainer').appendChild(frame);
+    }
+    
     function pararCamera() {
         isScanning = false;
         if (videoStream) videoStream.getTracks().forEach(track => track.stop());
@@ -345,36 +461,46 @@
     }
 
     async function enviarParaBackend() {
-        if (!qrDetectado || !fotoBase64) return;
+        if (!fotoBase64) {
+            alert('⚠️ Nenhuma foto capturada!');
+            return;
+        }
         
+        if (!qrDetectado) {
+            alert('⚠️ QR Code não detectado! Tire uma nova foto garantindo que o QR Code esteja visível e bem iluminado.');
+            return;
+        }
+        
+        // Mostra a tela de "Processando..."
         document.getElementById('overlayProcessando').style.display = 'flex';
         
         try {
-            const API_URL = 'https://omr-sistema-api.onrender.com';
-            
+            // Usa a API_URL que declaramos no TOPO do arquivo
             const response = await fetch(API_URL + '/api/processar_imagem_omr', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     id_aluno: qrDetectado.id_aluno,
-                    id_avaliacao: qrDetectado.id_prova,
+                    id_avaliacao: qrDetectado.id_prova, // O backend espera este nome
                     imagem: fotoBase64
                 })
             });
 
             const data = await response.json();
+            
+            // Esconde a tela de "Processando..."
             document.getElementById('overlayProcessando').style.display = 'none';
 
             if (data.sucesso) {
-                dadosCorrecao = data;
+                dadosCorrecao = data; // Salva os dados para usar no passo seguinte
                 mostrarResultado(data);
             } else {
                 alert('❌ Erro na leitura do gabarito: ' + data.erro);
             }
         } catch (error) {
             document.getElementById('overlayProcessando').style.display = 'none';
-            console.error('Erro:', error);
-            alert('❌ Erro de conexão com o servidor.');
+            console.error('Erro de rede:', error);
+            alert('❌ Erro de conexão com o servidor. Verifique sua internet.');
         }
     }
 
@@ -413,17 +539,22 @@
     }
 
     async function salvarCorrecao() {
-        if (!dadosCorrecao) return;
+        if (!dadosCorrecao) {
+            alert('⚠️ Nenhum dado para salvar. Processe o gabarito primeiro.');
+            return;
+        }
         
+        // Pega a nota do campo manual ou usa a calculada automaticamente
         const notaFinal = parseFloat(document.getElementById('inputNotaManual').value) || dadosCorrecao.nota_final;
         
         const btnSalvar = document.querySelector('#resultadoContainer .btn-success');
+        const textoOriginal = btnSalvar.textContent; // Guarda o texto original para restaurar se der erro
+        
         btnSalvar.textContent = '⏳ Salvando...';
         btnSalvar.disabled = true;
 
         try {
-            const API_URL = 'https://omr-sistema-api.onrender.com';
-            
+            // Usa a API_URL que declaramos no TOPO do arquivo
             const response = await fetch(API_URL + '/api/salvar_correcao_omr', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -438,20 +569,23 @@
             const data = await response.json();
             
             if (data.sucesso) {
-                alert('✅ ' + (data.mensagem || 'Nota salva com sucesso!'));
+                alert('✅ ' + (data.mensagem || 'Nota salva com sucesso no sistema!'));
+                
                 if (modoFila) {
+                    // Se estiver no modo fila, recarrega a página para o próximo aluno
                     location.reload();
                 } else {
                     btnSalvar.textContent = '✅ SALVO!';
                 }
             } else {
                 alert('❌ Erro ao salvar: ' + data.erro);
-                btnSalvar.textContent = '💾 SALVAR NO SISTEMA';
+                btnSalvar.textContent = textoOriginal;
                 btnSalvar.disabled = false;
             }
         } catch (error) {
-            alert(' Erro de conexão ao salvar.');
-            btnSalvar.textContent = '💾 SALVAR NO SISTEMA';
+            console.error('Erro ao salvar:', error);
+            alert('❌ Erro de conexão ao salvar. Tente novamente.');
+            btnSalvar.textContent = textoOriginal;
             btnSalvar.disabled = false;
         }
     }
