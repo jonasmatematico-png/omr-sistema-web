@@ -12,11 +12,53 @@
         h2 { color: #008080; margin-bottom: 8px; }
         p { color: #666; margin-bottom: 24px; font-size: 15px; }
 
-        #cameraContainer { display: block; margin-bottom: 20px; }
+        #cameraContainer { display: block; margin-bottom: 20px; position: relative; }
         #cameraVideo {
-            width: 100%; max-height: 400px; object-fit: cover;
+            width: 100%; max-height: 500px; object-fit: cover;
             border-radius: 12px; border: 3px solid #008080; background: #000;
         }
+        
+        /* MOLDAURA DE ENQUADRAMENTO */
+        #molduraEnquadramento {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 60%;
+            border: 4px dashed rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.3);
+        }
+        
+        #molduraEnquadramento.alinhado {
+            border-color: #00ff00;
+            border-style: solid;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.6), 0 0 0 9999px rgba(0, 0, 0, 0.3);
+            animation: pulsar 1s ease-in-out infinite;
+        }
+        
+        @keyframes pulsar {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.02); }
+        }
+        
+        #textoEnquadramento {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 10;
+        }
+        
         .btn {
             display: flex; align-items: center; justify-content: center; gap: 10px;
             padding: 16px 24px; border-radius: 12px; font-size: 18px; font-weight: 600;
@@ -86,14 +128,19 @@
         </label>
     </div>
 
-    <!-- CÂMERA -->
+    <!-- CÂMERA COM MOLDAURA -->
     <div id="cameraContainer">
         <video id="cameraVideo" autoplay playsinline muted></video>
         <canvas id="cameraCanvas" style="display: none;"></canvas>
-        <p id="statusLeitura" style="margin-top: 10px; font-weight: bold; color: #008080;">Câmera desligada.</p>
+        
+        <!-- MOLDAURA DE ENQUADRAMENTO -->
+        <div id="molduraEnquadramento"></div>
+        <div id="textoEnquadramento">🔍 Buscando QR Code...</div>
+        
+        <p id="statusLeitura" style="margin-top: 10px; font-weight: bold; color: #008080; display: none;">Câmera desligada.</p>
 
-        <button id="btnIniciar" class="btn btn-primary" onclick="iniciarCamera()">📷 INICIAR CÂMERA</button>
-        <button id="btnTirar" class="btn btn-warning" onclick="tirarFoto()" style="display: none;">📸 TIRAR FOTO DO GABARITO</button>
+        <button id="btnIniciar" class="btn btn-primary" onclick="iniciarCamera()"> INICIAR CÂMERA</button>
+        <button id="btnTirar" class="btn btn-warning" onclick="tirarFotoManual()" style="display: none;">📸 CAPTURAR MANUALMENTE</button>
         <button id="btnParar" class="btn btn-danger" onclick="pararCamera()" style="display: none;">⏹️ PARAR</button>
     </div>
 
@@ -154,10 +201,13 @@
     let fotoBase64 = null;
     let modoFila = false;
     let dadosCorrecao = null;
+    let tempoAlinhado = 0;
+    let capturaAutomaticaAtiva = true;
 
     const video = document.getElementById('cameraVideo');
     const canvas = document.getElementById('cameraCanvas');
-    const statusLeitura = document.getElementById('statusLeitura');
+    const moldura = document.getElementById('molduraEnquadramento');
+    const textoEnquadramento = document.getElementById('textoEnquadramento');
 
     function toggleModoFila() {
         modoFila = document.getElementById('chkModoFila').checked;
@@ -165,16 +215,23 @@
 
     async function iniciarCamera() {
         try {
-            videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            videoStream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: "environment",
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                } 
+            });
             video.srcObject = videoStream;
             
             document.getElementById('btnIniciar').style.display = 'none';
             document.getElementById('btnParar').style.display = 'flex';
-            statusLeitura.textContent = '🔍 Buscando QR Code...';
+            document.getElementById('btnTirar').style.display = 'flex';
+            textoEnquadramento.style.display = 'block';
+            
             isScanning = true;
             video.onloadedmetadata = () => requestAnimationFrame(tick);
         } catch (err) {
-            statusLeitura.textContent = '❌ Erro: ' + err.message;
             alert('Erro ao acessar câmera: ' + err.message);
         }
     }
@@ -185,11 +242,13 @@
         document.getElementById('btnIniciar').style.display = 'flex';
         document.getElementById('btnTirar').style.display = 'none';
         document.getElementById('btnParar').style.display = 'none';
-        statusLeitura.textContent = 'Câmera desligada.';
+        moldura.classList.remove('alinhado');
+        textoEnquadramento.textContent = 'Câmera desligada';
     }
 
     function tick() {
         if (!isScanning) return;
+        
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
             canvas.height = video.videoHeight;
             canvas.width = video.videoWidth;
@@ -197,43 +256,84 @@
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+            const code = jsQR(imageData.data, imageData.width, canvas.height, { inversionAttempts: "dontInvert" });
 
             if (code) {
                 const partes = code.data.split(':');
-                // Aceita OMRALUNO:PROVA:ALUNO ou OMRALUNO:ALUNO (se a prova for selecionada depois)
                 if (partes[0].trim() === 'OMRALUNO' && partes.length >= 2) {
-                    qrDetectado = {
-                        id_prova: parseInt(partes[1].trim()) || null,
-                        id_aluno: parseInt(partes[2] ? partes[2].trim() : partes[1].trim())
-                    };
-                    isScanning = false;
-                    statusLeitura.innerHTML = '✅ <strong>QR Code Detectado!</strong><br><small>Enquadre o cartão-resposta e clique abaixo</small>';
-                    statusLeitura.style.color = '#28a745';
-                    document.getElementById('btnIniciar').style.display = 'none';
-                    document.getElementById('btnTirar').style.display = 'flex';
-                    document.getElementById('btnParar').style.display = 'flex';
-                    tocarBip();
+                    // Verifica se o QR está dentro da moldura
+                    const qrCentroX = code.location.topLeftCorner.x + 
+                                     (code.location.topRightCorner.x - code.location.topLeftCorner.x) / 2;
+                    const qrCentroY = code.location.topLeftCorner.y + 
+                                     (code.location.bottomLeftCorner.y - code.location.topLeftCorner.y) / 2;
+                    
+                    const molduraRect = moldura.getBoundingClientRect();
+                    const videoRect = video.getBoundingClientRect();
+                    
+                    // Converte coordenadas do QR para percentual da tela
+                    const qrXPercent = (qrCentroX / canvas.width) * 100;
+                    const qrYPercent = (qrCentroY / canvas.height) * 100;
+                    
+                    // Moldura está centralizada (50%, 50%) com 80% largura e 60% altura
+                    const dentroMoldura = (qrXPercent > 10 && qrXPercent < 90 && 
+                                          qrYPercent > 20 && qrYPercent < 80);
+                    
+                    if (dentroMoldura) {
+                        // QR está bem posicionado!
+                        if (!moldura.classList.contains('alinhado')) {
+                            moldura.classList.add('alinhado');
+                            tempoAlinhado = Date.now();
+                            textoEnquadramento.textContent = '✅ Perfeito! Capturando automaticamente...';
+                            tocarBip();
+                        }
+                        
+                        // Captura automática após 1.5 segundos alinhado
+                        if (capturaAutomaticaAtiva && (Date.now() - tempoAlinhado) > 1500) {
+                            qrDetectado = {
+                                id_prova: parseInt(partes[1].trim()) || null,
+                                id_aluno: parseInt(partes[2] ? partes[2].trim() : partes[1].trim())
+                            };
+                            tirarFotoAutomatica();
+                            return;
+                        }
+                    } else {
+                        // QR detectado mas fora da moldura
+                        moldura.classList.remove('alinhado');
+                        textoEnquadramento.textContent = '⚠️ QR detectado! Centralize na moldura';
+                    }
                 }
+            } else {
+                // Nenhum QR detectado
+                moldura.classList.remove('alinhado');
+                textoEnquadramento.textContent = '🔍 Buscando QR Code...';
             }
         }
+        
         if (isScanning) requestAnimationFrame(tick);
     }
 
-    function tirarFoto() {
+    function tirarFotoAutomatica() {
+        isScanning = false;
         canvas.height = video.videoHeight;
         canvas.width = video.videoWidth;
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Comprime um pouco para enviar mais rápido (0.8 = 80% de qualidade)
-        fotoBase64 = canvas.toDataURL('image/jpeg', 0.8);
+        fotoBase64 = canvas.toDataURL('image/jpeg', 0.85);
         tocarBip();
         pararCamera();
         
         document.getElementById('cameraContainer').style.display = 'none';
         document.getElementById('previewContainer').style.display = 'block';
         document.getElementById('imagemPreview').src = fotoBase64;
+    }
+
+    function tirarFotoManual() {
+        if (!qrDetectado) {
+            alert('⚠️ QR Code não detectado ainda! Aguarde ou reposicione.');
+            return;
+        }
+        tirarFotoAutomatica();
     }
 
     function descartarFoto() {
@@ -252,7 +352,6 @@
         try {
             const API_URL = 'https://omr-sistema-api.onrender.com';
             
-            // ✅ CHAMANDO A ROTA CORRETA: processar_imagem_omr
             const response = await fetch(API_URL + '/api/processar_imagem_omr', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -289,14 +388,33 @@
         document.getElementById('resNota').textContent = data.nota_final.toFixed(1);
         document.getElementById('resAcertos').textContent = data.acertos + ' acertos de ' + data.total_questoes + ' questões';
         
-        // Preenche o campo manual com a nota sugerida
         document.getElementById('inputNotaManual').value = data.nota_final.toFixed(1);
+        
+        // Mostra imagem processada
+        if (data.imagem_processada) {
+            let divImg = document.getElementById('divImagemProcessada');
+            
+            if (!divImg) {
+                divImg = document.createElement('div');
+                divImg.id = 'divImagemProcessada';
+                divImg.style.cssText = 'margin: 20px 0; text-align: center; background: #f0f0f0; padding: 15px; border-radius: 8px;';
+                divImg.innerHTML = `
+                    <h4 style="color: #008080; margin: 0 0 10px 0;">🔍 Gabarito Processado</h4>
+                    <p style="font-size: 12px; color: #666; margin: 0 0 10px 0;">
+                        🟢 Verde = Acerto |  Vermelho = Erro | 🟡 Amarelo = Bolinha Detectada
+                    </p>
+                    <img id="imgProcessada" style="width: 100%; max-width: 500px; border: 3px solid #008080; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+                `;
+                document.getElementById('resultadoContainer').appendChild(divImg);
+            }
+            
+            document.getElementById('imgProcessada').src = data.imagem_processada;
+        }
     }
 
     async function salvarCorrecao() {
         if (!dadosCorrecao) return;
         
-        // Usa a nota manual se o professor alterou, senão usa a da leitura OMR
         const notaFinal = parseFloat(document.getElementById('inputNotaManual').value) || dadosCorrecao.nota_final;
         
         const btnSalvar = document.querySelector('#resultadoContainer .btn-success');
@@ -306,24 +424,23 @@
         try {
             const API_URL = 'https://omr-sistema-api.onrender.com';
             
-            // CHAMANDO EXATAMENTE A ROTA QUE VOCÊ ME MOSTROU!
             const response = await fetch(API_URL + '/api/salvar_correcao_omr', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     id_aluno: qrDetectado.id_aluno,
-                    id_avaliacao: qrDetectado.id_avaliacao, // <-- Nome correto para o seu backend
+                    id_avaliacao: qrDetectado.id_prova,
                     nota_final: notaFinal,
-                    detalhes_respostas: dadosCorrecao.detalhes_respostas || [] // <-- Envia o detalhe de cada questão
+                    detalhes_respostas: dadosCorrecao.detalhes_respostas || []
                 })
             });
             
             const data = await response.json();
             
             if (data.sucesso) {
-                alert('✅ ' + (data.mensagem || 'Nota salva com sucesso no Supabase!'));
+                alert('✅ ' + (data.mensagem || 'Nota salva com sucesso!'));
                 if (modoFila) {
-                    location.reload(); // Volta para o início para o próximo aluno
+                    location.reload();
                 } else {
                     btnSalvar.textContent = '✅ SALVO!';
                 }
@@ -333,22 +450,10 @@
                 btnSalvar.disabled = false;
             }
         } catch (error) {
-            alert('❌ Erro de conexão ao salvar.');
+            alert(' Erro de conexão ao salvar.');
             btnSalvar.textContent = '💾 SALVAR NO SISTEMA';
             btnSalvar.disabled = false;
         }
-    }
-
-    function calcularNivel(nota, totalQuestoes) {
-        // Lógica de porcentagem para o nível SAEB (assumindo nota máxima 10 ou proporcional)
-        // Se a prova vale 10, usa a nota direta. Se vale mais, ajusta a proporção.
-        const notaMaximaPossivel = totalQuestoes; // Simplificação: 1 ponto por questão
-        const porcentagem = (nota / notaMaximaPossivel) * 10;
-        
-        if (porcentagem >= 8) return 'Avançado';
-        if (porcentagem >= 6) return 'Adequado';
-        if (porcentagem >= 4) return 'Básico';
-        return 'Abaixo do Básico';
     }
 
     function tocarBip() {
