@@ -8,10 +8,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <style>
-        * { box-sizing: border-box; font-family: Arial, sans-serif; }
-        body { background: #f5f5f5; margin: 0; padding: 20px; }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: #f5f5f5; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 600px; margin: 0 auto; }
-        h2 { color: #008080; text-align: center; }
+        h2 { color: #008080; text-align: center; margin-bottom: 8px; }
         
         .btn {
             display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -29,10 +29,106 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px;
         }
         
+        /* GUIA VISUAL ILUSTRATIVO */
+        .guia-visual {
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border: 2px solid #008080;
+        }
+        
+        .guia-visual h4 {
+            color: #006666;
+            margin: 0 0 12px 0;
+            font-size: 16px;
+        }
+        
+        .desenho-gabarito {
+            position: relative;
+            width: 100%;
+            height: 140px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .marcador-guia {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #000;
+            border-radius: 2px;
+            box-shadow: 0 0 4px rgba(0,0,0,0.5);
+        }
+        .marcador-guia.tl { top: 8px; left: 8px; }
+        .marcador-guia.tr { top: 8px; right: 8px; }
+        .marcador-guia.bl { bottom: 8px; left: 8px; }
+        .marcador-guia.br { bottom: 8px; right: 8px; }
+        
+        .retangulo-guia {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 65%;
+            border: 3px solid #00ff00;
+            border-radius: 6px;
+            box-shadow: 0 0 12px rgba(0,255,0,0.5);
+            animation: pulsarGuia 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulsarGuia {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+        
+        .qr-guia {
+            position: absolute;
+            bottom: 12px;
+            right: 35px;
+            width: 24px;
+            height: 24px;
+            background: 
+                repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50% / 4px 4px;
+            border: 1px solid #000;
+        }
+        
+        .texto-guia {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,128,128,0.9);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .dicas-lista {
+            background: #fff8e1;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 13px;
+            color: #6d4c00;
+            border-left: 4px solid #ffa000;
+        }
+        
+        .dicas-lista p {
+            margin: 4px 0;
+        }
+        
         #imageContainer {
             max-width: 100%;
-            max-height: 400px;
             margin: 20px 0;
+            border-radius: 8px;
+            overflow: hidden;
         }
         
         #imageContainer img {
@@ -70,31 +166,65 @@
             background: #e0f7fa; padding: 12px; border-radius: 8px;
             margin: 15px 0; font-size: 14px; color: #006666;
         }
+        
+        #statusQR {
+            margin: 15px 0;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>📝 Correção Objetiva</h2>
+    <h2>📝 Correção Objetiva (OMR)</h2>
     
-    <!-- PASSO 1: TIRAR FOTO -->
+    <!-- PASSO 1: GUIA + TIRAR FOTO (CÂMERA NATIVA) -->
     <div id="passo1" class="card">
-        <h3 style="color: #008080; margin-top: 0;">1️⃣ Tire a Foto</h3>
-        <p style="color: #666;">Tire foto do gabarito completo (com QR Code visível)</p>
+        <h3 style="color: #008080; margin-top: 0;">1️⃣ Tire a Foto do Gabarito</h3>
+        
+        <!-- GUIA VISUAL ILUSTRATIVO -->
+        <div class="guia-visual">
+            <h4>📐 Como posicionar o gabarito:</h4>
+            
+            <div class="desenho-gabarito">
+                <div class="marcador-guia tl"></div>
+                <div class="marcador-guia tr"></div>
+                <div class="marcador-guia bl"></div>
+                <div class="marcador-guia br"></div>
+                <div class="retangulo-guia"></div>
+                <div class="qr-guia"></div>
+                <div class="texto-guia">GABARITO AQUI</div>
+            </div>
+            
+            <div class="dicas-lista">
+                <p>✅ Posicione o gabarito <strong>na horizontal</strong></p>
+                <p>✅ Os <strong>4 quadrados pretos</strong> devem estar visíveis nos cantos</p>
+                <p>✅ O <strong>QR Code</strong> deve estar no canto inferior</p>
+                <p>✅ Use <strong>boa iluminação</strong> (flash se necessário)</p>
+                <p>✅ <strong>Não precisa ficar perfeito</strong> - o sistema ajusta automaticamente!</p>
+            </div>
+        </div>
+        
+        <p style="color: #666; font-size: 14px; text-align: center; margin: 15px 0;">
+            📸 A câmera do celular será aberta. Tire a foto com calma!
+        </p>
         
         <input type="file" id="inputFile" accept="image/*" capture="environment" onchange="carregarFoto(this)">
         
         <button class="btn btn-primary" onclick="document.getElementById('inputFile').click()">
-            📷 TIRAR FOTO
+            📷 ABRIR CÂMERA E TIRAR FOTO
         </button>
     </div>
 
-    <!-- PASSO 2: RECORTAR -->
+    <!-- PASSO 2: RECORTAR COM CROPPER -->
     <div id="passo2" style="display: none;">
         <div class="card">
-            <h3 style="color: #008080; margin-top: 0;">2️⃣ Recorte o Gabarito</h3>
+            <h3 style="color: #008080; margin-top: 0;">2️⃣ Ajuste o Recorte</h3>
             <div class="instrucao">
-                💡 <strong>Arraste os cantos</strong> para ajustar o recorte. O gabarito deve ficar dentro do retângulo.
+                💡 <strong>Arraste os cantos</strong> para incluir todo o gabarito. 
+                O sistema fará a planificação automática depois!
             </div>
             
             <div id="imageContainer">
@@ -102,22 +232,22 @@
             </div>
             
             <div style="display: flex; gap: 10px;">
-                <button class="btn btn-danger" onclick="voltarInicio()" style="flex: 1;">🗑️ Descartar</button>
-                <button class="btn btn-warning" onclick="confirmarRecorte()" style="flex: 1;">✂️ CONFIRMAR RECORTE</button>
+                <button class="btn btn-danger" onclick="voltarInicio()" style="flex: 1;">🔄 Nova Foto</button>
+                <button class="btn btn-warning" onclick="confirmarRecorte()" style="flex: 1;">✂️ CONFIRMAR</button>
             </div>
         </div>
     </div>
 
-    <!-- PASSO 3: PREVIEW RECORTADO -->
+    <!-- PASSO 3: PREVIEW RECORTADO + QR -->
     <div id="passo3" style="display: none;">
         <div class="card">
             <h3 style="color: #008080; margin-top: 0;">3️⃣ Preview do Gabarito</h3>
             <img id="imagemRecortada" style="width: 100%; border-radius: 8px; border: 2px solid #008080;">
             
-            <div id="statusQR" style="margin: 15px 0; padding: 12px; border-radius: 8px; display: none;"></div>
+            <div id="statusQR"></div>
             
             <div style="display: flex; gap: 10px;">
-                <button class="btn btn-secondary" onclick="voltarRecorte()" style="flex: 1;">↩️ Ajustar Recorte</button>
+                <button class="btn btn-secondary" onclick="voltarRecorte()" style="flex: 1;">↩️ Ajustar</button>
                 <button class="btn btn-success" onclick="processarGabarito()" style="flex: 1;">✅ PROCESSAR</button>
             </div>
         </div>
@@ -159,7 +289,7 @@
     <div class="overlay-box">
         <div class="spinner"></div>
         <h3 style="margin: 0 0 8px;">🤖 Processando...</h3>
-        <p style="margin: 0; color: #666; font-size: 14px;">Analisando gabarito...</p>
+        <p style="margin: 0; color: #666; font-size: 14px;">Lendo QR Code e analisando gabarito...</p>
     </div>
 </div>
 
@@ -172,6 +302,9 @@
 
     const API_URL = 'https://omr-sistema-api.onrender.com';
 
+    // ============================================
+    // PASSO 1: CARREGAR FOTO (CÂMERA NATIVA)
+    // ============================================
     function carregarFoto(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
@@ -181,14 +314,19 @@
                 document.getElementById('passo1').style.display = 'none';
                 document.getElementById('passo2').style.display = 'block';
                 
-                // Inicializa o Cropper
+                // Inicializa o Cropper com proporção do gabarito
                 setTimeout(() => {
                     const image = document.getElementById('imageToCrop');
                     cropper = new Cropper(image, {
-                        aspectRatio: 210 / 95, // Proporção do gabarito (21cm x 9.5cm)
+                        aspectRatio: 210 / 95, // Proporção A4 paisagem
                         viewMode: 1,
-                        autoCropArea: 0.9,
+                        autoCropArea: 0.95,
                         responsive: true,
+                        guides: true,
+                        center: true,
+                        highlight: true,
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
                     });
                 }, 100);
             };
@@ -196,12 +334,20 @@
         }
     }
 
+    // ============================================
+    // PASSO 2: CONFIRMAR RECORTE
+    // ============================================
     function confirmarRecorte() {
         if (!cropper) return;
         
-        // Pega a imagem recortada
-        const canvas = cropper.getCroppedCanvas();
-        fotoRecortada = canvas.toDataURL('image/jpeg', 0.9);
+        const canvasRecorte = cropper.getCroppedCanvas({
+            maxWidth: 2000,
+            maxHeight: 1000,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high',
+        });
+        
+        fotoRecortada = canvasRecorte.toDataURL('image/jpeg', 0.95);
         
         document.getElementById('imagemRecortada').src = fotoRecortada;
         document.getElementById('passo2').style.display = 'none';
@@ -230,6 +376,9 @@
         document.getElementById('inputFile').value = '';
     }
 
+    // ============================================
+    // PASSO 3: LEITURA DO QR CODE
+    // ============================================
     async function lerQRCodeDaFoto() {
         const statusDiv = document.getElementById('statusQR');
         
@@ -245,13 +394,11 @@
             
             let code = null;
             
-            // Tenta ler em tamanho original
+            // Tenta múltiplas escalas para garantir leitura
             code = tentarLerQR(img, 1.0);
-            
-            // Se não conseguiu, tenta reduzido
-            if (!code) {
-                code = tentarLerQR(img, 0.5);
-            }
+            if (!code) code = tentarLerQR(img, 0.7);
+            if (!code) code = tentarLerQR(img, 0.5);
+            if (!code) code = tentarLerQR(img, 0.3);
             
             if (code) {
                 const partes = code.data.split(':');
@@ -266,12 +413,12 @@
                 } else {
                     statusDiv.style.background = '#f8d7da';
                     statusDiv.style.color = '#721c24';
-                    statusDiv.innerHTML = '❌ QR Code inválido';
+                    statusDiv.innerHTML = '❌ QR Code inválido<br><small>Formato: ' + code.data + '</small>';
                 }
             } else {
                 statusDiv.style.background = '#f8d7da';
                 statusDiv.style.color = '#721c24';
-                statusDiv.innerHTML = '❌ QR Code não encontrado<br><small>Verifique se o QR está visível</small>';
+                statusDiv.innerHTML = '❌ QR Code não encontrado<br><small>Verifique se o QR está visível no recorte</small>';
             }
         } catch (err) {
             statusDiv.style.background = '#f8d7da';
@@ -293,6 +440,9 @@
         });
     }
 
+    // ============================================
+    // PASSO 4: PROCESSAR GABARITO
+    // ============================================
     async function processarGabarito() {
         if (!fotoRecortada) {
             alert('Nenhuma foto recortada!');
@@ -349,7 +499,7 @@
             if (!divImg) {
                 divImg = document.createElement('div');
                 divImg.style.cssText = 'margin: 20px 0; text-align: center; background: #f0f0f0; padding: 15px; border-radius: 8px;';
-                divImg.innerHTML = '<h4 style="color: #008080; margin: 0 0 10px 0;">🔍 Gabarito Processado</h4><img id="imgProcessada" style="width: auto; max-width: 100%; height: auto; border: 3px solid #008080; border-radius: 8px;">';
+                divImg.innerHTML = '<h4 style="color: #008080; margin: 0 0 10px 0;">🔍 Gabarito Processado (planificado automaticamente)</h4><img id="imgProcessada" style="width: auto; max-width: 100%; height: auto; border: 3px solid #008080; border-radius: 8px;">';
                 document.getElementById('passo4').querySelector('.card').appendChild(divImg);
             }
             document.getElementById('imgProcessada').src = data.imagem_processada;
