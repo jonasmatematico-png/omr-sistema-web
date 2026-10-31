@@ -12,52 +12,6 @@
         h2 { color: #008080; margin-bottom: 8px; }
         p { color: #666; margin-bottom: 24px; font-size: 15px; }
 
-        #cameraContainer { display: block; margin-bottom: 20px; position: relative; }
-        #cameraVideo {
-            width: 100%; max-height: 500px; object-fit: cover;
-            border-radius: 12px; border: 3px solid #008080; background: #000;
-        }
-        
-        #molduraEnquadramento {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 75%;
-            height: 38%;
-            border: 3px dashed rgba(255, 255, 255, 0.8);
-            border-radius: 12px;
-            pointer-events: none;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
-        }
-        
-        #molduraEnquadramento.alinhado {
-            border-color: #00ff00;
-            border-style: solid;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.6), 0 0 0 9999px rgba(0, 0, 0, 0.5);
-            animation: pulsar 1s ease-in-out infinite;
-        }
-        
-        @keyframes pulsar {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); }
-            50% { transform: translate(-50%, -50%) scale(1.02); }
-        }
-        
-        #textoEnquadramento {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: bold;
-            z-index: 10;
-        }
-        
         .btn {
             display: flex; align-items: center; justify-content: center; gap: 10px;
             padding: 16px 24px; border-radius: 12px; font-size: 18px; font-weight: 600;
@@ -71,7 +25,7 @@
 
         #previewContainer, #resultadoContainer { display: none; margin-top: 20px; }
         #imagemPreview {
-            width: 100%; max-height: 300px; object-fit: contain;
+            width: 100%; max-height: 400px; object-fit: contain;
             border-radius: 12px; border: 2px solid #ddd; background: #fff; margin-bottom: 15px;
         }
 
@@ -111,13 +65,25 @@
             margin: 12px 0; cursor: pointer; border: 1px solid #008080;
         }
         .modo-fila-toggle input[type="checkbox"] { width: 20px; height: 20px; }
+
+        #statusQR {
+            margin: 15px 0;
+            padding: 12px;
+            border-radius: 8px;
+            display: none;
+        }
+        #statusQR.sucesso { background: #d4edda; color: #155724; display: block; }
+        #statusQR.erro { background: #f8d7da; color: #721c24; display: block; }
+        #statusQR.processando { background: #fff3cd; color: #856404; display: block; }
+
+        #inputFile { display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2> Correção Objetiva (OMR)</h2>
-    <p>Aponte a câmera para o QR Code da folha de respostas.</p>
+    <h2>📝 Correção Objetiva (OMR)</h2>
+    <p>Tire foto do gabarito (com QR Code visível).</p>
 
     <div class="modo-fila-toggle" onclick="toggleModoFila()">
         <input type="checkbox" id="chkModoFila">
@@ -127,30 +93,27 @@
         </label>
     </div>
 
-    <!-- CÂMERA COM MOLDAURA -->
-    <div id="cameraContainer">
-        <video id="cameraVideo" autoplay playsinline muted></video>
-        <canvas id="cameraCanvas" style="display: none;"></canvas>
-        <canvas id="scanCanvas" style="display: none;"></canvas> <!-- Canvas para scan reduzido -->
-        
-        <!-- MOLDAURA DE ENQUADRAMENTO -->
-        <div id="molduraEnquadramento"></div>
-        <div id="textoEnquadramento">🔍 Buscando QR Code...</div>
-        
-        <p id="statusLeitura" style="margin-top: 10px; font-weight: bold; color: #008080; display: none;">Câmera desligada.</p>
+    <!-- BOTÃO PARA TIRAR FOTO -->
+    <input type="file" id="inputFile" accept="image/*" capture="environment" onchange="processarFoto(this)">
+    
+    <button class="btn btn-primary" onclick="document.getElementById('inputFile').click()">
+        📷 TIRAR FOTO DO GABARITO
+    </button>
 
-        <button id="btnIniciar" class="btn btn-primary" onclick="iniciarCamera()"> INICIAR CÂMERA</button>
-        <button id="btnTirar" class="btn btn-warning" onclick="tirarFotoManual()" style="display: none;">📸 CAPTURAR MANUALMENTE</button>
-        <button id="btnParar" class="btn btn-danger" onclick="pararCamera()" style="display: none;">⏹️ PARAR</button>
-    </div>
+    <p style="font-size: 13px; color: #888;">
+        💡 Dica: Use flash se necessário e garanta que o QR Code esteja visível na foto
+    </p>
 
     <!-- PREVIEW DA FOTO -->
     <div id="previewContainer">
-        <p style="color: #008080; font-weight: bold;">Foto capturada. O que deseja fazer?</p>
+        <h3 style="color: #008080;">📸 Foto Capturada</h3>
         <img id="imagemPreview" alt="Preview do Gabarito">
+        
+        <div id="statusQR"></div>
+        
         <div style="display: flex; gap: 10px;">
             <button class="btn btn-danger" onclick="descartarFoto()" style="flex: 1;">🗑️ Descartar</button>
-            <button class="btn btn-success" onclick="enviarParaBackend()" style="flex: 1;">✅ PROCESSAR</button>
+            <button class="btn btn-success" onclick="processarGabarito()" style="flex: 1;" id="btnProcessar" disabled>✅ PROCESSAR GABARITO</button>
         </div>
     </div>
 
@@ -160,7 +123,7 @@
             <h3 style="color: #008080; margin-top: 0; text-align: center;">✅ Leitura Concluída</h3>
             
             <div class="info-row">
-                <span class="info-label"> Aluno:</span>
+                <span class="info-label">👤 Aluno:</span>
                 <span id="resNome">-</span>
             </div>
             <div class="info-row" style="border: none;">
@@ -189,235 +152,168 @@
 <div id="overlayProcessando">
     <div class="processando-card">
         <div class="spinner"></div>
-        <h3 style="margin: 0 0 8px; color: #333;">🤖 Lendo Gabarito...</h3>
-        <p style="margin: 0; color: #666; font-size: 14px;">Aguardando resposta do servidor.</p>
+        <h3 style="margin: 0 0 8px; color: #333;">🤖 Processando...</h3>
+        <p style="margin: 0; color: #666; font-size: 14px;">Lendo QR Code e analisando gabarito.</p>
     </div>
 </div>
 
 <script>
-    let videoStream = null;
-    let isScanning = false;
-    let qrDetectado = null;
     let fotoBase64 = null;
-    let modoFila = false;
+    let qrDetectado = null;
     let dadosCorrecao = null;
-    let tempoAlinhado = 0;
-    let capturaAutomaticaAtiva = true;
+    let modoFila = false;
 
     const API_URL = 'https://omr-sistema-api.onrender.com';
-
-    const video = document.getElementById('cameraVideo');
-    const canvas = document.getElementById('cameraCanvas');
-    const scanCanvas = document.getElementById('scanCanvas'); // Canvas reduzido para scan
-    const moldura = document.getElementById('molduraEnquadramento');
-    const textoEnquadramento = document.getElementById('textoEnquadramento');
 
     function toggleModoFila() {
         modoFila = document.getElementById('chkModoFila').checked;
     }
 
-    async function iniciarCamera() {
-        try {
-            const constraints = {
-                video: {
-                    facingMode: "environment",
-                    width: { ideal: 1920, min: 1280 },
-                    height: { ideal: 1080, min: 720 }
-                }
+    function processarFoto(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                fotoBase64 = e.target.result;
+                document.getElementById('imagemPreview').src = fotoBase64;
+                document.getElementById('previewContainer').style.display = 'block';
+                
+                // Tenta ler QR Code automaticamente
+                lerQRCodeDaFoto();
             };
-
-            videoStream = await navigator.mediaDevices.getUserMedia(constraints);
-            video.srcObject = videoStream;
-            
-            document.getElementById('btnIniciar').style.display = 'none';
-            document.getElementById('btnParar').style.display = 'flex';
-            document.getElementById('btnTirar').style.display = 'flex';
-            textoEnquadramento.style.display = 'block';
-            textoEnquadramento.textContent = '📐 Afaste-se! QR pode ser lido de longe';
-            
-            isScanning = true;
-            video.onloadedmetadata = () => {
-                adicionarFrameGuia();
-                requestAnimationFrame(tick);
-            };
-        } catch (err) {
-            alert('Erro ao acessar câmera: ' + err.message);
+            reader.readAsDataURL(input.files[0]);
         }
     }
 
-    function adicionarFrameGuia() {
-        const existente = document.getElementById('frameGuia');
-        if (existente) existente.remove();
+    async function lerQRCodeDaFoto() {
+        const statusDiv = document.getElementById('statusQR');
+        const btnProcessar = document.getElementById('btnProcessar');
         
-        const frame = document.createElement('div');
-        frame.id = 'frameGuia';
-        frame.style.cssText = `
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 75%;
-            height: 38%;
-            border: 3px solid #00ff00;
-            border-radius: 12px;
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
-            pointer-events: none;
-            z-index: 100;
-            animation: pulsarFrame 2s ease-in-out infinite;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        `;
+        statusDiv.className = 'processando';
+        statusDiv.innerHTML = '<strong>⏳ Lendo QR Code...</strong>';
+        btnProcessar.disabled = true;
         
-        const texto = document.createElement('div');
-        texto.style.cssText = `
-            color: #00ff00;
-            font-weight: bold;
-            font-size: 12px;
-            text-align: center;
-            background: rgba(0,0,0,0.7);
-            padding: 6px 10px;
-            border-radius: 8px;
-            pointer-events: none;
-        `;
-        texto.innerText = ' Enquadre aqui (guia visual)';
-        frame.appendChild(texto);
-        
-        const cantos = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
-        cantos.forEach(pos => {
-            const canto = document.createElement('div');
-            canto.style.cssText = `position: absolute; width: 25px; height: 25px; border: 4px solid #00ff00;`;
-            if (pos === 'top-left') canto.style.cssText += 'top: -3px; left: -3px; border-right: 0; border-bottom: 0; border-top-left-radius: 12px;';
-            else if (pos === 'top-right') canto.style.cssText += 'top: -3px; right: -3px; border-left: 0; border-bottom: 0; border-top-right-radius: 12px;';
-            else if (pos === 'bottom-left') canto.style.cssText += 'bottom: -3px; left: -3px; border-right: 0; border-top: 0; border-bottom-left-radius: 12px;';
-            else if (pos === 'bottom-right') canto.style.cssText += 'bottom: -3px; right: -3px; border-left: 0; border-top: 0; border-bottom-right-radius: 12px;';
-            frame.appendChild(canto);
-        });
-        
-        const style = document.createElement('style');
-        style.textContent = `@keyframes pulsarFrame { 0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1.02); } }`;
-        document.head.appendChild(style);
-        
-        document.getElementById('cameraContainer').appendChild(frame);
-    }
-    
-    function pararCamera() {
-        isScanning = false;
-        if (videoStream) videoStream.getTracks().forEach(track => track.stop());
-        document.getElementById('btnIniciar').style.display = 'flex';
-        document.getElementById('btnTirar').style.display = 'none';
-        document.getElementById('btnParar').style.display = 'none';
-        moldura.classList.remove('alinhado');
-        textoEnquadramento.textContent = 'Câmera desligada';
-    }
-
-    function tick() {
-        if (!isScanning) return;
-        
-        if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            // Canvas em alta resolução para a foto final
-            canvas.height = video.videoHeight;
-            canvas.width = video.videoWidth;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        try {
+            const img = new Image();
+            img.src = fotoBase64;
+            await new Promise(resolve => img.onload = resolve);
             
-            // ✅ Canvas REDUZIDO para detecção do QR (lê de mais longe!)
-            const scanWidth = 640; // Reduz para 640px (QR parece maior proporcionalmente)
-            const scanHeight = Math.floor(scanWidth * (video.videoHeight / video.videoWidth));
-            scanCanvas.height = scanHeight;
-            scanCanvas.width = scanWidth;
-            const scanCtx = scanCanvas.getContext('2d');
-            scanCtx.drawImage(video, 0, 0, scanWidth, scanHeight);
+            // Tenta múltiplas estratégias para ler o QR
+            let code = null;
             
-            const imageData = scanCtx.getImageData(0, 0, scanWidth, scanHeight);
-            const code = jsQR(imageData.data, scanWidth, scanHeight, { 
-                inversionAttempts: "dontInvert",
-                // Tenta detectar QR Codes menores
-            });
-
+            // Estratégia 1: Imagem original
+            code = tentarLerQR(img, 1.0);
+            
+            // Estratégia 2: Imagem reduzida (QR pequeno funciona melhor)
+            if (!code) {
+                code = tentarLerQR(img, 0.5);
+            }
+            
+            // Estratégia 3: Imagem com contraste aumentado
+            if (!code) {
+                code = tentarLerQRComContraste(img, 1.0);
+            }
+            
+            // Estratégia 4: Recortar região do QR (canto inferior esquerdo)
+            if (!code) {
+                code = tentarLerQRRecortado(img);
+            }
+            
             if (code) {
                 const partes = code.data.split(':');
                 if (partes[0].trim() === 'OMRALUNO' && partes.length >= 2) {
-                    // QR detectado com sucesso!
-                    if (!moldura.classList.contains('alinhado')) {
-                        moldura.classList.add('alinhado');
-                        tempoAlinhado = Date.now();
-                        textoEnquadramento.textContent = '✅ QR detectado! Capturando...';
-                        tocarBip();
-                    }
-                    
-                    if (capturaAutomaticaAtiva && (Date.now() - tempoAlinhado) > 1000) {
-                        qrDetectado = {
-                            id_prova: parseInt(partes[1].trim()) || null,
-                            id_aluno: parseInt(partes[2] ? partes[2].trim() : partes[1].trim())
-                        };
-                        tirarFotoAutomatica();
-                        return;
-                    }
+                    qrDetectado = {
+                        id_prova: parseInt(partes[1].trim()) || null,
+                        id_aluno: parseInt(partes[2] ? partes[2].trim() : partes[1].trim())
+                    };
+                    statusDiv.className = 'sucesso';
+                    statusDiv.innerHTML = '<strong>✅ QR Code detectado!</strong><br><small>Aluno: ' + qrDetectado.id_aluno + ' | Prova: ' + qrDetectado.id_prova + '</small>';
+                    btnProcessar.disabled = false;
+                } else {
+                    statusDiv.className = 'erro';
+                    statusDiv.innerHTML = '<strong>❌ QR Code inválido</strong><br><small>Formato: ' + code.data + '</small>';
                 }
             } else {
-                moldura.classList.remove('alinhado');
-                textoEnquadramento.textContent = '🔍 Buscando QR Code (pode ser de longe)...';
+                statusDiv.className = 'erro';
+                statusDiv.innerHTML = '<strong>❌ QR Code não encontrado</strong><br><small>Verifique se o QR Code está visível na foto</small>';
             }
+        } catch (err) {
+            statusDiv.className = 'erro';
+            statusDiv.innerHTML = '<strong>❌ Erro ao ler QR Code</strong>';
         }
-        
-        if (isScanning) requestAnimationFrame(tick);
     }
 
-    function tirarFotoAutomatica() {
-        isScanning = false;
+    function tentarLerQR(img, escala) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = img.width * escala;
+        canvas.height = img.height * escala;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         
-        const tempCanvas = document.createElement('canvas');
-        const ctx = tempCanvas.getContext('2d');
-        
-        // Corrige rotação se necessário
-        if (video.videoWidth > video.videoHeight) {
-            tempCanvas.width = video.videoWidth;
-            tempCanvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
-        } else {
-            tempCanvas.width = video.videoHeight;
-            tempCanvas.height = video.videoWidth;
-            ctx.save();
-            ctx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
-            ctx.rotate(90 * Math.PI / 180);
-            ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
-            ctx.restore();
-        }
-        
-        fotoBase64 = tempCanvas.toDataURL('image/jpeg', 0.9);
-        tocarBip();
-        pararCamera();
-        
-        document.getElementById('cameraContainer').style.display = 'none';
-        document.getElementById('previewContainer').style.display = 'block';
-        document.getElementById('imagemPreview').src = fotoBase64;
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        return jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "attemptBoth"
+        });
     }
 
-    function tirarFotoManual() {
-        if (!qrDetectado) {
-            alert('⚠️ QR Code não detectado! Tente aproximar um pouco ou use mais luz.');
-            return;
+    function tentarLerQRComContraste(img, escala) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = img.width * escala;
+        canvas.height = img.height * escala;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        
+        for (let i = 0; i < data.length; i += 4) {
+            const avg = (data[i] + data[i+1] + data[i+2]) / 3;
+            const contraste = 1.5;
+            const novoValor = ((avg - 128) * contraste) + 128;
+            data[i] = data[i+1] = data[i+2] = Math.max(0, Math.min(255, novoValor));
         }
-        tirarFotoAutomatica();
+        
+        ctx.putImageData(imageData, 0, 0);
+        const imageDataFinal = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        return jsQR(imageDataFinal.data, imageDataFinal.width, imageDataFinal.height, {
+            inversionAttempts: "attemptBoth"
+        });
+    }
+
+    function tentarLerQRRecortado(img) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const larguraRecorte = img.width * 0.4;
+        const alturaRecorte = img.height * 0.4;
+        const xInicio = 0;
+        const yInicio = img.height * 0.6;
+        
+        canvas.width = larguraRecorte;
+        canvas.height = alturaRecorte;
+        ctx.drawImage(img, xInicio, yInicio, larguraRecorte, alturaRecorte, 0, 0, larguraRecorte, alturaRecorte);
+        
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        return jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "attemptBoth"
+        });
     }
 
     function descartarFoto() {
         fotoBase64 = null;
         qrDetectado = null;
         document.getElementById('previewContainer').style.display = 'none';
-        document.getElementById('cameraContainer').style.display = 'block';
-        iniciarCamera();
+        document.getElementById('statusQR').style.display = 'none';
+        document.getElementById('inputFile').value = '';
     }
 
-    async function enviarParaBackend() {
+    async function processarGabarito() {
         if (!fotoBase64) {
-            alert('⚠️ Nenhuma foto capturada!');
+            alert('Nenhuma foto capturada!');
             return;
         }
         
         if (!qrDetectado) {
-            alert('⚠️ QR Code não detectado! Tire uma nova foto garantindo que o QR Code esteja visível e bem iluminado.');
+            alert('QR Code não detectado! Tire uma nova foto garantindo que o QR Code esteja visível e bem iluminado.');
             return;
         }
         
@@ -445,8 +341,8 @@
             }
         } catch (error) {
             document.getElementById('overlayProcessando').style.display = 'none';
-            console.error('Erro de rede:', error);
-            alert('❌ Erro de conexão com o servidor. Verifique sua internet.');
+            console.error('Erro:', error);
+            alert('❌ Erro de conexão com o servidor.');
         }
     }
 
@@ -470,7 +366,7 @@
                 divImg.id = 'divImagemProcessada';
                 divImg.style.cssText = 'margin: 20px 0; text-align: center; background: #f0f0f0; padding: 15px; border-radius: 8px;';
                 divImg.innerHTML = `
-                    <h4 style="color: #008080; margin: 0 0 10px 0;"> Gabarito Processado</h4>
+                    <h4 style="color: #008080; margin: 0 0 10px 0;">🔍 Gabarito Processado</h4>
                     <p style="font-size: 12px; color: #666; margin: 0 0 10px 0;">
                         🟢 Verde = Acerto | 🔴 Vermelho = Erro | 🟡 Amarelo = Bolinha Detectada
                     </p>
@@ -484,16 +380,11 @@
     }
 
     async function salvarCorrecao() {
-        if (!dadosCorrecao) {
-            alert('⚠️ Nenhum dado para salvar. Processe o gabarito primeiro.');
-            return;
-        }
+        if (!dadosCorrecao) return;
         
         const notaFinal = parseFloat(document.getElementById('inputNotaManual').value) || dadosCorrecao.nota_final;
         
         const btnSalvar = document.querySelector('#resultadoContainer .btn-success');
-        const textoOriginal = btnSalvar.textContent;
-        
         btnSalvar.textContent = '⏳ Salvando...';
         btnSalvar.disabled = true;
 
@@ -512,39 +403,22 @@
             const data = await response.json();
             
             if (data.sucesso) {
-                alert('✅ ' + (data.mensagem || 'Nota salva com sucesso no sistema!'));
-                
+                alert('✅ ' + (data.mensagem || 'Nota salva com sucesso!'));
                 if (modoFila) {
                     location.reload();
                 } else {
                     btnSalvar.textContent = '✅ SALVO!';
                 }
             } else {
-                alert(' Erro ao salvar: ' + data.erro);
-                btnSalvar.textContent = textoOriginal;
+                alert('❌ Erro ao salvar: ' + data.erro);
+                btnSalvar.textContent = '💾 SALVAR NO SISTEMA';
                 btnSalvar.disabled = false;
             }
         } catch (error) {
-            console.error('Erro ao salvar:', error);
-            alert('❌ Erro de conexão ao salvar. Tente novamente.');
-            btnSalvar.textContent = textoOriginal;
+            alert('❌ Erro de conexão ao salvar.');
+            btnSalvar.textContent = '💾 SALVAR NO SISTEMA';
             btnSalvar.disabled = false;
         }
-    }
-
-    function tocarBip() {
-        try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            oscillator.type = 'sine';
-            oscillator.frequency.value = 800;
-            gainNode.gain.value = 0.1;
-            oscillator.start();
-            setTimeout(() => oscillator.stop(), 150);
-        } catch(e) {}
     }
 </script>
 
