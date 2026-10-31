@@ -29,99 +29,6 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px;
         }
         
-        #cameraContainer {
-            position: relative;
-            width: 100%;
-            max-height: 400px;
-            overflow: hidden;
-            border-radius: 12px;
-            border: 3px solid #008080;
-            background: #000;
-            margin: 15px 0;
-        }
-        
-        #cameraVideo {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-        
-        /* MÁSCARA VISUAL SOBRE A CÂMERA */
-        #mascaraGuia {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none;
-            z-index: 10;
-        }
-        
-        /* 4 marcadores pretos nos cantos */
-        .marcador {
-            position: absolute;
-            width: 24px;
-            height: 24px;
-            background: #000;
-            border: 2px solid #fff;
-            border-radius: 3px;
-            box-shadow: 0 0 8px rgba(255,255,255,0.8);
-        }
-        .marcador.tl { top: 15px; left: 15px; }
-        .marcador.tr { top: 15px; right: 15px; }
-        .marcador.bl { bottom: 15px; left: 15px; }
-        .marcador.br { bottom: 15px; right: 15px; }
-        
-        /* Retângulo verde de enquadramento */
-        .retangulo-verde {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 85%;
-            height: 65%;
-            border: 3px solid #00ff00;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,255,0,0.6), inset 0 0 15px rgba(0,255,0,0.2);
-            animation: pulsar 2s ease-in-out infinite;
-        }
-        
-        @keyframes pulsar {
-            0%, 100% { opacity: 0.8; }
-            50% { opacity: 1; }
-        }
-        
-        /* QR Code ilustrativo */
-        .qr-ilustrativo {
-            position: absolute;
-            bottom: 20px;
-            right: 50px;
-            width: 28px;
-            height: 28px;
-            background: 
-                linear-gradient(45deg, #000 25%, transparent 25%),
-                linear-gradient(-45deg, #000 25%, transparent 25%),
-                linear-gradient(45deg, transparent 75%, #000 75%),
-                linear-gradient(-45deg, transparent 75%, #000 75%);
-            background-size: 8px 8px;
-            background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
-            border: 1px solid #fff;
-            box-shadow: 0 0 6px rgba(255,255,255,0.8);
-        }
-        
-        /* Texto central */
-        .texto-central {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,128,128,0.9);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: bold;
-            text-align: center;
-            white-space: nowrap;
-        }
-        
         #imageContainer {
             max-width: 100%;
             max-height: 400px;
@@ -163,16 +70,6 @@
             background: #e0f7fa; padding: 12px; border-radius: 8px;
             margin: 15px 0; font-size: 14px; color: #006666;
         }
-        
-        .dicas {
-            background: #fff8e1;
-            padding: 12px;
-            border-radius: 8px;
-            margin: 10px 0;
-            font-size: 13px;
-            color: #6d4c00;
-            border-left: 4px solid #ffa000;
-        }
     </style>
 </head>
 <body>
@@ -180,52 +77,19 @@
 <div class="container">
     <h2>📝 Correção Objetiva</h2>
     
-    <!-- PASSO 1: CÂMERA AO VIVO COM MÁSCARA -->
+    <!-- PASSO 1: TIRAR FOTO -->
     <div id="passo1" class="card">
-        <h3 style="color: #008080; margin-top: 0;">1️⃣ Enquadre o Gabarito</h3>
+        <h3 style="color: #008080; margin-top: 0;">1️⃣ Tire a Foto</h3>
+        <p style="color: #666;">Tire foto do gabarito completo (com QR Code visível)</p>
         
-        <div class="instrucao">
-            💡 Alinhe o gabarito dentro do <strong>retângulo verde</strong>. Os <strong>4 quadrados pretos</strong> devem ficar nos cantos.
-        </div>
+        <input type="file" id="inputFile" accept="image/*" capture="environment" onchange="carregarFoto(this)">
         
-        <!-- CÂMERA AO VIVO -->
-        <div id="cameraContainer">
-            <video id="cameraVideo" autoplay playsinline muted></video>
-            <canvas id="cameraCanvas" style="display: none;"></canvas>
-            
-            <!-- MÁSCARA VISUAL -->
-            <div id="mascaraGuia">
-                <div class="marcador tl"></div>
-                <div class="marcador tr"></div>
-                <div class="marcador bl"></div>
-                <div class="marcador br"></div>
-                <div class="retangulo-verde"></div>
-                <div class="qr-ilustrativo"></div>
-                <div class="texto-central">📐 GABARITO AQUI</div>
-            </div>
-        </div>
-        
-        <div class="dicas">
-            ✅ Gabarito na <strong>horizontal</strong><br>
-            ✅ <strong>4 quadrados pretos</strong> visíveis nos cantos<br>
-            ✅ <strong>QR Code</strong> no canto inferior<br>
-            ✅ Boa <strong>iluminação</strong> (use flash se precisar)
-        </div>
-        
-        <button id="btnIniciarCamera" class="btn btn-primary" onclick="iniciarCamera()">
-            📷 INICIAR CÂMERA
-        </button>
-        
-        <button id="btnCapturar" class="btn btn-success" onclick="capturarFoto()" style="display: none;">
-            📸 CAPTURAR FOTO
-        </button>
-        
-        <button id="btnParar" class="btn btn-danger" onclick="pararCamera()" style="display: none;">
-            ⏹️ PARAR CÂMERA
+        <button class="btn btn-primary" onclick="document.getElementById('inputFile').click()">
+            📷 TIRAR FOTO
         </button>
     </div>
 
-    <!-- PASSO 2: RECORTAR COM CROPPER -->
+    <!-- PASSO 2: RECORTAR -->
     <div id="passo2" style="display: none;">
         <div class="card">
             <h3 style="color: #008080; margin-top: 0;">2️⃣ Recorte o Gabarito</h3>
@@ -238,7 +102,7 @@
             </div>
             
             <div style="display: flex; gap: 10px;">
-                <button class="btn btn-danger" onclick="voltarCamera()" style="flex: 1;">🔄 Nova Foto</button>
+                <button class="btn btn-danger" onclick="voltarInicio()" style="flex: 1;">🗑️ Descartar</button>
                 <button class="btn btn-warning" onclick="confirmarRecorte()" style="flex: 1;">✂️ CONFIRMAR RECORTE</button>
             </div>
         </div>
@@ -300,7 +164,6 @@
 </div>
 
 <script>
-    let videoStream = null;
     let cropper = null;
     let fotoOriginal = null;
     let fotoRecortada = null;
@@ -308,75 +171,52 @@
     let dadosCorrecao = null;
 
     const API_URL = 'https://omr-sistema-api.onrender.com';
-    const video = document.getElementById('cameraVideo');
-    const canvas = document.getElementById('cameraCanvas');
 
-    // ============================================
-    // CÂMERA AO VIVO
-    // ============================================
-    async function iniciarCamera() {
-        try {
-            const constraints = {
-                video: {
-                    facingMode: "environment",
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                }
+    function carregarFoto(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                fotoOriginal = e.target.result;
+                document.getElementById('imageToCrop').src = fotoOriginal;
+                document.getElementById('passo1').style.display = 'none';
+                document.getElementById('passo2').style.display = 'block';
+                
+                // Inicializa o Cropper
+                setTimeout(() => {
+                    const image = document.getElementById('imageToCrop');
+                    cropper = new Cropper(image, {
+                        aspectRatio: 210 / 95, // Proporção do gabarito (21cm x 9.5cm)
+                        viewMode: 1,
+                        autoCropArea: 0.9,
+                        responsive: true,
+                    });
+                }, 100);
             };
-
-            videoStream = await navigator.mediaDevices.getUserMedia(constraints);
-            video.srcObject = videoStream;
-            
-            document.getElementById('btnIniciarCamera').style.display = 'none';
-            document.getElementById('btnCapturar').style.display = 'flex';
-            document.getElementById('btnParar').style.display = 'flex';
-        } catch (err) {
-            alert('Erro ao acessar câmera: ' + err.message + '\n\nDica: Use o Chrome no celular e permita o acesso à câmera.');
+            reader.readAsDataURL(input.files[0]);
         }
     }
 
-    function capturarFoto() {
-        if (!videoStream) return;
+    function confirmarRecorte() {
+        if (!cropper) return;
         
-        // Captura o frame atual do vídeo
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // Pega a imagem recortada
+        const canvas = cropper.getCroppedCanvas();
+        fotoRecortada = canvas.toDataURL('image/jpeg', 0.9);
         
-        fotoOriginal = canvas.toDataURL('image/jpeg', 0.9);
+        document.getElementById('imagemRecortada').src = fotoRecortada;
+        document.getElementById('passo2').style.display = 'none';
+        document.getElementById('passo3').style.display = 'block';
         
-        // Para a câmera
-        pararCamera();
-        
-        // Vai para o passo de recorte
-        document.getElementById('imageToCrop').src = fotoOriginal;
-        document.getElementById('passo1').style.display = 'none';
+        // Tenta ler o QR Code
+        lerQRCodeDaFoto();
+    }
+
+    function voltarRecorte() {
+        document.getElementById('passo3').style.display = 'none';
         document.getElementById('passo2').style.display = 'block';
-        
-        // Inicializa o Cropper
-        setTimeout(() => {
-            const image = document.getElementById('imageToCrop');
-            cropper = new Cropper(image, {
-                aspectRatio: 210 / 95,
-                viewMode: 1,
-                autoCropArea: 0.9,
-                responsive: true,
-            });
-        }, 100);
     }
 
-    function pararCamera() {
-        if (videoStream) {
-            videoStream.getTracks().forEach(track => track.stop());
-            videoStream = null;
-        }
-        document.getElementById('btnIniciarCamera').style.display = 'flex';
-        document.getElementById('btnCapturar').style.display = 'none';
-        document.getElementById('btnParar').style.display = 'none';
-    }
-
-    function voltarCamera() {
+    function voltarInicio() {
         if (cropper) {
             cropper.destroy();
             cropper = null;
@@ -387,32 +227,9 @@
         document.getElementById('passo2').style.display = 'none';
         document.getElementById('passo3').style.display = 'none';
         document.getElementById('passo1').style.display = 'block';
+        document.getElementById('inputFile').value = '';
     }
 
-    // ============================================
-    // RECORTAR
-    // ============================================
-    function confirmarRecorte() {
-        if (!cropper) return;
-        
-        const canvasRecorte = cropper.getCroppedCanvas();
-        fotoRecortada = canvasRecorte.toDataURL('image/jpeg', 0.9);
-        
-        document.getElementById('imagemRecortada').src = fotoRecortada;
-        document.getElementById('passo2').style.display = 'none';
-        document.getElementById('passo3').style.display = 'block';
-        
-        lerQRCodeDaFoto();
-    }
-
-    function voltarRecorte() {
-        document.getElementById('passo3').style.display = 'none';
-        document.getElementById('passo2').style.display = 'block';
-    }
-
-    // ============================================
-    // LEITURA DO QR CODE
-    // ============================================
     async function lerQRCodeDaFoto() {
         const statusDiv = document.getElementById('statusQR');
         
@@ -427,9 +244,14 @@
             await new Promise(resolve => img.onload = resolve);
             
             let code = null;
+            
+            // Tenta ler em tamanho original
             code = tentarLerQR(img, 1.0);
-            if (!code) code = tentarLerQR(img, 0.5);
-            if (!code) code = tentarLerQR(img, 0.3);
+            
+            // Se não conseguiu, tenta reduzido
+            if (!code) {
+                code = tentarLerQR(img, 0.5);
+            }
             
             if (code) {
                 const partes = code.data.split(':');
@@ -444,12 +266,12 @@
                 } else {
                     statusDiv.style.background = '#f8d7da';
                     statusDiv.style.color = '#721c24';
-                    statusDiv.innerHTML = '❌ QR Code inválido<br><small>Formato: ' + code.data + '</small>';
+                    statusDiv.innerHTML = '❌ QR Code inválido';
                 }
             } else {
                 statusDiv.style.background = '#f8d7da';
                 statusDiv.style.color = '#721c24';
-                statusDiv.innerHTML = '❌ QR Code não encontrado<br><small>Verifique se o QR está visível no recorte</small>';
+                statusDiv.innerHTML = '❌ QR Code não encontrado<br><small>Verifique se o QR está visível</small>';
             }
         } catch (err) {
             statusDiv.style.background = '#f8d7da';
@@ -471,9 +293,6 @@
         });
     }
 
-    // ============================================
-    // PROCESSAR
-    // ============================================
     async function processarGabarito() {
         if (!fotoRecortada) {
             alert('Nenhuma foto recortada!');
