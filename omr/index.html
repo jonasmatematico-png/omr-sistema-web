@@ -1270,10 +1270,10 @@ async function editarProva(id) {
     // ️ USANDO O SUPER-HERÓI para buscar questões!
     var qs = await buscarQuestoes('aberta', id);
     
-    document.getElementById('nomeProva').value = a.nome;
-    document.getElementById('bimestre').value = String(a.bimestre);
-    document.getElementById('peso').value = String(a.peso_media);
-    document.getElementById('disciplina').value = a.disciplina || 'Matemática';
+    var el = document.getElementById('nomeProva').value = a.nome;
+    var el = document.getElementById('bimestre').value = String(a.bimestre);
+    var el = document.getElementById('peso').value = String(a.peso_media);
+    var el = document.getElementById('disciplina').value = a.disciplina || 'Matemática';
     
     questoes = qs.map(function (q) { 
       return { 
@@ -1461,49 +1461,61 @@ async function carregarProvasObj() {
   } catch (e) { lista.innerHTML = '<p style="color:#dc3545;text-align:center;padding:20px;">Falha de conexão.</p>'; }
 }
 
-// 7. Editar prova objetiva existente
+// 7. Editar prova objetiva existente (VERSÃO BLINDADA)
 async function editarProvaObj(id) {
-  try {
-    var r1 = await sbFetch('GET', '/rest/v1/avaliacoes?id=eq.' + id + '&select=*');
-    var a = (await r1.json())[0];
-    
-    // ✨ USANDO O SUPER-HERÓI para buscar questões!
-    var qs = await buscarQuestoes('objetiva', id);
-    
-    document.getElementById('nomeProvaObj').value = a.nome;
-    document.getElementById('bimestreObj').value = String(a.bimestre);
-    document.getElementById('pesoObj').value = String(a.peso_media);
-    document.getElementById('disciplinaObj').value = a.disciplina || 'Matemática';
-    // 🆕 Seleciona o tipo correto no dropdown
-    if (a.tipo) {
-        document.getElementById('tipoAvaliacaoObj').value = a.tipo;
+    try {
+        var r1 = await sbFetch('GET', '/rest/v1/avaliacoes?id=eq.' + id + '&select=*');
+        var a = (await r1.json())[0];
+        var qs = await buscarQuestoes('objetiva', id);
+        
+        // Preenche os campos com segurança (se o elemento existir)
+        var elNome = document.getElementById('nomeProvaObj');
+        if (elNome) elNome.value = a.nome || '';
+        
+        var elBimestre = document.getElementById('bimestreObj');
+        if (elBimestre) elBimestre.value = String(a.bimestre || '3');
+        
+        var elPeso = document.getElementById('pesoObj');
+        if (elPeso) elPeso.value = String(a.peso_media || '1');
+        
+        var elDisciplina = document.getElementById('disciplinaObj');
+        if (elDisciplina) elDisciplina.value = a.disciplina || 'Matemática';
+
+        // 🆕 Preenche o Tipo de Avaliação com segurança
+        var elTipo = document.getElementById('tipoAvaliacaoObj');
+        if (elTipo && a.tipo) {
+            elTipo.value = a.tipo;
+        }
+
+        questoesObj = qs.map(function (q) {
+            return {
+                enunciado: q.enunciado || '',
+                alt_a: q.alternativa_a || '',
+                alt_b: q.alternativa_b || '',
+                alt_c: q.alternativa_c || '',
+                alt_d: q.alternativa_d || '',
+                alt_e: q.alternativa_e || '',
+                gabarito: q.gabarito || 'A',
+                valor: String(q.valor || '1'),
+                descritor: q[COLUNAS.OBJETIVAS.descritor] || '',
+                habilidade: q[COLUNAS.OBJETIVAS.habilidade] || ''
+            };
+        });
+        
+        if (questoesObj.length === 0) questoesObj = [novaQuestaoObj()];
+        
+        editandoIdObj = id;
+        document.getElementById('bannerEdicaoObj').classList.remove('hidden');
+        document.getElementById('bannerTextoObj').textContent = '✏️ Editando: ' + a.nome;
+        document.getElementById('btnSalvarObj').textContent = '💾 SALVAR ALTERAÇÕES';
+        
+        renderizarQuestoesObj();
+        navegarPara('view-objetivas', document.querySelectorAll('.menu-item')[1]);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+    } catch (e) { 
+        toast('Erro ao carregar: ' + e.message, 'error'); 
     }
-    
-    questoesObj = qs.map(function (q) { 
-      return { 
-        enunciado: q.enunciado, 
-        alt_a: q.alternativa_a || '', 
-        alt_b: q.alternativa_b || '', 
-        alt_c: q.alternativa_c || '', 
-        alt_d: q.alternativa_d || '', 
-        alt_e: q.alternativa_e || '', 
-        gabarito: q.gabarito || 'A', 
-        valor: String(q.valor), 
-        descritor: q[COLUNAS.OBJETIVAS.descritor] || '', 
-        habilidade: q[COLUNAS.OBJETIVAS.habilidade] || '' 
-      }; 
-    });
-    
-    if (questoesObj.length === 0) questoesObj = [novaQuestaoObj()];
-    
-    editandoIdObj = id;
-    document.getElementById('bannerEdicaoObj').classList.remove('hidden');
-    document.getElementById('bannerTextoObj').textContent = '✏️ Editando: ' + a.nome;
-    document.getElementById('btnSalvarObj').textContent = '💾 SALVAR ALTERAÇÕES';
-    renderizarQuestoesObj();
-    navegarPara('view-objetivas', document.querySelectorAll('.menu-item')[1]);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  } catch (e) { toast('Erro ao carregar: ' + e.message, 'error'); }
 }
 
 // 8. Excluir prova objetiva
