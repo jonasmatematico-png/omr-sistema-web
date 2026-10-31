@@ -18,14 +18,14 @@
             border-radius: 12px; border: 3px solid #008080; background: #000;
         }
         
-        /* MOLDAURA DE ENQUADRAMENTO (Formato Retangular Horizontal) */
+        /* MOLDAURA DE ENQUADRAMENTO (REDUZIDA 15%) */
         #molduraEnquadramento {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 90%;
-            height: 45%;
+            width: 75%;
+            height: 38%;
             border: 3px dashed rgba(255, 255, 255, 0.8);
             border-radius: 12px;
             pointer-events: none;
@@ -139,7 +139,7 @@
         
         <p id="statusLeitura" style="margin-top: 10px; font-weight: bold; color: #008080; display: none;">Câmera desligada.</p>
 
-        <button id="btnIniciar" class="btn btn-primary" onclick="iniciarCamera()">📷 INICIAR CÂMERA</button>
+        <button id="btnIniciar" class="btn btn-primary" onclick="iniciarCamera()"> INICIAR CÂMERA</button>
         <button id="btnTirar" class="btn btn-warning" onclick="tirarFotoManual()" style="display: none;">📸 CAPTURAR MANUALMENTE</button>
         <button id="btnParar" class="btn btn-danger" onclick="pararCamera()" style="display: none;">⏹️ PARAR</button>
     </div>
@@ -204,7 +204,7 @@
     let tempoAlinhado = 0;
     let capturaAutomaticaAtiva = true;
 
-    // 🌍 URL DO BACKEND (Declare apenas UMA vez aqui no topo)
+    // 🌍 URL DO BACKEND
     const API_URL = 'https://omr-sistema-api.onrender.com';
 
     const video = document.getElementById('cameraVideo');
@@ -222,12 +222,7 @@
                 video: {
                     facingMode: "environment",
                     width: { ideal: 1920, min: 1280 },
-                    height: { ideal: 1080, min: 720 },
-                    advanced: [
-                        { focusMode: "continuous" },
-                        { width: 1920 },
-                        { height: 1080 }
-                    ]
+                    height: { ideal: 1080, min: 720 }
                 }
             };
 
@@ -238,7 +233,7 @@
             document.getElementById('btnParar').style.display = 'flex';
             document.getElementById('btnTirar').style.display = 'flex';
             textoEnquadramento.style.display = 'block';
-            textoEnquadramento.textContent = '📐 Alinhe o gabarito DENTRO do retângulo verde';
+            textoEnquadramento.textContent = '📐 Afaste um pouco e alinhe o gabarito';
             
             isScanning = true;
             video.onloadedmetadata = () => {
@@ -250,7 +245,7 @@
         }
     }
 
-    // ✅ FUNÇÃO ÚNICA E CORRIGIDA (Formato Retangular Horizontal)
+    // ✅ FRAME REDUZIDO EM 15%
     function adicionarFrameGuia() {
         const existente = document.getElementById('frameGuia');
         if (existente) existente.remove();
@@ -262,8 +257,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 90%;
-            height: 45%;
+            width: 75%;
+            height: 38%;
             border: 3px solid #00ff00;
             border-radius: 12px;
             box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
@@ -275,26 +270,24 @@
             justify-content: center;
         `;
         
-        // Texto de instrução DENTRO do frame
         const texto = document.createElement('div');
         texto.style.cssText = `
             color: #00ff00;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 13px;
             text-align: center;
             background: rgba(0,0,0,0.7);
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-radius: 8px;
             pointer-events: none;
         `;
-        texto.innerText = '📐 Alinhe o gabarito na HORIZONTAL aqui dentro';
+        texto.innerText = '📐 Afaste um pouco e alinhe na HORIZONTAL';
         frame.appendChild(texto);
         
-        // Cantos destacados
         const cantos = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
         cantos.forEach(pos => {
             const canto = document.createElement('div');
-            canto.style.cssText = `position: absolute; width: 30px; height: 30px; border: 4px solid #00ff00;`;
+            canto.style.cssText = `position: absolute; width: 25px; height: 25px; border: 4px solid #00ff00;`;
             if (pos === 'top-left') canto.style.cssText += 'top: -3px; left: -3px; border-right: 0; border-bottom: 0; border-top-left-radius: 12px;';
             else if (pos === 'top-right') canto.style.cssText += 'top: -3px; right: -3px; border-left: 0; border-bottom: 0; border-top-right-radius: 12px;';
             else if (pos === 'bottom-left') canto.style.cssText += 'bottom: -3px; left: -3px; border-right: 0; border-top: 0; border-bottom-left-radius: 12px;';
@@ -334,30 +327,26 @@
             if (code) {
                 const partes = code.data.split(':');
                 if (partes[0].trim() === 'OMRALUNO' && partes.length >= 2) {
-                    // Verifica se o QR está dentro da moldura
                     const qrCentroX = code.location.topLeftCorner.x + 
                                      (code.location.topRightCorner.x - code.location.topLeftCorner.x) / 2;
                     const qrCentroY = code.location.topLeftCorner.y + 
                                      (code.location.bottomLeftCorner.y - code.location.topLeftCorner.y) / 2;
                     
-                    // Converte coordenadas do QR para percentual da tela
                     const qrXPercent = (qrCentroX / canvas.width) * 100;
                     const qrYPercent = (qrCentroY / canvas.height) * 100;
                     
-                    // Moldura está centralizada (50%, 50%) com 90% largura e 45% altura
-                    const dentroMoldura = (qrXPercent > 5 && qrXPercent < 95 && 
-                                          qrYPercent > 27.5 && qrYPercent < 72.5);
+                    // Moldura 75% x 38%
+                    const dentroMoldura = (qrXPercent > 12.5 && qrXPercent < 87.5 && 
+                                          qrYPercent > 31 && qrYPercent < 69);
                     
                     if (dentroMoldura) {
-                        // QR está bem posicionado!
                         if (!moldura.classList.contains('alinhado')) {
                             moldura.classList.add('alinhado');
                             tempoAlinhado = Date.now();
-                            textoEnquadramento.textContent = '✅ Perfeito! Capturando automaticamente...';
+                            textoEnquadramento.textContent = '✅ Perfeito! Capturando...';
                             tocarBip();
                         }
                         
-                        // Captura automática após 1.5 segundos alinhado
                         if (capturaAutomaticaAtiva && (Date.now() - tempoAlinhado) > 1500) {
                             qrDetectado = {
                                 id_prova: parseInt(partes[1].trim()) || null,
@@ -367,13 +356,11 @@
                             return;
                         }
                     } else {
-                        // QR detectado mas fora da moldura
                         moldura.classList.remove('alinhado');
-                        textoEnquadramento.textContent = '⚠️ QR detectado! Centralize na moldura';
+                        textoEnquadramento.textContent = '⚠️ QR detectado! Centralize';
                     }
                 }
             } else {
-                // Nenhum QR detectado
                 moldura.classList.remove('alinhado');
                 textoEnquadramento.textContent = '🔍 Buscando QR Code...';
             }
@@ -382,14 +369,32 @@
         if (isScanning) requestAnimationFrame(tick);
     }
 
+    // ✅ CORRIGE ROTAÇÃO DA IMAGEM BASEADA NA ORIENTAÇÃO
     function tirarFotoAutomatica() {
         isScanning = false;
-        canvas.height = video.videoHeight;
-        canvas.width = video.videoWidth;
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        fotoBase64 = canvas.toDataURL('image/jpeg', 0.85);
+        // Cria canvas temporário para correção de rotação
+        const tempCanvas = document.createElement('canvas');
+        const ctx = tempCanvas.getContext('2d');
+        
+        // Configura tamanho baseado na orientação do vídeo
+        if (video.videoWidth > video.videoHeight) {
+            // Paisagem (correto)
+            tempCanvas.width = video.videoWidth;
+            tempCanvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+        } else {
+            // Retrato (precisa rotacionar)
+            tempCanvas.width = video.videoHeight;
+            tempCanvas.height = video.videoWidth;
+            ctx.save();
+            ctx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
+            ctx.rotate(90 * Math.PI / 180); // Rotaciona 90 graus
+            ctx.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
+            ctx.restore();
+        }
+        
+        fotoBase64 = tempCanvas.toDataURL('image/jpeg', 0.9);
         tocarBip();
         pararCamera();
         
@@ -489,7 +494,7 @@
 
     async function salvarCorrecao() {
         if (!dadosCorrecao) {
-            alert('⚠️ Nenhum dado para salvar. Processe o gabarito primeiro.');
+            alert('️ Nenhum dado para salvar. Processe o gabarito primeiro.');
             return;
         }
         
