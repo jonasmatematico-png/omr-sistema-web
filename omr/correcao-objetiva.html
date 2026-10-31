@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Correção Objetiva (OMR)</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <style>
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -21,7 +19,6 @@
         .btn-primary { background: #008080; color: white; }
         .btn-success { background: #28a745; color: white; }
         .btn-danger { background: #dc3545; color: white; }
-        .btn-warning { background: #f59e0b; color: white; }
         .btn-secondary { background: #6c757d; color: white; }
         
         .card {
@@ -29,7 +26,6 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px;
         }
         
-        /* GUIA VISUAL ILUSTRATIVO */
         .guia-visual {
             background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
             padding: 20px;
@@ -61,7 +57,6 @@
             height: 20px;
             background: #000;
             border-radius: 2px;
-            box-shadow: 0 0 4px rgba(0,0,0,0.5);
         }
         .marcador-guia.tl { top: 8px; left: 8px; }
         .marcador-guia.tr { top: 8px; right: 8px; }
@@ -92,8 +87,7 @@
             right: 35px;
             width: 24px;
             height: 24px;
-            background: 
-                repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50% / 4px 4px;
+            background: repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50% / 4px 4px;
             border: 1px solid #000;
         }
         
@@ -120,20 +114,16 @@
             border-left: 4px solid #ffa000;
         }
         
-        .dicas-lista p {
-            margin: 4px 0;
-        }
+        .dicas-lista p { margin: 4px 0; }
         
-        #imageContainer {
-            max-width: 100%;
-            margin: 20px 0;
+        #imagemPreview {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
             border-radius: 8px;
-            overflow: hidden;
-        }
-        
-        #imageContainer img {
-            max-width: 100%;
-            display: block;
+            border: 2px solid #008080;
+            margin: 15px 0;
+            background: #fff;
         }
         
         .nota-box {
@@ -162,15 +152,20 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        .instrucao {
-            background: #e0f7fa; padding: 12px; border-radius: 8px;
-            margin: 15px 0; font-size: 14px; color: #006666;
-        }
-        
         #statusQR {
             margin: 15px 0;
             padding: 12px;
             border-radius: 8px;
+            display: none;
+        }
+        
+        .progresso-leitura {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 13px;
+            color: #1565c0;
             display: none;
         }
     </style>
@@ -180,14 +175,12 @@
 <div class="container">
     <h2>📝 Correção Objetiva (OMR)</h2>
     
-    <!-- PASSO 1: GUIA + TIRAR FOTO (CÂMERA NATIVA) -->
+    <!-- PASSO 1: TIRAR FOTO -->
     <div id="passo1" class="card">
         <h3 style="color: #008080; margin-top: 0;">1️⃣ Tire a Foto do Gabarito</h3>
         
-        <!-- GUIA VISUAL ILUSTRATIVO -->
         <div class="guia-visual">
-            <h4>📐 Como posicionar o gabarito:</h4>
-            
+            <h4>📐 Como posicionar:</h4>
             <div class="desenho-gabarito">
                 <div class="marcador-guia tl"></div>
                 <div class="marcador-guia tr"></div>
@@ -197,64 +190,43 @@
                 <div class="qr-guia"></div>
                 <div class="texto-guia">GABARITO AQUI</div>
             </div>
-            
             <div class="dicas-lista">
-                <p>✅ Posicione o gabarito <strong>na horizontal</strong></p>
-                <p>✅ Os <strong>4 quadrados pretos</strong> devem estar visíveis nos cantos</p>
-                <p>✅ O <strong>QR Code</strong> deve estar no canto inferior</p>
-                <p>✅ Use <strong>boa iluminação</strong> (flash se necessário)</p>
-                <p>✅ <strong>Não precisa ficar perfeito</strong> - o sistema ajusta automaticamente!</p>
+                <p>✅ Gabarito na <strong>horizontal</strong></p>
+                <p>✅ <strong>4 quadrados pretos</strong> visíveis nos cantos</p>
+                <p>✅ <strong>QR Code</strong> no canto inferior</p>
+                <p>✅ <strong>Boa iluminação</strong> (use flash se precisar)</p>
+                <p>✅ <strong>Não precisa perfeito</strong> - o sistema ajusta!</p>
             </div>
         </div>
         
-        <p style="color: #666; font-size: 14px; text-align: center; margin: 15px 0;">
-            📸 A câmera do celular será aberta. Tire a foto com calma!
-        </p>
-        
-        <input type="file" id="inputFile" accept="image/*" capture="environment" onchange="carregarFoto(this)">
+        <input type="file" id="inputFile" accept="image/*" capture="environment" onchange="processarFoto(this)">
         
         <button class="btn btn-primary" onclick="document.getElementById('inputFile').click()">
             📷 ABRIR CÂMERA E TIRAR FOTO
         </button>
     </div>
 
-    <!-- PASSO 2: RECORTAR COM CROPPER -->
+    <!-- PASSO 2: PREVIEW + LEITURA QR -->
     <div id="passo2" style="display: none;">
         <div class="card">
-            <h3 style="color: #008080; margin-top: 0;">2️⃣ Ajuste o Recorte</h3>
-            <div class="instrucao">
-                💡 <strong>Arraste os cantos</strong> para incluir todo o gabarito. 
-                O sistema fará a planificação automática depois!
-            </div>
+            <h3 style="color: #008080; margin-top: 0;">2️⃣ Foto Capturada</h3>
+            <img id="imagemPreview" alt="Preview">
             
-            <div id="imageContainer">
-                <img id="imageToCrop" src="" alt="Foto para recortar">
+            <div id="progressoLeitura" class="progresso-leitura">
+                🔍 Lendo QR Code... (tentativa <span id="numTentativa">1</span> de 8)
             </div>
-            
-            <div style="display: flex; gap: 10px;">
-                <button class="btn btn-danger" onclick="voltarInicio()" style="flex: 1;">🔄 Nova Foto</button>
-                <button class="btn btn-warning" onclick="confirmarRecorte()" style="flex: 1;">✂️ CONFIRMAR</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- PASSO 3: PREVIEW RECORTADO + QR -->
-    <div id="passo3" style="display: none;">
-        <div class="card">
-            <h3 style="color: #008080; margin-top: 0;">3️⃣ Preview do Gabarito</h3>
-            <img id="imagemRecortada" style="width: 100%; border-radius: 8px; border: 2px solid #008080;">
             
             <div id="statusQR"></div>
             
             <div style="display: flex; gap: 10px;">
-                <button class="btn btn-secondary" onclick="voltarRecorte()" style="flex: 1;">↩️ Ajustar</button>
-                <button class="btn btn-success" onclick="processarGabarito()" style="flex: 1;">✅ PROCESSAR</button>
+                <button class="btn btn-danger" onclick="descartarFoto()" style="flex: 1;">🗑️ Descartar</button>
+                <button class="btn btn-success" onclick="processarGabarito()" style="flex: 1;" id="btnProcessar" disabled>✅ PROCESSAR</button>
             </div>
         </div>
     </div>
 
-    <!-- PASSO 4: RESULTADO -->
-    <div id="passo4" style="display: none;">
+    <!-- PASSO 3: RESULTADO -->
+    <div id="passo3" style="display: none;">
         <div class="card">
             <h3 style="color: #008080; margin-top: 0; text-align: center;">✅ Leitura Concluída</h3>
             
@@ -289,116 +261,76 @@
     <div class="overlay-box">
         <div class="spinner"></div>
         <h3 style="margin: 0 0 8px;">🤖 Processando...</h3>
-        <p style="margin: 0; color: #666; font-size: 14px;">Lendo QR Code e analisando gabarito...</p>
+        <p style="margin: 0; color: #666; font-size: 14px;">Analisando gabarito...</p>
     </div>
 </div>
 
 <script>
-    let cropper = null;
-    let fotoOriginal = null;
-    let fotoRecortada = null;
+    let fotoBase64 = null;
     let qrDetectado = null;
     let dadosCorrecao = null;
 
     const API_URL = 'https://omr-sistema-api.onrender.com';
 
     // ============================================
-    // PASSO 1: CARREGAR FOTO (CÂMERA NATIVA)
+    // PASSO 1: PROCESSAR FOTO (QUALIDADE MÁXIMA)
     // ============================================
-    function carregarFoto(input) {
+    function processarFoto(input) {
         if (input.files && input.files[0]) {
+            const file = input.files[0];
             const reader = new FileReader();
+            
             reader.onload = function(e) {
-                fotoOriginal = e.target.result;
-                document.getElementById('imageToCrop').src = fotoOriginal;
+                // Mantém a qualidade máxima da imagem original
+                fotoBase64 = e.target.result;
+                
+                document.getElementById('imagemPreview').src = fotoBase64;
                 document.getElementById('passo1').style.display = 'none';
                 document.getElementById('passo2').style.display = 'block';
                 
-                // Inicializa o Cropper com proporção do gabarito
-                setTimeout(() => {
-                    const image = document.getElementById('imageToCrop');
-                    cropper = new Cropper(image, {
-                        aspectRatio: 210 / 95, // Proporção A4 paisagem
-                        viewMode: 1,
-                        autoCropArea: 0.95,
-                        responsive: true,
-                        guides: true,
-                        center: true,
-                        highlight: true,
-                        cropBoxMovable: true,
-                        cropBoxResizable: true,
-                    });
-                }, 100);
+                // Inicia leitura do QR com múltiplas tentativas
+                lerQRCodeAutomatico();
             };
-            reader.readAsDataURL(input.files[0]);
+            
+            reader.readAsDataURL(file);
         }
     }
 
     // ============================================
-    // PASSO 2: CONFIRMAR RECORTE
+    // LEITURA AUTOMÁTICA DO QR (8 TENTATIVAS)
     // ============================================
-    function confirmarRecorte() {
-        if (!cropper) return;
-        
-        const canvasRecorte = cropper.getCroppedCanvas({
-            maxWidth: 2000,
-            maxHeight: 1000,
-            imageSmoothingEnabled: true,
-            imageSmoothingQuality: 'high',
-        });
-        
-        fotoRecortada = canvasRecorte.toDataURL('image/jpeg', 0.95);
-        
-        document.getElementById('imagemRecortada').src = fotoRecortada;
-        document.getElementById('passo2').style.display = 'none';
-        document.getElementById('passo3').style.display = 'block';
-        
-        // Tenta ler o QR Code
-        lerQRCodeDaFoto();
-    }
-
-    function voltarRecorte() {
-        document.getElementById('passo3').style.display = 'none';
-        document.getElementById('passo2').style.display = 'block';
-    }
-
-    function voltarInicio() {
-        if (cropper) {
-            cropper.destroy();
-            cropper = null;
-        }
-        fotoOriginal = null;
-        fotoRecortada = null;
-        qrDetectado = null;
-        document.getElementById('passo2').style.display = 'none';
-        document.getElementById('passo3').style.display = 'none';
-        document.getElementById('passo1').style.display = 'block';
-        document.getElementById('inputFile').value = '';
-    }
-
-    // ============================================
-    // PASSO 3: LEITURA DO QR CODE
-    // ============================================
-    async function lerQRCodeDaFoto() {
+    async function lerQRCodeAutomatico() {
         const statusDiv = document.getElementById('statusQR');
+        const progressoDiv = document.getElementById('progressoLeitura');
+        const numTentativaSpan = document.getElementById('numTentativa');
+        const btnProcessar = document.getElementById('btnProcessar');
         
-        statusDiv.style.display = 'block';
-        statusDiv.style.background = '#fff3cd';
-        statusDiv.style.color = '#856404';
-        statusDiv.innerHTML = '⏳ Lendo QR Code...';
+        statusDiv.style.display = 'none';
+        progressoDiv.style.display = 'block';
+        btnProcessar.disabled = true;
         
-        try {
-            const img = new Image();
-            img.src = fotoRecortada;
-            await new Promise(resolve => img.onload = resolve);
+        const img = new Image();
+        img.src = fotoBase64;
+        await new Promise(resolve => img.onload = resolve);
+        
+        // 8 tentativas com diferentes escalas e processamentos
+        const tentativas = [
+            { escala: 1.0, contraste: false, nome: "Original" },
+            { escala: 0.7, contraste: false, nome: "Reduzida 70%" },
+            { escala: 0.5, contraste: false, nome: "Reduzida 50%" },
+            { escala: 0.3, contraste: false, nome: "Reduzida 30%" },
+            { escala: 1.0, contraste: true, nome: "Contraste alto" },
+            { escala: 0.7, contraste: true, nome: "Reduzida + Contraste" },
+            { escala: 0.5, contraste: true, nome: "50% + Contraste" },
+            { escala: 0.3, contraste: true, nome: "30% + Contraste" }
+        ];
+        
+        let code = null;
+        
+        for (let i = 0; i < tentativas.length; i++) {
+            numTentativaSpan.textContent = (i + 1);
             
-            let code = null;
-            
-            // Tenta múltiplas escalas para garantir leitura
-            code = tentarLerQR(img, 1.0);
-            if (!code) code = tentarLerQR(img, 0.7);
-            if (!code) code = tentarLerQR(img, 0.5);
-            if (!code) code = tentarLerQR(img, 0.3);
+            code = tentarLerQR(img, tentativas[i].escala, tentativas[i].contraste);
             
             if (code) {
                 const partes = code.data.split(':');
@@ -407,50 +339,75 @@
                         id_prova: parseInt(partes[1].trim()) || null,
                         id_aluno: parseInt(partes[2] ? partes[2].trim() : partes[1].trim())
                     };
+                    
+                    progressoDiv.style.display = 'none';
+                    statusDiv.style.display = 'block';
                     statusDiv.style.background = '#d4edda';
                     statusDiv.style.color = '#155724';
-                    statusDiv.innerHTML = '✅ QR Code detectado!<br><small>Aluno: ' + qrDetectado.id_aluno + ' | Prova: ' + qrDetectado.id_prova + '</small>';
-                } else {
-                    statusDiv.style.background = '#f8d7da';
-                    statusDiv.style.color = '#721c24';
-                    statusDiv.innerHTML = '❌ QR Code inválido<br><small>Formato: ' + code.data + '</small>';
+                    statusDiv.innerHTML = `✅ QR Code detectado! (tentativa ${i+1}: ${tentativas[i].nome})<br><small>Aluno: ${qrDetectado.id_aluno} | Prova: ${qrDetectado.id_prova}</small>`;
+                    btnProcessar.disabled = false;
+                    return;
                 }
-            } else {
-                statusDiv.style.background = '#f8d7da';
-                statusDiv.style.color = '#721c24';
-                statusDiv.innerHTML = '❌ QR Code não encontrado<br><small>Verifique se o QR está visível no recorte</small>';
             }
-        } catch (err) {
-            statusDiv.style.background = '#f8d7da';
-            statusDiv.style.color = '#721c24';
-            statusDiv.innerHTML = '❌ Erro ao ler QR Code';
         }
+        
+        // Se nenhuma tentativa funcionou
+        progressoDiv.style.display = 'none';
+        statusDiv.style.display = 'block';
+        statusDiv.style.background = '#f8d7da';
+        statusDiv.style.color = '#721c24';
+        statusDiv.innerHTML = '❌ QR Code não encontrado após 8 tentativas<br><small>Verifique se o QR está visível e bem iluminado</small>';
+        btnProcessar.disabled = false;
     }
 
-    function tentarLerQR(img, escala) {
+    function tentarLerQR(img, escala, aplicarContraste) {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = img.width * escala;
         canvas.height = img.height * escala;
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        // Aplica contraste se necessário
+        if (aplicarContraste) {
+            const data = imageData.data;
+            const fator = 1.8; // Contraste alto
+            for (let i = 0; i < data.length; i += 4) {
+                const avg = (data[i] + data[i+1] + data[i+2]) / 3;
+                const novo = ((avg - 128) * fator) + 128;
+                data[i] = data[i+1] = data[i+2] = Math.max(0, Math.min(255, novo));
+            }
+            ctx.putImageData(imageData, 0, 0);
+            imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        }
+        
         return jsQR(imageData.data, imageData.width, imageData.height, {
             inversionAttempts: "attemptBoth"
         });
     }
 
+    function descartarFoto() {
+        fotoBase64 = null;
+        qrDetectado = null;
+        document.getElementById('passo2').style.display = 'none';
+        document.getElementById('passo1').style.display = 'block';
+        document.getElementById('inputFile').value = '';
+        document.getElementById('statusQR').style.display = 'none';
+        document.getElementById('progressoLeitura').style.display = 'none';
+    }
+
     // ============================================
-    // PASSO 4: PROCESSAR GABARITO
+    // PROCESSAR GABARITO
     // ============================================
     async function processarGabarito() {
-        if (!fotoRecortada) {
-            alert('Nenhuma foto recortada!');
+        if (!fotoBase64) {
+            alert('Nenhuma foto capturada!');
             return;
         }
         
         if (!qrDetectado) {
-            if (!confirm('QR Code não detectado. Deseja processar mesmo assim?')) {
+            if (!confirm('QR Code não detectado. Deseja processar mesmo assim? (usará valores padrão)')) {
                 return;
             }
             qrDetectado = { id_prova: 1, id_aluno: 1 };
@@ -465,7 +422,7 @@
                 body: JSON.stringify({
                     id_aluno: qrDetectado.id_aluno,
                     id_avaliacao: qrDetectado.id_prova,
-                    imagem: fotoRecortada
+                    imagem: fotoBase64
                 })
             });
 
@@ -485,8 +442,8 @@
     }
 
     function mostrarResultado(data) {
-        document.getElementById('passo3').style.display = 'none';
-        document.getElementById('passo4').style.display = 'block';
+        document.getElementById('passo2').style.display = 'none';
+        document.getElementById('passo3').style.display = 'block';
         
         document.getElementById('resNome').textContent = data.nome_aluno || 'Aluno ID: ' + qrDetectado.id_aluno;
         document.getElementById('resProva').textContent = data.nome_prova || 'Prova ID: ' + qrDetectado.id_prova;
@@ -500,7 +457,7 @@
                 divImg = document.createElement('div');
                 divImg.style.cssText = 'margin: 20px 0; text-align: center; background: #f0f0f0; padding: 15px; border-radius: 8px;';
                 divImg.innerHTML = '<h4 style="color: #008080; margin: 0 0 10px 0;">🔍 Gabarito Processado (planificado automaticamente)</h4><img id="imgProcessada" style="width: auto; max-width: 100%; height: auto; border: 3px solid #008080; border-radius: 8px;">';
-                document.getElementById('passo4').querySelector('.card').appendChild(divImg);
+                document.getElementById('passo3').querySelector('.card').appendChild(divImg);
             }
             document.getElementById('imgProcessada').src = data.imagem_processada;
         }
