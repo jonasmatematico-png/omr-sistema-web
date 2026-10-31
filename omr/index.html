@@ -177,6 +177,7 @@
           <label>Nome da Prova</label>
           <input type="text" id="nomeProva" placeholder="Ex: Prova 1 - Frações">
         </div>
+
         <div class="form-row">
           <div class="form-group">
             <label>Bimestre</label>
@@ -242,20 +243,32 @@
             <input type="text" id="disciplinaObj" value="Matemática">
           </div>
         </div>
+
         <div class="form-row">
           <div class="form-group">
-            <label>Peso na Média</label>
-            <input type="number" id="pesoObj" value="1" step="0.1">
+              <label>Peso na Média</label>
+              <input type="number" id="pesoObj" value="1" step="0.1">
           </div>
           <div class="form-group">
-            <label>Alternativas por Questão</label>
-            <select id="qtdAlternativasObj" onchange="atualizarAlternativasUI()">
-              <option value="3">3 (A, B, C)</option>
-              <option value="4" selected>4 (A, B, C, D)</option>
-              <option value="5">5 (A, B, C, D, E)</option>
-            </select>
+              <label>Alternativas por Questão</label>
+              <select id="qtdAlternativasObj" onchange="atualizarAlternativasUI()">
+                  <option value="3">3 (A, B, C)</option>
+                  <option value="4" selected>4 (A, B, C, D)</option>
+                  <option value="5">5 (A, B, C, D, E)</option>
+              </select>
           </div>
-        </div>
+      </div>
+
+<!-- 🆕 NOVO CAMPO: TIPO DE AVALIAÇÃO -->
+<div class="form-group">
+    <label>Tipo de Avaliação</label>
+    <select id="tipoAvaliacaoObj">
+        <option value="">Carregando tipos...</option>
+    </select>
+    <small style="color: #666; font-size: 12px;">
+        💡 <strong>Simulado SAEB</strong> usa pesos por dificuldade. <strong>Prova</strong> usa média simples.
+    </small>
+</div>
         
         <h3 style="margin: 20px 0 12px; display: flex; justify-content: space-between; align-items: center;">
           Questões (<span id="totalQuestoesObj">1</span>)
@@ -1331,22 +1344,27 @@ async function salvarProvaObjetiva() {
       // Atualizar prova existente
       await sbFetch('PATCH', '/rest/v1/avaliacoes?id=eq.' + editandoIdObj, { 
         nome: nome, bimestre: bimestre, peso_media: peso, 
-        numero_questoes: questoesObj.length, disciplina: disciplina 
+        numero_questoes: questoesObj.length, disciplina: disciplina, tipo: tipoSelecionado
       });
       await sbFetch('DELETE', '/rest/v1/' + COLUNAS.OBJETIVAS.tabela + '?id_avaliacao=eq.' + editandoIdObj);
       idAval = editandoIdObj;
     } else {
+
+      // Pega o tipo selecionado no dropdown (ou usa 'Prova' como padrão)
+var tipoSelecionado = document.getElementById('tipoAvaliacaoObj').value || 'Prova';
+
       // Criar nova prova
-      var r1 = await sbFetch('POST', '/rest/v1/avaliacoes', { 
-        nome: nome, 
-        data_prova: new Date().toISOString().split('T')[0], 
-        numero_questoes: questoesObj.length, 
-        bimestre: bimestre, 
-        peso_media: peso, 
-        disciplina: disciplina, 
-        modo_correcao: 'objetiva', 
-        tipo: 'Prova Objetiva' 
+      var r1 = await sbFetch('POST', '/rest/v1/avaliacoes', {
+          nome: nome,
+          data_prova: new Date().toISOString().split('T')[0],
+          numero_questoes: questoesObj.length,
+          bimestre: bimestre,
+          peso_media: peso,
+          disciplina: disciplina,
+          modo_correcao: 'objetiva',
+          tipo: tipoSelecionado   // ← AGORA USA O TIPO SELECIONADO!
       }, 'return=representation');
+
       if (!r1.ok) { toast('Erro ao criar prova: ' + msgErro(await r1.json()), 'error'); return; }
       idAval = (await r1.json())[0].id;
     }
@@ -1399,6 +1417,10 @@ async function editarProvaObj(id) {
     document.getElementById('bimestreObj').value = String(a.bimestre);
     document.getElementById('pesoObj').value = String(a.peso_media);
     document.getElementById('disciplinaObj').value = a.disciplina || 'Matemática';
+    // 🆕 Seleciona o tipo correto no dropdown
+    if (a.tipo) {
+        document.getElementById('tipoAvaliacaoObj').value = a.tipo;
+    }
     
     questoesObj = qs.map(function (q) { 
       return { 
@@ -2612,6 +2634,7 @@ async function gerarPlanoAula() {
     carregarSelectsPlanilha();
     carregarSelectsCorretor();
     carregarProvasObj();
+    carregarTiposAvaliacao();
 }
 
 
@@ -3972,6 +3995,47 @@ async function enviarParaCorrecaoAutomatica(arquivoImagem, dadosQR) {
 function salvarCorrecaoAutomatica(idAluno, idProva) {
     // Aqui você pode adicionar a lógica para salvar no Supabase
     alert('✅ Correção salva com sucesso! (Função a ser implementada)');
+}
+
+// ========================================================================
+// 🆕 CARREGAR TIPOS DE AVALIAÇÃO (Para o dropdown)
+// ========================================================================
+async function carregarTiposAvaliacao() {
+    var select = document.getElementById('tipoAvaliacaoObj');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">Carregando...</option>';
+    
+    try {
+        var r = await fetch(API_BASE_URL + '/api/avaliacoes/tipos');
+        var j = await r.json();
+        
+        if (j.sucesso && j.tipos) {
+            select.innerHTML = '<option value="">Selecione o tipo...</option>';
+            j.tipos.forEach(function(tipo) {
+                // Se o tipo tiver "SAEB" no nome, destaca
+                var destaque = tipo.nome.toUpperCase().includes('SAEB') ? ' 🎯' : '';
+                select.innerHTML += '<option value="' + tipo.nome + '">' + tipo.nome + destaque + '</option>';
+            });
+            console.log('✅ Tipos de avaliação carregados:', j.tipos.length);
+        } else {
+            // Fallback: tipos padrão caso a API falhe
+            select.innerHTML = `
+                <option value="Prova">Prova</option>
+                <option value="Simulado SAEB">Simulado SAEB 🎯</option>
+                <option value="Trabalho">Trabalho</option>
+                <option value="Atividade">Atividade</option>
+            `;
+        }
+    } catch (e) {
+        console.error('Erro ao carregar tipos:', e);
+        // Fallback
+        select.innerHTML = `
+            <option value="Prova">Prova</option>
+            <option value="Simulado SAEB">Simulado SAEB 🎯</option>
+            <option value="Trabalho">Trabalho</option>
+        `;
+    }
 }
 
 </script>
