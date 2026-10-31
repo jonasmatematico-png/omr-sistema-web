@@ -18,7 +18,6 @@
             border-radius: 12px; border: 3px solid #008080; background: #000;
         }
         
-        /* MOLDAURA DE ENQUADRAMENTO (Visual menor, mas detecção ampla) */
         #molduraEnquadramento {
             position: absolute;
             top: 50%;
@@ -117,7 +116,7 @@
 <body>
 
 <div class="container">
-    <h2>📝 Correção Objetiva (OMR)</h2>
+    <h2> Correção Objetiva (OMR)</h2>
     <p>Aponte a câmera para o QR Code da folha de respostas.</p>
 
     <div class="modo-fila-toggle" onclick="toggleModoFila()">
@@ -132,6 +131,7 @@
     <div id="cameraContainer">
         <video id="cameraVideo" autoplay playsinline muted></video>
         <canvas id="cameraCanvas" style="display: none;"></canvas>
+        <canvas id="scanCanvas" style="display: none;"></canvas> <!-- Canvas para scan reduzido -->
         
         <!-- MOLDAURA DE ENQUADRAMENTO -->
         <div id="molduraEnquadramento"></div>
@@ -140,7 +140,7 @@
         <p id="statusLeitura" style="margin-top: 10px; font-weight: bold; color: #008080; display: none;">Câmera desligada.</p>
 
         <button id="btnIniciar" class="btn btn-primary" onclick="iniciarCamera()"> INICIAR CÂMERA</button>
-        <button id="btnTirar" class="btn btn-warning" onclick="tirarFotoManual()" style="display: none;"> CAPTURAR MANUALMENTE</button>
+        <button id="btnTirar" class="btn btn-warning" onclick="tirarFotoManual()" style="display: none;">📸 CAPTURAR MANUALMENTE</button>
         <button id="btnParar" class="btn btn-danger" onclick="pararCamera()" style="display: none;">⏹️ PARAR</button>
     </div>
 
@@ -160,7 +160,7 @@
             <h3 style="color: #008080; margin-top: 0; text-align: center;">✅ Leitura Concluída</h3>
             
             <div class="info-row">
-                <span class="info-label">👤 Aluno:</span>
+                <span class="info-label"> Aluno:</span>
                 <span id="resNome">-</span>
             </div>
             <div class="info-row" style="border: none;">
@@ -180,7 +180,7 @@
             </div>
 
             <button class="btn btn-success" onclick="salvarCorrecao()" style="margin-top: 16px;">💾 SALVAR NO SISTEMA</button>
-            <button class="btn btn-secondary" onclick="location.reload()" style="margin-top: 8px;">️ Voltar ao Início</button>
+            <button class="btn btn-secondary" onclick="location.reload()" style="margin-top: 8px;">↩️ Voltar ao Início</button>
         </div>
     </div>
 </div>
@@ -208,6 +208,7 @@
 
     const video = document.getElementById('cameraVideo');
     const canvas = document.getElementById('cameraCanvas');
+    const scanCanvas = document.getElementById('scanCanvas'); // Canvas reduzido para scan
     const moldura = document.getElementById('molduraEnquadramento');
     const textoEnquadramento = document.getElementById('textoEnquadramento');
 
@@ -232,7 +233,7 @@
             document.getElementById('btnParar').style.display = 'flex';
             document.getElementById('btnTirar').style.display = 'flex';
             textoEnquadramento.style.display = 'block';
-            textoEnquadramento.textContent = '📐 Enquadre o QR Code (pode capturar manual)';
+            textoEnquadramento.textContent = '📐 Afaste-se! QR pode ser lido de longe';
             
             isScanning = true;
             video.onloadedmetadata = () => {
@@ -279,7 +280,7 @@
             border-radius: 8px;
             pointer-events: none;
         `;
-        texto.innerText = '📐 Enquadre aqui (guia visual)';
+        texto.innerText = ' Enquadre aqui (guia visual)';
         frame.appendChild(texto);
         
         const cantos = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
@@ -314,54 +315,49 @@
         if (!isScanning) return;
         
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            // Canvas em alta resolução para a foto final
             canvas.height = video.videoHeight;
             canvas.width = video.videoWidth;
             const ctx = canvas.getContext('2d', { willReadFrequently: true });
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const code = jsQR(imageData.data, imageData.width, canvas.height, { inversionAttempts: "dontInvert" });
+            // ✅ Canvas REDUZIDO para detecção do QR (lê de mais longe!)
+            const scanWidth = 640; // Reduz para 640px (QR parece maior proporcionalmente)
+            const scanHeight = Math.floor(scanWidth * (video.videoHeight / video.videoWidth));
+            scanCanvas.height = scanHeight;
+            scanCanvas.width = scanWidth;
+            const scanCtx = scanCanvas.getContext('2d');
+            scanCtx.drawImage(video, 0, 0, scanWidth, scanHeight);
+            
+            const imageData = scanCtx.getImageData(0, 0, scanWidth, scanHeight);
+            const code = jsQR(imageData.data, scanWidth, scanHeight, { 
+                inversionAttempts: "dontInvert",
+                // Tenta detectar QR Codes menores
+            });
 
             if (code) {
                 const partes = code.data.split(':');
                 if (partes[0].trim() === 'OMRALUNO' && partes.length >= 2) {
-                    const qrCentroX = code.location.topLeftCorner.x + 
-                                     (code.location.topRightCorner.x - code.location.topLeftCorner.x) / 2;
-                    const qrCentroY = code.location.topLeftCorner.y + 
-                                     (code.location.bottomLeftCorner.y - code.location.topLeftCorner.y) / 2;
+                    // QR detectado com sucesso!
+                    if (!moldura.classList.contains('alinhado')) {
+                        moldura.classList.add('alinhado');
+                        tempoAlinhado = Date.now();
+                        textoEnquadramento.textContent = '✅ QR detectado! Capturando...';
+                        tocarBip();
+                    }
                     
-                    const qrXPercent = (qrCentroX / canvas.width) * 100;
-                    const qrYPercent = (qrCentroY / canvas.height) * 100;
-                    
-                    // ✅ ÁREA DE DETECÇÃO AMPLA (90% x 50%) - Mesmo com retângulo visual menor
-                    const dentroMoldura = (qrXPercent > 5 && qrXPercent < 95 && 
-                                          qrYPercent > 25 && qrYPercent < 75);
-                    
-                    if (dentroMoldura) {
-                        if (!moldura.classList.contains('alinhado')) {
-                            moldura.classList.add('alinhado');
-                            tempoAlinhado = Date.now();
-                            textoEnquadramento.textContent = '✅ QR detectado! Capturando...';
-                            tocarBip();
-                        }
-                        
-                        if (capturaAutomaticaAtiva && (Date.now() - tempoAlinhado) > 1000) {
-                            qrDetectado = {
-                                id_prova: parseInt(partes[1].trim()) || null,
-                                id_aluno: parseInt(partes[2] ? partes[2].trim() : partes[1].trim())
-                            };
-                            tirarFotoAutomatica();
-                            return;
-                        }
-                    } else {
-                        // QR detectado mas fora - permite captura manual
-                        moldura.classList.remove('alinhado');
-                        textoEnquadramento.textContent = '✅ QR detectado! Use o botão CAPTURAR';
+                    if (capturaAutomaticaAtiva && (Date.now() - tempoAlinhado) > 1000) {
+                        qrDetectado = {
+                            id_prova: parseInt(partes[1].trim()) || null,
+                            id_aluno: parseInt(partes[2] ? partes[2].trim() : partes[1].trim())
+                        };
+                        tirarFotoAutomatica();
+                        return;
                     }
                 }
             } else {
                 moldura.classList.remove('alinhado');
-                textoEnquadramento.textContent = ' Buscando QR Code...';
+                textoEnquadramento.textContent = '🔍 Buscando QR Code (pode ser de longe)...';
             }
         }
         
@@ -374,6 +370,7 @@
         const tempCanvas = document.createElement('canvas');
         const ctx = tempCanvas.getContext('2d');
         
+        // Corrige rotação se necessário
         if (video.videoWidth > video.videoHeight) {
             tempCanvas.width = video.videoWidth;
             tempCanvas.height = video.videoHeight;
@@ -398,9 +395,7 @@
     }
 
     function tirarFotoManual() {
-        // Agora permite capturar mesmo sem alinhamento perfeito
         if (!qrDetectado) {
-            // Tenta ler QR uma última vez antes de capturar
             alert('⚠️ QR Code não detectado! Tente aproximar um pouco ou use mais luz.');
             return;
         }
@@ -417,7 +412,7 @@
 
     async function enviarParaBackend() {
         if (!fotoBase64) {
-            alert('️ Nenhuma foto capturada!');
+            alert('⚠️ Nenhuma foto capturada!');
             return;
         }
         
@@ -525,7 +520,7 @@
                     btnSalvar.textContent = '✅ SALVO!';
                 }
             } else {
-                alert('❌ Erro ao salvar: ' + data.erro);
+                alert(' Erro ao salvar: ' + data.erro);
                 btnSalvar.textContent = textoOriginal;
                 btnSalvar.disabled = false;
             }
