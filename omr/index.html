@@ -642,12 +642,20 @@ Acesse a versão otimizada para celular com:<br>
 </div>
 </div>
 
-<!-- 1. CARREGAR OS ARQUIVOS SEPARADOS (FICAM SOLTOS, FORA de qualquer tag <script>) -->
+</div>
+    </div>
+</div>
+
+<!-- ======================================================================== -->
+<!-- 1. AQUI CARREGAMOS OS ARQUIVOS EXTERNOS (CADA UM É UMA TAG INDEPENDENTE) -->
+<!-- ======================================================================== -->
 <script src="js/config.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/auth.js"></script>
 
-<!-- 2. SEU SCRIPT PRINCIPAL (APENAS UMA TAG <script> AQUI EMBAIXO) -->
+<!-- ======================================================================== -->
+<!-- 2. AQUI COMEÇA O SEU SCRIPT PRINCIPAL (COM TODO O RESTANTE DO CÓDIGO)    -->
+<!-- ======================================================================== -->
 <script>
 
 // ========================================================================
@@ -1851,30 +1859,15 @@ async function cadastrarProfessorViaAPI() {
     finally { btn.innerHTML = textoOriginal; btn.disabled = false; }
 }
 
-<!-- ======================================================================== -->
-<!-- FINAL CORRETO DO index.html (COPIE A PARTIR DAQUI) -->
-<!-- ======================================================================== -->
-
-// ========================================================================
-// ⚠️ IMPORTANTE: 
-// Mantenha aqui TODAS as suas funções (novaQuestao, salvarProva, 
-// carregarProvas, diagnóstico, QR, IA, etc.) que já estavam no seu código.
-// Apenas garanta que o FINAL do arquivo seja exatamente assim:
-// ========================================================================
-
-// ... [Aqui fica todo o meio do seu código JavaScript] ...
-
-// ========================================================================
-// 🚀 INICIALIZAÇÃO SEGURA (DEIXE ISSO NO FINAL DE TUDO, ANTES DE FECHAR)
-// ========================================================================
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("🟢 Página carregada. Iniciando sistema...");
-    
-    // Se o usuário já estiver logado, carrega a tela principal automaticamente
-    if (token && userEmail) { 
-        refrescarSessao().then(() => mostrarPrincipal(userEmail)); 
-    }
-});
+    // ========================================================================
+    // 🚀 INICIALIZAÇÃO SEGURA
+    // ========================================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("🟢 Página carregada. Iniciando sistema...");
+        if (token && userEmail) { 
+            refrescarSessao().then(() => mostrarPrincipal(userEmail)); 
+        }
+    });
 </script>
 </body>
 </html>
