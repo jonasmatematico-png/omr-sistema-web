@@ -1033,11 +1033,12 @@ async function salvarProva() {
     } catch (e) { toast('Falha: ' + e.message, 'error'); }
 }
 
+// 7. Carregar lista de provas abertas (VERSÃO BLINDADA - SEM DEPENDER DE TOKEN)
 async function carregarProvas() {
     var lista = document.getElementById('provasLista');
     lista.innerHTML = '<div class="loading">Carregando...</div>';
     try {
-        // Usa a chave anon diretamente (bypass do RLS para leitura)
+        // ✅ USA A CHAVE ANÔNIMA DIRETAMENTE (NÃO DEPENDE DE TOKEN)
         var r = await fetch(SUPABASE_URL + '/rest/v1/avaliacoes?modo_correcao=eq.aberta&select=id,nome,bimestre,numero_questoes,data_prova,tipo&order=id.desc', {
             headers: {
                 'apikey': SUPABASE_KEY,
@@ -1046,7 +1047,7 @@ async function carregarProvas() {
         });
         
         if (!r.ok) {
-            console.error('Erro ao carregar provas:', r.status, await r.text());
+            console.error('❌ Erro ao carregar provas:', r.status, await r.text());
             lista.innerHTML = '<p style="color:#dc3545;text-align:center;padding:20px;">Erro ao carregar provas. Verifique as políticas RLS no Supabase.</p>';
             return;
         }
@@ -1072,7 +1073,7 @@ async function carregarProvas() {
                 '</div>';
         }).join('');
     } catch (e) {
-        console.error('Erro ao carregar provas:', e);
+        console.error('❌ Erro ao carregar provas:', e);
         lista.innerHTML = '<p style="color:#dc3545;text-align:center;padding:20px;">Falha de conexão.</p>';
     }
 }
@@ -1236,25 +1237,48 @@ async function salvarProvaObjetiva() {
     } catch (e) { toast('Falha: ' + e.message, 'error'); }
 }
 
+// 6. Carregar lista de provas objetivas (VERSÃO BLINDADA)
 async function carregarProvasObj() {
     var lista = document.getElementById('provasObjLista');
     lista.innerHTML = '<div class="loading">Carregando...</div>';
     try {
-        var r = await sbFetch('GET', '/rest/v1/avaliacoes?modo_correcao=eq.objetiva&select=id,nome,bimestre,numero_questoes,data_prova,tipo&order=id.desc');
-        if (!r.ok) { lista.innerHTML = '<p style="color:#dc3545;text-align:center;padding:20px;">Erro ao carregar.</p>'; return; }
+        var r = await fetch(SUPABASE_URL + '/rest/v1/avaliacoes?modo_correcao=eq.objetiva&select=id,nome,bimestre,numero_questoes,data_prova,tipo&order=id.desc', {
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': 'Bearer ' + SUPABASE_KEY
+            }
+        });
+        
+        if (!r.ok) {
+            console.error('❌ Erro ao carregar provas objetivas:', r.status);
+            lista.innerHTML = '<p style="color:#dc3545;text-align:center;padding:20px;">Erro ao carregar.</p>';
+            return;
+        }
+        
         var data = await r.json();
-        if (!data || data.length === 0) { lista.innerHTML = '<p style="color:#888;text-align:center;padding:20px;">Nenhuma prova objetiva cadastrada.</p>'; return; }
+        if (!data || data.length === 0) {
+            lista.innerHTML = '<p style="color:#888;text-align:center;padding:20px;">Nenhuma prova objetiva cadastrada.</p>';
+            return;
+        }
         
         lista.innerHTML = data.map(function (p) {
             var tipoDisplay = p.tipo ? ` • <span style="color:#6f42c1; font-weight:bold;">${p.tipo}</span>` : '';
-            return '<div class="prova-item"><div class="prova-item-info"><strong>' + p.nome + '</strong><div class="prova-item-meta">' + p.numero_questoes + ' questões • ' + p.bimestre + 'º bimestre' + tipoDisplay + '</div></div>' +
+            return '<div class="prova-item">' +
+                '<div class="prova-item-info">' +
+                '<strong>' + p.nome + '</strong>' +
+                '<div class="prova-item-meta">' + p.numero_questoes + ' questões • ' + p.bimestre + 'º bimestre' + tipoDisplay + '</div>' +
+                '</div>' +
                 '<div style="display:flex;gap:6px;">' +
                 '<button class="btn btn-primary btn-sm" onclick="imprimirGabaritoObj(' + p.id + ')">🖨️ Gabarito</button>' +
                 '<button class="btn btn-warn btn-sm" onclick="editarProvaObj(' + p.id + ')">✏️ Editar</button>' +
                 '<button class="btn btn-danger btn-sm" onclick="excluirProvaObj(' + p.id + ')">🗑️</button>' +
-                '</div></div>';
+                '</div>' +
+                '</div>';
         }).join('');
-    } catch (e) { lista.innerHTML = '<p style="color:#dc3545;text-align:center;padding:20px;">Falha de conexão.</p>'; }
+    } catch (e) {
+        console.error('❌ Erro ao carregar provas objetivas:', e);
+        lista.innerHTML = '<p style="color:#dc3545;text-align:center;padding:20px;">Falha de conexão.</p>';
+    }
 }
 
 async function editarProvaObj(id) {
