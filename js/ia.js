@@ -9,6 +9,14 @@ function mudarAbaIA(aba) {
     if (botaoAlvo) botaoAlvo.classList.add('active');
 }
 
+function abrirModalIA() { 
+    document.getElementById('modalIA').classList.add('active'); 
+    mudarAbaIA('gerar'); 
+    document.getElementById('iaResultadoGerar').innerHTML = ''; 
+    document.getElementById('iaResultadoIdentificar').innerHTML = ''; 
+    document.getElementById('iaResultadoPlanejar').innerHTML = ''; 
+}
+
 async function carregarMatrizIA() {
     var fonte = document.getElementById('iaFonte').value;
     var ano = document.getElementById('iaAno').value;

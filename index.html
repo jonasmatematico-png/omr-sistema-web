@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OMR Sistema 2.0</title>
+<link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -646,7 +647,12 @@ Acesse a versão otimizada para celular com:<br>
     </div>
 </div>
 
-<!-- CARREGUE OS ARQUIVOS JAVASCRIPT NA ORDEM CORRETA -->
+<!-- FAB IA -->
+<div id="meuRobo" class="fab-ia" onclick="abrirModalIA()" style="display:none;">🤖</div>
+
+<!-- ======================================================================== -->
+<!-- CARREGUE OS ARQUIVOS JAVASCRIPT NA ORDEM CORRETA (ANTES DO </body>) -->
+<!-- ======================================================================== -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="js/config.js"></script>
@@ -660,45 +666,8 @@ Acesse a versão otimizada para celular com:<br>
 <script src="js/ia.js"></script>
 <script src="js/gestao.js"></script>
 <script src="js/main.js"></script>
-</body>
-</html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ========================================================================
-// 🔄 NAVEGAÇÃO E SESSÃO
-// ========================================================================
-function navegarPara(viewId, btn) {
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById(viewId).classList.add('active');
-    document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
-    if(btn) btn.classList.add('active');
-    if (viewId === 'view-gestao') carregarListaUsuarios();
-}
-
-
-function abrirModalIA() { document.getElementById('modalIA').classList.add('active'); mudarAbaIA('gerar'); document.getElementById('iaResultadoGerar').innerHTML = ''; document.getElementById('iaResultadoIdentificar').innerHTML = ''; document.getElementById('iaResultadoPlanejar').innerHTML = ''; }
-
-
 
 </script>
+
 </body>
 </html>
