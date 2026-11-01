@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Correção Objetiva (OMR)</title>
-<link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correção Objetiva (OMR)</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <style>
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background: #f5f5f5; margin: 0; padding: 20px; color: #333; }
@@ -265,13 +265,6 @@
     </div>
 </div>
 
-
-<!-- Carrega o cérebro do sistema -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/auth.js"></script>
-
 <script>
     let fotoBase64 = null;
     let qrDetectado = null;
@@ -499,7 +492,7 @@
             alert('❌ Erro de conexão');
         }
     }
-
 </script>
+
 </body>
 </html>
