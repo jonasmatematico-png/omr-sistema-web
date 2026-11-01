@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<link rel="manifest" href="/manifest.json">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Correção Objetiva (OMR)</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 20px; }
+.container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+h1 { color: #008080; text-align: center; margin-bottom: 24px; font-size: 24px; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; margin-bottom: 6px; font-size: 14px; color: #555; font-weight: 500; }
+.form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+.btn { padding: 12px 24px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-primary { background: #008080; color: white; }
+.btn-primary:hover { background: #006666; }
+.btn-success { background: #28a745; color: white; }
+.btn-success:hover { background: #218838; }
+.btn-secondary { background: #6c757d; color: white; }
+.resultado { margin-top: 20px; padding: 20px; border-radius: 8px; text-align: center; }
+.resultado.sucesso { background: #d4edda; border-left: 5px solid #28a745; }
+.resultado.erro { background: #f8d7da; border-left: 5px solid #dc3545; }
+.nota-final { font-size: 48px; font-weight: bold; color: #008080; margin: 20px 0; }
+.info-aluno { background: #f9f9f9; padding: 16px; border-radius: 8px; margin-bottom: 20px; }
+.info-aluno p { margin: 8px 0; font-size: 14px; }
+.info-aluno strong { color: #008080; }
+.hidden { display: none; }
+.loading { text-align: center; padding: 40px; color: #888; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>📝 Correção Objetiva (OMR)</h1>
+
+<!-- SELEÇÃO DE PROVA E ALUNO -->
+<div id="areaSelecao">
+<div class="form-group">
+<label>📋 Selecione a Prova:</label>
+<select id="selProva" onchange="carregarAlunosDaProva()">
+<option value="">Carregando provas...</option>
+</select>
+</div>
+<div class="form-group">
+<label>👤 Selecione o Aluno:</label>
+<select id="selAluno">
+<option value="">Selecione a prova primeiro</option>
+</select>
+</div>
+<button class="btn btn-primary" style="width: 100%;" onclick="iniciarCorrecao()">🚀 INICIAR CORREÇÃO</button>
+</div>
+
+<!-- ÁREA DE CORREÇÃO -->
+<div id="areaCorrecao" class="hidden">
+<div class="info-aluno">
+<p><strong>Aluno:</strong> <span id="nomeAluno"></span></p>
+<p><strong>Prova:</strong> <span id="nomeProva"></span></p>
+</div>
+
+<div class="form-group">
+<label>📸 Envie a foto do gabarito:</label>
+<input type="file" id="inputImagem" accept="image/*" capture="environment" onchange="previewImagem(this)">
+</div>
+
+<div id="areaPreview" class="hidden" style="margin: 20px 0; text-align: center;">
+<img id="imgPreview" style="max-width: 100%; border-radius: 8px; border: 2px solid #008080;">
+</div>
+
+<button class="btn btn-success" style="width: 100%; margin-bottom: 12px;" onclick="enviarParaCorrecao()">🤖 CORREÇÃO AUTOMÁTICA COM IA</button>
+<button class="btn btn-secondary" style="width: 100%;" onclick="voltarSelecao()">↩️ Voltar</button>
+</div>
+
+<!-- RESULTADO -->
+<div id="areaResultado"></div>
+</div>
+
+<!-- IMPORTA OS ARQUIVOS JS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/auth.js"></script>
+
+<script>
+// ========================================================================
+// 📝 CORREÇÃO OBJETIVA - LÓGICA ESPECÍFICA
+// ========================================================================
+
+// Carrega as provas ao abrir a página
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("🟢 Correção Objetiva carregada!");
+    carregarProvas();
+});
+
+async function carregarProvas() {
+    const select = document.getElementById('selProva');
+    try {
+        const r = await sbFetch('GET', '/rest/v1/avaliacoes?modo_correcao=eq.objetiva&select=id,nome&order=id.desc');
+        const provas = await r.json();
+        select.innerHTML = '<option value="">Selecione a prova...</option>';
+        provas.forEach(p => {
+            select.innerHTML += `<option value="${p.id}">${p.nome}</option>`;
+        });
+    } catch(e) {
+        console.error("Erro ao carregar provas:", e);
+        select.innerHTML = '<option value="">Erro ao carregar</option>';
+    }
+}
+
+async function carregarAlunosDaProva() {
+    const provaId = document.getElementById('selProva').value;
+    const selectAluno = document.getElementById('selAluno');
+    if (!provaId) {
+        selectAluno.innerHTML = '<option value="">Selecione a prova primeiro</option>';
+        return;
+    }
+    selectAluno.innerHTML = '<option value="">Carregando alunos...</option>';
+    try {
+        // Busca todas as turmas e alunos
+        const rTurmas = await sbFetch('GET', '/rest/v1/turmas?select=id,nome');
+        const turmas = await rTurmas.json();
+        let html = '<option value="">Selecione o aluno...</option>';
+        for (let turma of turmas) {
+            const rAlunos = await sbFetch('GET', `/rest/v1/alunos?id_turma=eq.${turma.id}&select=id,nome_completo,numero_chamada&order=numero_chamada.asc`);
+            const alunos = await rAlunos.json();
+            alunos.forEach(a => {
+                html += `<option value="${a.id}">${turma.nome} - ${a.numero_chamada}. ${a.nome_completo}</option>`;
+            });
+        }
+        selectAluno.innerHTML = html;
+    } catch(e) {
+        console.error("Erro ao carregar alunos:", e);
+        selectAluno.innerHTML = '<option value="">Erro ao carregar</option>';
+    }
+}
+
+function iniciarCorrecao() {
+    const provaId = document.getElementById('selProva').value;
+    const alunoId = document.getElementById('selAluno').value;
+    if (!provaId || !alunoId) {
+        alert('⚠️ Selecione a prova e o aluno!');
+        return;
+    }
+    document.getElementById('areaSelecao').classList.add('hidden');
+    document.getElementById('areaCorrecao').classList.remove('hidden');
+    document.getElementById('areaResultado').innerHTML = '';
+}
+
+function voltarSelecao() {
+    document.getElementById('areaSelecao').classList.remove('hidden');
+    document.getElementById('areaCorrecao').classList.add('hidden');
+    document.getElementById('areaResultado').innerHTML = '';
+    document.getElementById('inputImagem').value = '';
+    document.getElementById('areaPreview').classList.add('hidden');
+}
+
+function previewImagem(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('imgPreview').src = e.target.result;
+            document.getElementById('areaPreview').classList.remove('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+async function enviarParaCorrecao() {
+    const provaId = document.getElementById('selProva').value;
+    const alunoId = document.getElementById('selAluno').value;
+    const inputImagem = document.getElementById('inputImagem');
+    const areaResultado = document.getElementById('areaResultado');
+
+    if (!inputImagem.files || !inputImagem.files[0]) {
+        alert('⚠️ Envie uma imagem do gabarito!');
+        return;
+    }
+
+    areaResultado.innerHTML = '<div class="loading">⏳ Processando imagem com IA...</div>';
+
+    const formData = new FormData();
+    formData.append('imagem', inputImagem.files[0]);
+    formData.append('id_avaliacao', provaId);
+    formData.append('id_aluno', alunoId);
+
+    try {
+        const response = await fetch(API_BASE_URL + '/api/processar_imagem_omr', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await response.json();
+
+        if (data.sucesso) {
+            areaResultado.innerHTML = `
+                <div class="resultado sucesso">
+                    <h3>✅ Correção Concluída!</h3>
+                    <div class="nota-final">${data.nota || '0.0'}</div>
+                    <p><strong>Acertos:</strong> ${data.acertos || 0} de ${data.total_questoes || '?'}</p>
+                    <button class="btn btn-primary" style="margin-top: 16px;" onclick="voltarSelecao()">🔄 Nova Correção</button>
+                </div>
+            `;
+        } else {
+            areaResultado.innerHTML = `
+                <div class="resultado erro">
+                    <h3>❌ Erro na Correção</h3>
+                    <p>${data.erro || 'Falha no processamento'}</p>
+                    <button class="btn btn-secondary" style="margin-top: 16px;" onclick="voltarSelecao()">↩️ Voltar</button>
+                </div>
+            `;
+        }
+    } catch(e) {
+        console.error("Erro ao enviar imagem:", e);
+        areaResultado.innerHTML = `
+            <div class="resultado erro">
+                <h3>❌ Falha na Conexão</h3>
+                <p>${e.message}</p>
+                <button class="btn btn-secondary" style="margin-top: 16px;" onclick="voltarSelecao()">↩️ Voltar</button>
+            </div>
+        `;
+    }
+}
+</script>
+</body>
+</html>
