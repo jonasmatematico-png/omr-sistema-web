@@ -297,7 +297,7 @@
     }
 
     // ============================================
-    // LEITURA AUTOMÁTICA DO QR (8 TENTATIVAS)
+    // LEITURA AUTOMÁTICA DO QR (8 TENTATIVAS OTIMIZADAS)
     // ============================================
     async function lerQRCodeAutomatico() {
         const statusDiv = document.getElementById('statusQR');
@@ -313,7 +313,6 @@
         img.src = fotoBase64;
         await new Promise(resolve => img.onload = resolve);
         
-        // 8 tentativas com diferentes escalas e processamentos
         const tentativas = [
             { escala: 1.0, contraste: false, nome: "Original" },
             { escala: 0.7, contraste: false, nome: "Reduzida 70%" },
@@ -328,9 +327,17 @@
         let code = null;
         
         for (let i = 0; i < tentativas.length; i++) {
+            // 🌟 CORREÇÃO 1: Dá um "respiro" para o navegador atualizar o número na tela
+            await new Promise(resolve => setTimeout(resolve, 50));
             numTentativaSpan.textContent = (i + 1);
             
-            code = tentarLerQR(img, tentativas[i].escala, tentativas[i].contraste);
+            try {
+                // 🌟 CORREÇÃO 2: Protege contra travamento se uma escala der erro
+                code = tentarLerQR(img, tentativas[i].escala, tentativas[i].contraste);
+            } catch (error) {
+                console.warn(`Falha na tentativa ${i+1} (${tentativas[i].nome}):`, error);
+                continue; // Pula para a próxima tentativa
+            }
             
             if (code) {
                 const partes = code.data.split(':');
@@ -346,7 +353,9 @@
                     statusDiv.style.color = '#155724';
                     statusDiv.innerHTML = `✅ QR Code detectado! (tentativa ${i+1}: ${tentativas[i].nome})<br><small>Aluno: ${qrDetectado.id_aluno} | Prova: ${qrDetectado.id_prova}</small>`;
                     btnProcessar.disabled = false;
-                    return;
+                    return; // Sai da função com sucesso
+                } else {
+                    console.log("QR encontrado, mas formato diferente de OMRALUNO:", code.data);
                 }
             }
         }
@@ -356,10 +365,41 @@
         statusDiv.style.display = 'block';
         statusDiv.style.background = '#f8d7da';
         statusDiv.style.color = '#721c24';
-        statusDiv.innerHTML = '❌ QR Code não encontrado após 8 tentativas<br><small>Verifique se o QR está visível e bem iluminado</small>';
-        btnProcessar.disabled = false;
+        statusDiv.innerHTML = '❌ QR Code não encontrado após 8 tentativas.<br><small>Verifique se o QR está visível, sem reflexo e bem iluminado.</small>';
+        
+        // 🌟 CORREÇÃO 3: Habilita o botão mesmo assim, caso o professor queira forçar
+        btnProcessar.disabled = false; 
     }
 
+    function tentarLerQR(img, escala, aplicarContraste) {
+        const canvas = document.createElement('canvas');
+        // 🌟 CORREÇÃO 4: Otimização de performance para leitura de pixels
+        const ctx = canvas.getContext('2d', { willReadFrequently: true }); 
+        
+        canvas.width = Math.floor(img.width * escala);
+        canvas.height = Math.floor(img.height * escala);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        if (aplicarContraste) {
+            const data = imageData.data;
+            const fator = 1.8; // Contraste alto
+            for (let i = 0; i < data.length; i += 4) {
+                const avg = (data[i] + data[i+1] + data[i+2]) / 3;
+                const novo = ((avg - 128) * fator) + 128;
+                const val = Math.max(0, Math.min(255, novo));
+                data[i] = val;
+                data[i+1] = val;
+                data[i+2] = val;
+            }
+            // Não precisa do putImageData, pois vamos ler o array 'data' diretamente abaixo
+        }
+        
+        return jsQR(imageData.data, canvas.width, canvas.height, {
+            inversionAttempts: "attemptBoth"
+        });
+    }
     function tentarLerQR(img, escala, aplicarContraste) {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
