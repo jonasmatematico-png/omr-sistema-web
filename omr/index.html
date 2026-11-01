@@ -263,96 +263,103 @@ Questões (<span id="totalQuestoesObj">1</span>)
 <!-- (O restante das views: Diagnóstico, Planilha, Corretor, QR, Gestão, Correção Rápida permanece igual ao seu código original para economizar espaço e manter suas configurações) -->
 <!-- VIEW: DIAGNÓSTICO -->
 <div id="view-diagnostico" class="view">
-<h2>📊 Diagnóstico de Desempenho</h2>
-<div class="card">
-<button class="btn btn-primary" onclick="processarTriagem()" style="width: 100%; padding: 12px; font-size: 16px; font-weight: bold; margin-bottom: 20px;">
-RECALCULAR E CLASSIFICAR TURMA
-</button>
-<div id="areaTriagem" style="display: none;">
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-<div style="background: #fff5f5; padding: 16px; border-radius: 8px; border-left: 5px solid #dc3545;">
-<h4 style="color: #dc3545; margin-top: 0;">🚨 Piores Desempenhos (Abaixo do Básico / Básico)</h4>
-<div id="listaPiores" style="max-height: 400px; overflow-y: auto;"></div>
-</div>
-<div style="background: #f0fff4; padding: 16px; border-radius: 8px; border-left: 5px solid #28a745;">
-<h4 style="color: #28a745; margin-top: 0;">🏆 Melhores Desempenhos (Adequado / Avançado)</h4>
-<div id="listaMelhores" style="max-height: 400px; overflow-y: auto;"></div>
-</div>
-</div>
-</div>
-</div>
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-<div>
-<label for="selectAvaliacao" style="font-weight: bold; color: #4A148C; display: block; margin-bottom: 8px;">📋 Selecione a Prova:</label>
-<select id="selectAvaliacao" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; background: white;">
-<option value="">Carregando provas...</option>
-</select>
-</div>
-<div>
-<label for="selectTurma" style="font-weight: bold; color: #4A148C; display: block; margin-bottom: 8px;">🏫 Selecione a Turma (Opcional):</label>
-<select id="selectTurma" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; background: white;">
-<option value="">Todas as turmas</option>
-</select>
-</div>
-</div>
-<button class="btn btn-primary" onclick="processarTriagem()" style="width: 100%; padding: 12px; font-size: 16px; font-weight: bold; margin-bottom: 20px;">
-🧮 RECALCULAR E CLASSIFICAR
-</button>
-<div class="ia-tabs">
-<button class="ia-tab active" id="tabDiagTurma" onclick="mudarAbaDiagnostico('turma')">Por Turma</button>
-<button class="ia-tab" id="tabDiagAluno" onclick="mudarAbaDiagnostico('aluno')">Por Aluno</button>
-</div>
-<div id="abaDiagTurma">
-<div class="form-row">
-<div class="form-group">
-<label>Turma</label>
-<select id="selTurmaDiagnostico" onchange="carregarProvasPorTurma()"></select>
-</div>
-<div class="form-group">
-<label>Prova</label>
-<select id="selProvaDiagnostico"></select>
-</div>
-</div>
-<div class="form-group">
-<label>Analisar por:</label>
-<select id="tipoAnaliseTurma">
-<option value="descritor_codigo">Descritor (SAEB)</option>
-<option value="habilidade">Habilidade (BNCC)</option>
-</select>
-</div>
-<button class="btn btn-primary" style="width: 100%;" onclick="carregarDiagnosticoTurma()">📊 GERAR DIAGNÓSTICO DA TURMA</button>
-</div>
-<div id="abaDiagAluno" class="hidden">
-<div class="form-row">
-<div class="form-group">
-<label>Turma</label>
-<select id="selTurmaDiagAluno" onchange="carregarAlunosDiagAluno()"></select>
-</div>
-<div class="form-group">
-<label>Aluno</label>
-<select id="selAlunoDiagAluno" onchange="carregarProvasAluno()"></select>
-</div>
-</div>
-<div class="form-row">
-<div class="form-group">
-<label>Prova</label>
-<select id="selProvaDiagAluno"></select>
-</div>
-<div class="form-group">
-<label>Analisar por:</label>
-<select id="tipoAnaliseAluno">
-<option value="descritor_codigo">Descritor (SAEB)</option>
-<option value="habilidade">Habilidade (BNCC)</option>
-</select>
-</div>
-</div>
-<button class="btn btn-primary" style="width: 100%;" onclick="carregarDiagnosticoAluno()">📊 GERAR DIAGNÓSTICO DO ALUNO</button>
-</div>
-</div>
-<div class="card">
-<div id="areaDiagnosticoTurma"></div>
-<div id="areaGraficoDiagnosticoAluno"></div>
-</div>
+    <h2>📊 Diagnóstico de Desempenho</h2>
+    
+    <!-- SELETORES (PROVA + TURMA) -->
+    <div class="card">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div>
+                <label for="selectAvaliacao" style="font-weight: bold; color: #4A148C; display: block; margin-bottom: 8px;">📋 Selecione a Prova:</label>
+                <select id="selectAvaliacao" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; background: white;">
+                    <option value="">Carregando provas...</option>
+                </select>
+            </div>
+            <div>
+                <label for="selectTurma" style="font-weight: bold; color: #4A148C; display: block; margin-bottom: 8px;">🏫 Selecione a Turma (Opcional):</label>
+                <select id="selectTurma" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; background: white;">
+                    <option value="">Todas as turmas</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- BOTÃO PARA PROCESSAR (APENAS UM!) -->
+        <button class="btn btn-primary" onclick="processarTriagem()" style="width: 100%; padding: 12px; font-size: 16px; font-weight: bold; margin-bottom: 20px;">
+            🧮 RECALCULAR E CLASSIFICAR
+        </button>
+
+        <!-- ÁREA DE RESULTADOS -->
+        <div id="areaTriagem" style="display: none;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div style="background: #fff5f5; padding: 16px; border-radius: 8px; border-left: 5px solid #dc3545;">
+                    <h4 style="color: #dc3545; margin-top: 0;">🚨 Piores Desempenhos</h4>
+                    <div id="listaPiores" style="max-height: 400px; overflow-y: auto;"></div>
+                </div>
+                <div style="background: #f0fff4; padding: 16px; border-radius: 8px; border-left: 5px solid #28a745;">
+                    <h4 style="color: #28a745; margin-top: 0;">🏆 Melhores Desempenhos</h4>
+                    <div id="listaMelhores" style="max-height: 400px; overflow-y: auto;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABAS DE DIAGNÓSTICO DETALHADO -->
+    <div class="card">
+        <div class="ia-tabs">
+            <button class="ia-tab active" id="tabDiagTurma" onclick="mudarAbaDiagnostico('turma')">Por Turma</button>
+            <button class="ia-tab" id="tabDiagAluno" onclick="mudarAbaDiagnostico('aluno')">Por Aluno</button>
+        </div>
+        
+        <div id="abaDiagTurma">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Turma</label>
+                    <select id="selTurmaDiagnostico" onchange="carregarProvasPorTurma()"></select>
+                </div>
+                <div class="form-group">
+                    <label>Prova</label>
+                    <select id="selProvaDiagnostico"></select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Analisar por:</label>
+                <select id="tipoAnaliseTurma">
+                    <option value="descritor_codigo">Descritor (SAEB)</option>
+                    <option value="habilidade">Habilidade (BNCC)</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="carregarDiagnosticoTurma()">📊 GERAR DIAGNÓSTICO DA TURMA</button>
+        </div>
+        
+        <div id="abaDiagAluno" class="hidden">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Turma</label>
+                    <select id="selTurmaDiagAluno" onchange="carregarAlunosDiagAluno()"></select>
+                </div>
+                <div class="form-group">
+                    <label>Aluno</label>
+                    <select id="selAlunoDiagAluno" onchange="carregarProvasAluno()"></select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Prova</label>
+                    <select id="selProvaDiagAluno"></select>
+                </div>
+                <div class="form-group">
+                    <label>Analisar por:</label>
+                    <select id="tipoAnaliseAluno">
+                        <option value="descritor_codigo">Descritor (SAEB)</option>
+                        <option value="habilidade">Habilidade (BNCC)</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="carregarDiagnosticoAluno()">📊 GERAR DIAGNÓSTICO DO ALUNO</button>
+        </div>
+        
+        <div id="areaDiagnosticoTurma" style="margin-top: 20px;"></div>
+        <div id="areaGraficoDiagnosticoAluno" style="margin-top: 20px;"></div>
+    </div>
 </div>
 
 <!-- VIEW: PLANILHA -->
@@ -1365,9 +1372,14 @@ function mostrarPrincipal(email) {
     var fab = document.querySelector('.fab-ia');
     if(fab) fab.style.display = 'flex';
     
+    const EMAIL_ADMIN_MASTER = 'jonasmatematico@yahoo.com.br';
     var btnGestao = document.querySelector('.menu-item[onclick="navegarPara(\'view-gestao\', this)"]');
     if (btnGestao) {
-        btnGestao.style.display = (email === EMAIL_ADMIN_MASTER) ? 'flex' : 'none';
+        if (email === EMAIL_ADMIN_MASTER) {
+            btnGestao.style.display = 'flex';
+        } else {
+            btnGestao.style.display = 'none';
+        }
     }
     
     navegarPara('view-provas', document.querySelector('.menu-item'));
@@ -1378,7 +1390,47 @@ function mostrarPrincipal(email) {
     carregarTurmasDiagnostico();
     carregarSelectsPlanilha();
     carregarSelectsCorretor();
-    carregarTiposAvaliacao();
+    
+    // 🆕 ESTAS DUAS LINHAS SÃO A MÁGICA QUE FALTAVA:
+    carregarAvaliacoes(); 
+    carregarTurmas();
+}
+
+// 🆕 FUNÇÃO PARA CARREGAR PROVAS NO DIAGNÓSTICO
+async function carregarAvaliacoes() {
+    const select = document.getElementById('selectAvaliacao');
+    if (!select) {
+        console.warn("️ Elemento 'selectAvaliacao' não encontrado no HTML.");
+        return;
+    }
+    
+    try {
+        console.log("🔄 Buscando provas para o diagnóstico...");
+        const response = await fetch(`${API_BASE_URL}/api/listar_avaliacoes`);
+        const contentType = response.headers.get("content-type");
+        
+        if (!contentType || !contentType.includes("application/json")) {
+            throw new TypeError("Backend não retornou JSON!");
+        }
+        
+        const data = await response.json();
+        
+        if (data.sucesso) {
+            select.innerHTML = '<option value="">-- Escolha uma prova --</option>';
+            data.avaliacoes.forEach(av => {
+                const option = document.createElement('option');
+                option.value = av.id;
+                option.textContent = `ID ${av.id} - ${av.nome}`;
+                select.appendChild(option);
+            });
+            console.log("✅ Provas carregadas:", data.avaliacoes.length);
+        } else {
+            throw new Error(data.erro);
+        }
+    } catch (e) {
+        console.error("❌ Erro ao carregar provas:", e);
+        select.innerHTML = '<option value="">Erro ao carregar</option>';
+    }
 }
 
 async function carregarTiposAvaliacao() {
