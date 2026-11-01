@@ -498,7 +498,7 @@ Acesse a versão otimizada para celular com:<br>
 </div>
 <div class="modal-body">
 <p style="margin-bottom: 12px; color: #666; font-size: 14px;">Cole suas questões no formato:<br><code style="background: #f5f5f5; padding: 4px 8px; border-radius: 4px;">1) Enunciado | Resposta esperada | Valor</code></p>
-<textarea id="textareaColar" rows="10" placeholder="1) Qual é 2+2? | 4 | 2&#10;2) Capital do Brasil? | Brasília | 1.5"></textarea>
+<textarea id="textareaColar" rows="10" placeholder="1) Qual é 2+2? | 4 | 2\n2) Capital do Brasil? | Brasília | 1.5"></textarea>
 <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" onclick="colarDoWord()">✅ IMPORTAR QUESTÕES</button>
 </div>
 </div>
@@ -899,6 +899,7 @@ function colarDoWord() {
     var texto = document.getElementById('textareaColar').value;
     if (!texto.trim()) { toast('Cole o texto primeiro', 'error'); return; }
     var novas = [];
+    // ✅ CORREÇÃO: Uso correto de \n para quebra de linha
     texto.split('\n').map(function (l) { return l.trim(); }).filter(function (l) { return l; }).forEach(function (linha) {
         var m = linha.match(/^(\d+)\s*[).\-]\s*(.*)/);
         if (m) {
@@ -908,7 +909,9 @@ function colarDoWord() {
             q.resposta = partes[1] || '';
             q.valor = partes[2] ? String(parseFloat(partes[2].replace(',', '.')) || 2) : '2';
             novas.push(q);
-        } else if (novas.length > 0) { novas[novas.length - 1].enunciado += '\n' + linha; }
+        } else if (novas.length > 0) { 
+            novas[novas.length - 1].enunciado += '\n' + linha; 
+        }
     });
     if (novas.length === 0) { toast('Use o formato "1) enunciado | critério | valor"', 'error'); return; }
     questoes = novas;
@@ -1941,7 +1944,7 @@ function mostrarPrincipal(email) {
     carregarSelectsCorretor();
     carregarProvasObj();
     
-    // 🆕 ADICIONE ESTA LINHA AQUI EMBAIXO:
+    // 🆕 CHAMADA GARANTIDA PARA CARREGAR OS SELECTS DO DIAGNÓSTICO
     carregarSelectsDiagnosticoDireto(); 
 }
 
