@@ -13,19 +13,13 @@
         p { color: #6b7280; margin-bottom: 24px; font-size: 15px; }
 
         /* CARD DE INFO */
-        .info-card {
-            background: white; border-radius: 12px; padding: 16px;
-            margin: 12px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
+        .info-card { background: white; border-radius: 12px; padding: 16px; margin: 12px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .info-row { display: flex; justify-content: space-between; margin: 8px 0; }
         .info-label { font-weight: 600; color: #4f46e5; }
         .info-value { color: #1f2937; }
 
         /* NÍVEL SAEB */
-        .nivel-badge {
-            display: inline-block; padding: 4px 12px; border-radius: 12px;
-            font-size: 12px; font-weight: bold; margin-top: 8px;
-        }
+        .nivel-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-top: 8px; }
         .nivel-avancado { background: #d1fae5; color: #065f46; }
         .nivel-adequado { background: #dbeafe; color: #1e40af; }
         .nivel-basico { background: #fef3c7; color: #92400e; }
@@ -33,15 +27,8 @@
 
         /* CÂMERA */
         #cameraContainer { display: block; margin-bottom: 20px; }
-        #cameraVideo {
-            width: 100%; max-height: 400px; object-fit: cover;
-            border-radius: 12px; border: 3px solid #4f46e5; background: #000;
-        }
-        .btn {
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            padding: 16px 24px; border-radius: 12px; font-size: 16px; font-weight: 600;
-            border: none; cursor: pointer; width: 100%; margin: 8px 0;
-        }
+        #cameraVideo { width: 100%; max-height: 400px; object-fit: cover; border-radius: 12px; border: 3px solid #4f46e5; background: #000; }
+        .btn { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 16px 24px; border-radius: 12px; font-size: 16px; font-weight: 600; border: none; cursor: pointer; width: 100%; margin: 8px 0; }
         .btn-primary { background-color: #4f46e5; color: white; }
         .btn-success { background-color: #10b981; color: white; }
         .btn-warning { background-color: #f59e0b; color: white; }
@@ -49,49 +36,23 @@
         .btn-outline { background: white; color: #4f46e5; border: 2px solid #4f46e5; }
 
         /* MINIATURAS */
-        .miniaturas {
-            display: flex; gap: 10px; margin: 15px 0; overflow-x: auto;
-            padding: 10px; background: #fff; border-radius: 8px;
-        }
+        .miniaturas { display: flex; gap: 10px; margin: 15px 0; overflow-x: auto; padding: 10px; background: #fff; border-radius: 8px; }
         .miniatura-wrapper { text-align: center; position: relative; display: inline-block; }
-        .miniatura {
-            min-width: 80px; height: 80px; border: 2px solid #4f46e5;
-            border-radius: 8px; object-fit: cover;
-        }
+        .miniatura { min-width: 80px; height: 80px; border: 2px solid #4f46e5; border-radius: 8px; object-fit: cover; }
         .miniatura-label { font-size: 12px; color: #4f46e5; margin-top: 5px; }
-        .btn-remover-mini {
-            position: absolute; top: -5px; right: -5px;
-            background: #ef4444; color: white; border: none;
-            border-radius: 50%; width: 22px; height: 22px;
-            font-size: 14px; cursor: pointer; font-weight: bold;
-        }
+        .btn-remover-mini { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 14px; cursor: pointer; font-weight: bold; }
 
         /* PREVIEW */
         #previewFotoAtualContainer { display: none; margin-top: 20px; }
-        #imagemAtualPreview {
-            width: 100%; max-height: 300px; object-fit: contain;
-            border-radius: 12px; border: 2px solid #e5e7eb; background: #fff; margin-bottom: 15px;
-        }
+        #imagemAtualPreview { width: 100%; max-height: 300px; object-fit: contain; border-radius: 12px; border: 2px solid #e5e7eb; background: #fff; margin-bottom: 15px; }
 
         /* REVISÃO DETALHADA */
-        #revisaoDetalhadaContainer {
-            display: none; margin-top: 24px; padding: 20px;
-            background: #fff; border-radius: 12px; text-align: left;
-        }
-        .questao-item {
-            background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
-            padding: 15px; margin: 10px 0;
-        }
-        .questao-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 10px;
-        }
+        #revisaoDetalhadaContainer { display: none; margin-top: 24px; padding: 20px; background: #fff; border-radius: 12px; text-align: left; }
+        .questao-item { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin: 10px 0; }
+        .questao-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .questao-numero { font-weight: bold; color: #4f46e5; font-size: 16px; }
         
-        .info-box {
-            padding: 12px; border-radius: 8px; margin: 8px 0;
-            border-left: 4px solid;
-        }
+        .info-box { padding: 12px; border-radius: 8px; margin: 8px 0; border-left: 4px solid; }
         .info-box-enunciado { background: #e0e7ff; border-left-color: #4f46e5; }
         .info-box-criterio { background: #fef3c7; border-left-color: #f59e0b; }
         .info-box-transcricao { background: #dbeafe; border-left-color: #3b82f6; }
@@ -100,102 +61,45 @@
         .box-label { font-size: 11px; font-weight: bold; margin-bottom: 4px; opacity: 0.8; }
         .box-text { font-size: 13px; white-space: pre-wrap; }
         
-        .flag-revisar {
-            background: #fed7aa; border: 1px solid #f97316;
-            color: #c2410c; padding: 6px 12px; border-radius: 8px;
-            font-size: 12px; font-weight: bold; margin: 8px 0;
-        }
+        .flag-revisar { background: #fed7aa; border: 1px solid #f97316; color: #c2410c; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; margin: 8px 0; }
         
-        .nota-input-group {
-            display: flex; gap: 10px; align-items: center; margin-top: 12px;
-        }
+        .nota-input-group { display: flex; gap: 10px; align-items: center; margin-top: 12px; }
         .nota-input-group label { font-weight: 600; min-width: 100px; }
-        .nota-input-group input {
-            flex: 1; padding: 10px; border: 2px solid #d1d5db;
-            border-radius: 8px; font-size: 16px; font-weight: bold;
-        }
+        .nota-input-group input { flex: 1; padding: 10px; border: 2px solid #d1d5db; border-radius: 8px; font-size: 16px; font-weight: bold; }
         
-        .comentario-textarea {
-            width: 100%; padding: 10px; border: 2px solid #d1d5db;
-            border-radius: 8px; margin-top: 8px; min-height: 80px;
-            font-size: 14px; resize: vertical;
-        }
+        .comentario-textarea { width: 100%; padding: 10px; border: 2px solid #d1d5db; border-radius: 8px; margin-top: 8px; min-height: 80px; font-size: 14px; resize: vertical; }
 
         /* RESUMO NOTA */
-        .resumo-nota {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-            color: white; padding: 24px; border-radius: 16px;
-            margin: 20px 0; text-align: center; box-shadow: 0 4px 12px rgba(79,70,229,0.3);
-        }
+        .resumo-nota { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; padding: 24px; border-radius: 16px; margin: 20px 0; text-align: center; box-shadow: 0 4px 12px rgba(79,70,229,0.3); }
         .resumo-nota .nota-grande { font-size: 56px; font-weight: bold; margin: 8px 0; }
         .resumo-nota .nota-label { font-size: 14px; opacity: 0.95; }
 
         /* MODO FILA */
-        .modo-fila-toggle {
-            display: flex; align-items: center; gap: 10px;
-            padding: 12px; background: #ecfdf5; border-radius: 8px;
-            margin: 12px 0; cursor: pointer;
-        }
+        .modo-fila-toggle { display: flex; align-items: center; gap: 10px; padding: 12px; background: #ecfdf5; border-radius: 8px; margin: 12px 0; cursor: pointer; }
         .modo-fila-toggle input[type="checkbox"] { width: 20px; height: 20px; }
 
         /* MODAL EDITAR CRITÉRIOS */
-        .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.6); z-index: 1000;
-            align-items: flex-end; justify-content: center;
-        }
-        .modal-content {
-            background: white; border-radius: 20px 20px 0 0;
-            width: 100%; max-height: 80vh; overflow-y: auto;
-            padding: 20px; animation: slideUp 0.3s ease;
-        }
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
-        }
-        .modal-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 16px;
-        }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: flex-end; justify-content: center; }
+        .modal-content { background: white; border-radius: 20px 20px 0 0; width: 100%; max-height: 80vh; overflow-y: auto; padding: 20px; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .modal-title { font-size: 20px; font-weight: bold; color: #1f2937; }
-        .modal-close {
-            background: none; border: none; font-size: 28px;
-            cursor: pointer; color: #6b7280;
-        }
+        .modal-close { background: none; border: none; font-size: 28px; cursor: pointer; color: #6b7280; }
 
         /* OVERLAY PROCESSANDO */
-        #overlayProcessando {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.7); z-index: 2000;
-            align-items: center; justify-content: center;
-        }
-        .processando-card {
-            background: white; padding: 32px; border-radius: 16px;
-            text-align: center; max-width: 300px;
-        }
-        .spinner {
-            width: 48px; height: 48px; border: 4px solid #e5e7eb;
-            border-top-color: #4f46e5; border-radius: 50%;
-            animation: spin 1s linear infinite; margin: 0 auto 16px;
-        }
+        #overlayProcessando { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center; }
+        .processando-card { background: white; padding: 32px; border-radius: 16px; text-align: center; max-width: 300px; }
+        .spinner { width: 48px; height: 48px; border: 4px solid #e5e7eb; border-top-color: #4f46e5; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* STATUS */
         #statusLeitura { margin-top: 10px; font-weight: bold; color: #4f46e5; font-size: 14px; }
-        #dicasFoto { 
-            display: none; background: #fef3c7; padding: 12px; border-radius: 8px; 
-            margin: 10px 0; font-size: 13px; text-align: left; 
-        }
+        #dicasFoto { display: none; background: #fef3c7; padding: 12px; border-radius: 8px; margin: 10px 0; font-size: 13px; text-align: left; }
         #dicasFoto ul { margin: 8px 0; padding-left: 20px; }
 
         /* BOTÕES DE AÇÃO */
-        .action-buttons {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
-            margin: 16px 0;
-        }
-        .action-btn {
-            padding: 12px 8px; font-size: 13px;
-        }
+        .action-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0; }
+        .action-btn { padding: 12px 8px; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -598,235 +502,230 @@
     }
 
     // ENVIAR PARA BACKEND
-          fotosComprimidas.push(comprimida);
-        
-        const API_URL = 'https://omr-sistema-api.onrender.com';
-        
-        // 2. Montar prompt com os critérios do banco
-   async function enviarParaBackend() {
-    if (!dadosCorrecao || !dadosCorrecao.criterios) {
-        alert(' Erro: Dados da correção não carregados!');
-        return;
-    }
-    
-    document.getElementById('overlayProcessando').style.display = 'flex';
-    
-    try {
-        // 1. Comprimir imagens
-        console.log('️ Comprimindo ' + fotosCapturadas.length + ' imagem(ns)...');
-        const fotosComprimidas = [];
-        for (let i = 0; i < fotosCapturadas.length; i++) {
-            const comprimida = await comprimirImagem(fotosCapturadas[i], 0.75);
-            fotosComprimidas.push(comprimida);
-            console.log('🗜️ Imagem ' + (i+1) + ': ' + Math.round(comprimida.length / 1024) + 'KB');
+    async function enviarParaBackend() {
+        if (!dadosCorrecao || !dadosCorrecao.criterios) {
+            alert(' Erro: Dados da correção não carregados!');
+            return;
         }
         
-        const API_URL = 'https://omr-sistema-api.onrender.com';
+        document.getElementById('overlayProcessando').style.display = 'flex';
         
-        // 2. Montar prompt
-        const prompt = montarPromptIA(dadosCorrecao.criterios);
-        
-        // 3. Preparar imagens
-        const imagensPayload = fotosComprimidas.map(foto => {
-            const base64Data = foto.split(',')[1];
-            return {
-                mime: 'image/jpeg',
-                data: base64Data
-            };
-        });
-        
-        console.log('📤 Enviando para Gemini...');
-        console.log('📄 Prompt:', prompt.substring(0, 100) + '...');
-        console.log('🖼️ Imagens:', imagensPayload.length);
-        
-        // 4. CHAMAR GEMINI
-        const response = await fetch(API_URL + '/api/corrigir_dissertativa', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                prompt: prompt,
-                imagens: imagensPayload
-            })
-        });
-
-        console.log(' Status:', response.status);
-        const texto = await response.text();
-        console.log('📥 Resposta:', texto.substring(0, 200) + '...');
-        
-        let data;
         try {
-            data = JSON.parse(texto);
-        } catch (e) {
-            throw new Error('Servidor retornou HTML em vez de JSON: ' + texto.substring(0, 100));
-        }
-        
-        document.getElementById('overlayProcessando').style.display = 'none';
-
-        if (data.sucesso) {
-            // 5. Parsear resposta da IA
-            let analiseIA;
-            try {
-                analiseIA = JSON.parse(data.texto);
-                console.log('✅ Análise da IA:', analiseIA);
-            } catch (e) {
-                console.error('❌ Erro ao parsear JSON da IA:', e);
-                alert('⚠️ IA retornou formato inválido. Usando apenas critérios do banco.');
-                mostrarRevisaoDetalhada(dadosCorrecao);
-                return;
+            // 1. Comprimir imagens
+            console.log('️ Comprimindo ' + fotosCapturadas.length + ' imagem(ns)...');
+            const fotosComprimidas = [];
+            for (let i = 0; i < fotosCapturadas.length; i++) {
+                const comprimida = await comprimirImagem(fotosCapturadas[i], 0.75);
+                fotosComprimidas.push(comprimida);
+                console.log('🗜️ Imagem ' + (i+1) + ': ' + Math.round(comprimida.length / 1024) + 'KB');
             }
             
-            // 6. Mesclar critérios com análise
-            dadosCorrecao.criterios.forEach((q, i) => {
-                const analise = analiseIA ? analiseIA.find(a => a.numero === q.numero) : null;
-                if (analise) {
-                    q.transcricao = analise.transcricao || 'Não foi possível ler';
-                    q.justificativa = analise.justificativa || 'Sem justificativa';
-                    q.nota_sugerida = analise.nota_sugerida || 0;
-                    q.revisar = analise.revisar || false;
-                } else {
-                    q.transcricao = 'IA não analisou';
-                    q.justificativa = '';
-                    q.nota_sugerida = 0;
-                    q.revisar = false;
-                }
+            const API_URL = 'https://omr-sistema-api.onrender.com';
+            
+            // 2. Montar prompt
+            const prompt = montarPromptIA(dadosCorrecao.criterios);
+            
+            // 3. Preparar imagens
+            const imagensPayload = fotosComprimidas.map(foto => {
+                const base64Data = foto.split(',')[1];
+                return {
+                    mime: 'image/jpeg',
+                    data: base64Data
+                };
             });
             
-            mostrarRevisaoDetalhada(dadosCorrecao);
-        } else {
-            alert('❌ Erro na correção: ' + data.erro);
+            console.log('📤 Enviando para Gemini...');
+            console.log('📄 Prompt:', prompt.substring(0, 100) + '...');
+            console.log('🖼️ Imagens:', imagensPayload.length);
+            
+            // 4. CHAMAR GEMINI
+            const response = await fetch(API_URL + '/api/corrigir_dissertativa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt: prompt,
+                    imagens: imagensPayload
+                })
+            });
+
+            console.log(' Status:', response.status);
+            const texto = await response.text();
+            console.log('📥 Resposta:', texto.substring(0, 200) + '...');
+            
+            let data;
+            try {
+                data = JSON.parse(texto);
+            } catch (e) {
+                throw new Error('Servidor retornou HTML em vez de JSON: ' + texto.substring(0, 100));
+            }
+            
+            document.getElementById('overlayProcessando').style.display = 'none';
+
+            if (data.sucesso) {
+                // 5. Parsear resposta da IA
+                let analiseIA;
+                try {
+                    analiseIA = JSON.parse(data.texto);
+                    console.log('✅ Análise da IA:', analiseIA);
+                } catch (e) {
+                    console.error('❌ Erro ao parsear JSON da IA:', e);
+                    alert('⚠️ IA retornou formato inválido. Usando apenas critérios do banco.');
+                    mostrarRevisaoDetalhada(dadosCorrecao);
+                    return;
+                }
+                
+                // 6. Mesclar critérios com análise
+                dadosCorrecao.criterios.forEach((q, i) => {
+                    const analise = analiseIA ? analiseIA.find(a => a.numero === q.numero) : null;
+                    if (analise) {
+                        q.transcricao = analise.transcricao || 'Não foi possível ler';
+                        q.justificativa = analise.justificativa || 'Sem justificativa';
+                        q.nota_sugerida = analise.nota_sugerida || 0;
+                        q.revisar = analise.revisar || false;
+                    } else {
+                        q.transcricao = 'IA não analisou';
+                        q.justificativa = '';
+                        q.nota_sugerida = 0;
+                        q.revisar = false;
+                    }
+                });
+                
+                mostrarRevisaoDetalhada(dadosCorrecao);
+            } else {
+                alert('❌ Erro na correção: ' + data.erro);
+            }
+        } catch (error) {
+            document.getElementById('overlayProcessando').style.display = 'none';
+            console.error('❌ Erro completo:', error);
+            alert('❌ Erro de conexão:\n' + error.message);
         }
-    } catch (error) {
-        document.getElementById('overlayProcessando').style.display = 'none';
-        console.error('❌ Erro completo:', error);
-        alert('❌ Erro de conexão:\n' + error.message);
     }
-}
 
-function montarPromptIA(criterios) {
-    const sb = [];
-    
-    sb.push('Você é um professor assistente de Matemática.');
-    sb.push('Avalie com os critérios, conceitos e vocabulário próprios de Matemática.');
-    sb.push('As imagens anexas são a prova manuscrita de um aluno (1 ou mais folhas).');
-    sb.push('As questões estão NUMERADAS e podem estar em folhas diferentes — procure o número de cada questão em TODAS as folhas antes de responder.');
-    sb.push('Para cada questão: leia TUDO o que o aluno escreveu (contas e rascunhos inclusos), compare com a resposta esperada e dê crédito parcial por etapas corretas.');
-    sb.push('Se o aluno usou um raciocínio diferente mas possivelmente válido, marque "revisar": true.');
-    sb.push('');
-    sb.push('QUESTÕES:');
-    
-    for (const q of criterios) {
-        sb.push(`${q.numero}) Enunciado: ${q.enunciado} | Resposta esperada: ${q.criterios_correcao} | Valor: ${q.valor}`);
+    function montarPromptIA(criterios) {
+        const sb = [];
+        
+        sb.push('Você é um professor assistente de Matemática.');
+        sb.push('Avalie com os critérios, conceitos e vocabulário próprios de Matemática.');
+        sb.push('As imagens anexas são a prova manuscrita de um aluno (1 ou mais folhas).');
+        sb.push('As questões estão NUMERADAS e podem estar em folhas diferentes — procure o número de cada questão em TODAS as folhas antes de responder.');
+        sb.push('Para cada questão: leia TUDO o que o aluno escreveu (contas e rascunhos inclusos), compare com a resposta esperada e dê crédito parcial por etapas corretas.');
+        sb.push('Se o aluno usou um raciocínio diferente mas possivelmente válido, marque "revisar": true.');
+        sb.push('');
+        sb.push('QUESTÕES:');
+        
+        for (const q of criterios) {
+            sb.push(`${q.numero}) Enunciado: ${q.enunciado} | Resposta esperada: ${q.criterios_correcao} | Valor: ${q.valor}`);
+        }
+        
+        sb.push('');
+        sb.push('Responda SOMENTE um array JSON válido (sem markdown), no formato:');
+        sb.push('[{"numero":1,"transcricao":"...","nota_sugerida":1.5,"justificativa":"...","revisar":false}]');
+        sb.push('Cada nota_sugerida deve ficar entre 0 e o valor da questão.');
+        sb.push('As imagens anexadas são as folhas de resposta do aluno.');
+        sb.push('/no_think');
+        sb.push('Responda IMEDIATAMENTE somente o array JSON, sem nenhum texto antes ou depois.');
+        
+        return sb.join('\n');
     }
-    
-    sb.push('');
-    sb.push('Responda SOMENTE um array JSON válido (sem markdown), no formato:');
-    sb.push('[{"numero":1,"transcricao":"...","nota_sugerida":1.5,"justificativa":"...","revisar":false}]');
-    sb.push('Cada nota_sugerida deve ficar entre 0 e o valor da questão.');
-    sb.push('As imagens anexadas são as folhas de resposta do aluno.');
-    sb.push('/no_think');
-    sb.push('Responda IMEDIATAMENTE somente o array JSON, sem nenhum texto antes ou depois.');
-    
-    return sb.join('\n');
-}
 
-function montarPrompt(criterios) {
-    let prompt = 'Você é um professor assistente de Matemática.\n';
-    prompt += 'Avalie as respostas do aluno comparando com os critérios.\n\n';
-    prompt += 'QUESTÕES:\n';
-    
-    criterios.forEach(q => {
-        prompt += `${q.numero}) ${q.enunciado}\n`;
-        prompt += `Resposta esperada: ${q.criterios_correcao}\n`;
-        prompt += `Valor: ${q.valor} pontos\n\n`;
-    });
-    
-    prompt += 'Responda SOMENTE um JSON válido no formato:\n';
-    prompt += '[{"numero":1,"transcricao":"...","nota_sugerida":1.5,"justificativa":"...","revisar":false}]';
-    
-    return prompt;
-}
+    function montarPrompt(criterios) {
+        let prompt = 'Você é um professor assistente de Matemática.\n';
+        prompt += 'Avalie as respostas do aluno comparando com os critérios.\n\n';
+        prompt += 'QUESTÕES:\n';
+        
+        criterios.forEach(q => {
+            prompt += `${q.numero}) ${q.enunciado}\n`;
+            prompt += `Resposta esperada: ${q.criterios_correcao}\n`;
+            prompt += `Valor: ${q.valor} pontos\n\n`;
+        });
+        
+        prompt += 'Responda SOMENTE um JSON válido no formato:\n';
+        prompt += '[{"numero":1,"transcricao":"...","nota_sugerida":1.5,"justificativa":"...","revisar":false}]';
+        
+        return prompt;
+    }
 
     // MOSTRAR REVISÃO DETALHADA
     function mostrarRevisaoDetalhada(data) {
-    document.getElementById('listaPaginasContainer').style.display = 'none';
-    document.getElementById('revisaoDetalhadaContainer').style.display = 'block';
-    
-    document.getElementById('detNome').textContent = dadosAluno ? dadosAluno.nome_completo : 'Aluno ' + dadosQR.id_aluno;
-    document.getElementById('detProva').textContent = data.nome_prova || 'Prova ID: ' + dadosQR.id_prova;
-    
-    const listaQuestoes = document.getElementById('listaQuestoes');
-    listaQuestoes.innerHTML = '';
-    
-    if (data.criterios && data.criterios.length > 0) {
-        data.criterios.forEach((questao, index) => {
-            const div = document.createElement('div');
-            div.className = 'questao-item';
-            
-            const valorQuestao = questao.valor || 0;
-            
-            // Valor padrão da nota (da IA ou 0)
-            const notaPadrao = questao.nota_sugerida !== undefined ? questao.nota_sugerida.toFixed(1) : '0.0';
-            
-            div.innerHTML = `
-                <div class="questao-header">
-                    <span class="questao-numero">Questão ${questao.numero}</span>
-                    <span style="color: #6b7280; font-size: 14px;">Valor: ${valorQuestao} pts</span>
-                </div>
-                
-                <div class="info-box info-box-enunciado">
-                    <div class="box-label">📋 Enunciado</div>
-                    <div class="box-text">${questao.enunciado || 'Sem enunciado'}</div>
-                </div>
-                
-                <div class="info-box info-box-criterio">
-                    <div class="box-label">✅ Critérios / Resposta Esperada</div>
-                    <div class="box-text">${questao.criterios_correcao || 'Sem critérios'}</div>
-                </div>
-                
-                ${questao.transcricao ? `
-                <div class="info-box info-box-transcricao">
-                    <div class="box-label">✍️ O que a IA leu</div>
-                    <div class="box-text">${questao.transcricao}</div>
-                </div>
-                ` : ''}
-                
-                ${questao.justificativa ? `
-                <div class="info-box info-box-justificativa">
-                    <div class="box-label">💡 Justificativa da Nota</div>
-                    <div class="box-text">${questao.justificativa}</div>
-                </div>
-                ` : ''}
-                
-                ${questao.revisar ? `
-                <div class="flag-revisar">
-                    ⚠️ Raciocínio diferente — confira, professor!
-                </div>
-                ` : ''}
-                
-                <div class="nota-input-group">
-                    <label>Nota (0-${valorQuestao}):</label>
-                    <input type="number" step="0.1" min="0" max="${valorQuestao}" 
-                           placeholder="0.0" id="nota-${index}" 
-                           value="${notaPadrao}"
-                           onchange="calcularNotaFinal()">
-                </div>
-                <textarea placeholder="Comentário sobre a resposta do aluno..." 
-                          id="comentario-${index}" 
-                          class="comentario-textarea"></textarea>
-            `;
-            
-            listaQuestoes.appendChild(div);
-        });
+        document.getElementById('listaPaginasContainer').style.display = 'none';
+        document.getElementById('revisaoDetalhadaContainer').style.display = 'block';
         
-        // Calcular nota final após criar todos os elementos
-        setTimeout(() => {
-            calcularNotaFinal();
-        }, 100);
+        document.getElementById('detNome').textContent = dadosAluno ? dadosAluno.nome_completo : 'Aluno ' + dadosQR.id_aluno;
+        document.getElementById('detProva').textContent = data.nome_prova || 'Prova ID: ' + dadosQR.id_prova;
         
-    } else {
-        listaQuestoes.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 20px;">⚠️ Nenhum critério encontrado</p>';
+        const listaQuestoes = document.getElementById('listaQuestoes');
+        listaQuestoes.innerHTML = '';
+        
+        if (data.criterios && data.criterios.length > 0) {
+            data.criterios.forEach((questao, index) => {
+                const div = document.createElement('div');
+                div.className = 'questao-item';
+                
+                const valorQuestao = questao.valor || 0;
+                
+                // Valor padrão da nota (da IA ou 0)
+                const notaPadrao = questao.nota_sugerida !== undefined ? questao.nota_sugerida.toFixed(1) : '0.0';
+                
+                div.innerHTML = `
+                    <div class="questao-header">
+                        <span class="questao-numero">Questão ${questao.numero}</span>
+                        <span style="color: #6b7280; font-size: 14px;">Valor: ${valorQuestao} pts</span>
+                    </div>
+                    
+                    <div class="info-box info-box-enunciado">
+                        <div class="box-label">📋 Enunciado</div>
+                        <div class="box-text">${questao.enunciado || 'Sem enunciado'}</div>
+                    </div>
+                    
+                    <div class="info-box info-box-criterio">
+                        <div class="box-label">✅ Critérios / Resposta Esperada</div>
+                        <div class="box-text">${questao.criterios_correcao || 'Sem critérios'}</div>
+                    </div>
+                    
+                    ${questao.transcricao ? `
+                    <div class="info-box info-box-transcricao">
+                        <div class="box-label">✍️ O que a IA leu</div>
+                        <div class="box-text">${questao.transcricao}</div>
+                    </div>
+                    ` : ''}
+                    
+                    ${questao.justificativa ? `
+                    <div class="info-box info-box-justificativa">
+                        <div class="box-label">💡 Justificativa da Nota</div>
+                        <div class="box-text">${questao.justificativa}</div>
+                    </div>
+                    ` : ''}
+                    
+                    ${questao.revisar ? `
+                    <div class="flag-revisar">
+                        ⚠️ Raciocínio diferente — confira, professor!
+                    </div>
+                    ` : ''}
+                    
+                    <div class="nota-input-group">
+                        <label>Nota (0-${valorQuestao}):</label>
+                        <input type="number" step="0.1" min="0" max="${valorQuestao}" 
+                               placeholder="0.0" id="nota-${index}" 
+                               value="${notaPadrao}"
+                               onchange="calcularNotaFinal()">
+                    </div>
+                    <textarea placeholder="Comentário sobre a resposta do aluno..." 
+                              id="comentario-${index}" 
+                              class="comentario-textarea"></textarea>
+                `;
+                
+                listaQuestoes.appendChild(div);
+            });
+            
+            // Calcular nota final após criar todos os elementos
+            setTimeout(() => {
+                calcularNotaFinal();
+            }, 100);
+            
+        } else {
+            listaQuestoes.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 20px;">⚠️ Nenhum critério encontrado</p>';
+        }
     }
-}
 
     // CALCULAR NOTA FINAL
     function calcularNotaFinal() {
@@ -1067,63 +966,62 @@ function montarPrompt(criterios) {
 
     // BUSCAR DADOS DO ALUNO
     async function irParaRevisao() {
-    if (!dadosQR) {
-        alert('❌ QR Code não detectado!');
-        return;
-    }
-
-    const btnRevisao = document.querySelector('#listaPaginasContainer .btn-success');
-    btnRevisao.textContent = '⏳ Buscando critérios...';
-    btnRevisao.disabled = true;
-
-    try {
-        const API_URL = 'https://omr-sistema-api.onrender.com';
-        
-        // 1. PRIMEIRO: Buscar critérios do banco
-        console.log('📥 Buscando critérios da prova ' + dadosQR.id_prova);
-        
-        const response = await fetch(API_URL + '/api/corrigir_por_foto_qr', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                fotos: fotosCapturadas,
-                qr_data: dadosQR,
-                id_aluno: dadosQR.id_aluno,
-                id_prova: dadosQR.id_prova
-            })
-        });
-
-        const data = await response.json();
-        console.log(' Resposta do backend (critérios):', data);
-
-        if (!data.sucesso) {
-            throw new Error('Erro ao buscar critérios: ' + data.erro);
+        if (!dadosQR) {
+            alert('❌ QR Code não detectado!');
+            return;
         }
 
-        // 2. GUARDAR os dados
-        dadosCorrecao = data;
-        dadosAluno = {
-            nome_completo: data.nome_aluno,
-            numero_chamada: data.numero_chamada || '-',
-            nome_turma: data.nome_turma || '-'
-        };
-        
-        // 3. Verificar se tem critérios
-        if (!data.criterios || data.criterios.length === 0) {
-            throw new Error('Prova sem critérios cadastrados no banco!');
+        const btnRevisao = document.querySelector('#listaPaginasContainer .btn-success');
+        btnRevisao.textContent = '⏳ Buscando critérios...';
+        btnRevisao.disabled = true;
+
+        try {
+            const API_URL = 'https://omr-sistema-api.onrender.com';
+            
+            // 1. PRIMEIRO: Buscar critérios do banco
+            console.log('📥 Buscando critérios da prova ' + dadosQR.id_prova);
+            
+            const response = await fetch(API_URL + '/api/corrigir_por_foto_qr', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fotos: fotosCapturadas,
+                    qr_data: dadosQR,
+                    id_aluno: dadosQR.id_aluno,
+                    id_prova: dadosQR.id_prova
+                })
+            });
+
+            const data = await response.json();
+            console.log(' Resposta do backend (critérios):', data);
+
+            if (!data.sucesso) {
+                throw new Error('Erro ao buscar critérios: ' + data.erro);
+            }
+
+            // 2. GUARDAR os dados
+            dadosCorrecao = data;
+            dadosAluno = {
+                nome_completo: data.nome_aluno,
+                numero_chamada: data.numero_chamada || '-',
+                nome_turma: data.nome_turma || '-'
+            };
+            
+            // 3. Verificar se tem critérios
+            if (!data.criterios || data.criterios.length === 0) {
+                throw new Error('Prova sem critérios cadastrados no banco!');
+            }
+
+            // 4. AGORA SIM: Enviar para o Gemini
+            await enviarParaBackend();
+            
+        } catch (error) {
+            console.error('❌ Erro em irParaRevisao:', error);
+            alert('❌ Erro: ' + error.message);
+            btnRevisao.textContent = '✅ Revisar e Enviar';
+            btnRevisao.disabled = false;
         }
-
-        // 4. AGORA SIM: Enviar para o Gemini
-        await enviarParaBackend();
-        
-    } catch (error) {
-        console.error('❌ Erro em irParaRevisao:', error);
-        alert('❌ Erro: ' + error.message);
-        btnRevisao.textContent = '✅ Revisar e Enviar';
-        btnRevisao.disabled = false;
     }
-}
-
 </script>
 
 </body>
