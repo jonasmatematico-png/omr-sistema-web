@@ -1396,41 +1396,137 @@ function mostrarPrincipal(email) {
     carregarTurmas();
 }
 
-// 🆕 FUNÇÃO PARA CARREGAR PROVAS NO DIAGNÓSTICO
+
+// ==========================================================
+// 📋 CARREGAR PROVAS (VERSÃO BLINDADA COM FALLBACK)
+// ==========================================================
 async function carregarAvaliacoes() {
     const select = document.getElementById('selectAvaliacao');
-    if (!select) {
-        console.warn("️ Elemento 'selectAvaliacao' não encontrado no HTML.");
-        return;
-    }
+    if (!select) return;
     
+    select.innerHTML = '<option value="">⏳ Carregando...</option>';
+
     try {
-        console.log("🔄 Buscando provas para o diagnóstico...");
-        const response = await fetch(`${API_BASE_URL}/api/listar_avaliacoes`);
-        const contentType = response.headers.get("content-type");
+        // TENTATIVA 1: Backend Python (com limite de 5 segundos para não travar)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos
         
-        if (!contentType || !contentType.includes("application/json")) {
-            throw new TypeError("Backend não retornou JSON!");
-        }
-        
-        const data = await response.json();
-        
-        if (data.sucesso) {
-            select.innerHTML = '<option value="">-- Escolha uma prova --</option>';
-            data.avaliacoes.forEach(av => {
-                const option = document.createElement('option');
-                option.value = av.id;
-                option.textContent = `ID ${av.id} - ${av.nome}`;
-                select.appendChild(option);
-            });
-            console.log("✅ Provas carregadas:", data.avaliacoes.length);
-        } else {
-            throw new Error(data.erro);
+        const response = await fetch(`${API_BASE_URL}/api/listar_avaliacoes`, { 
+            signal: controller.signal 
+        });
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.sucesso && data.avaliacoes) {
+                preencherSelectProvas(select, data.avaliacoes);
+                console.log("✅ Provas carregadas via Backend Python");
+                return; // Se funcionou, sai da função
+            }
         }
     } catch (e) {
-        console.error("❌ Erro ao carregar provas:", e);
-        select.innerHTML = '<option value="">Erro ao carregar</option>';
+        console.warn("⚠️ Backend demorou ou falhou. Usando fallback direto no Supabase...", e);
     }
+
+    // TENTATIVA 2: Fallback direto no Supabase (Infalível e rápido)
+    try {
+        const { data, error } = await supabase
+            .from('avaliacoes')
+            .select('id, nome')
+            .order('id', { ascending: false });
+
+        if (error) throw error;
+
+        preencherSelectProvas(select, data);
+        console.log("✅ Provas carregadas via Supabase (Fallback)");
+    } catch (e) {
+        console.error("❌ Erro fatal ao carregar provas:", e);
+        select.innerHTML = '<option value="">❌ Erro (Aperte F12)</option>';
+    }
+}
+
+function preencherSelectProvas(select, avaliacoes) {
+    select.innerHTML = '<option value="">-- Escolha uma prova --</option>';
+    if (!avaliacoes || avaliacoes.length === 0) {
+        select.innerHTML += '<option value="" disabled>Nenhuma prova encontrada</option>';
+        return;
+    }
+    avaliacoes.forEach(av => {
+        const option = document.createElement('option');
+        option.value = av.id;
+        option.textContent = `ID ${av.id} - ${av.nome}`;
+        select.appendChild(option);
+    });
+}
+
+// ==========================================================
+// 🏫 CARREGAR TURMAS (VERSÃO BLINDADA COM FALLBACK)
+// ==========================================================
+async function carregarTurmas() {
+    const select = document.getElementById('selectTurma');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">⏳ Carregando...</option>';
+
+    try {
+        // Se não estiver logado, não faz sentido carregar turmas personalizadas
+        if (!token || !userEmail) {
+            select.innerHTML = '<option value="">Faça login primeiro</option>';
+            return;
+        }
+
+        const userId = localStorage.getItem('sb_uid') || 'admin';
+        
+        // TENTATIVA 1: Backend Python
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        const response = await fetch(`${API_BASE_URL}/api/listar_turmas?user_id=${userId}`, { 
+            signal: controller.signal 
+        });
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.sucesso && data.turmas) {
+                preencherSelectTurmas(select, data.turmas);
+                console.log("✅ Turmas carregadas via Backend Python");
+                return;
+            }
+        }
+    } catch (e) {
+        console.warn("⚠️ Backend demorou. Usando fallback Supabase...", e);
+    }
+
+    // TENTATIVA 2: Fallback direto no Supabase (Pega TODAS as turmas)
+    try {
+        const { data, error } = await supabase
+            .from('turmas')
+            .select('id, nome, serie')
+            .order('nome', { ascending: true });
+
+        if (error) throw error;
+
+        preencherSelectTurmas(select, data);
+        console.log("✅ Turmas carregadas via Supabase (Fallback)");
+    } catch (e) {
+        console.error("❌ Erro fatal ao carregar turmas:", e);
+        select.innerHTML = '<option value="">❌ Erro (Aperte F12)</option>';
+    }
+}
+
+function preencherSelectTurmas(select, turmas) {
+    select.innerHTML = '<option value="">-- Selecione a Turma (Opcional) --</option>';
+    if (!turmas || turmas.length === 0) {
+        select.innerHTML += '<option value="" disabled>Nenhuma turma encontrada</option>';
+        return;
+    }
+    turmas.forEach(turma => {
+        const option = document.createElement('option');
+        option.value = turma.id;
+        option.textContent = `${turma.serie || ''} - ${turma.nome}`;
+        select.appendChild(option);
+    });
 }
 
 async function carregarTiposAvaliacao() {
