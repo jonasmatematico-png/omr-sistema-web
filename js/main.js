@@ -16,7 +16,7 @@ function navegarPara(viewId, btn) {
     if (viewId === 'view-gestao' && typeof carregarListaUsuarios === 'function') {
         carregarListaUsuarios();
     }
-} // <-- AQUI ESTAVA FALTANDO ESTA CHAVE DE FECHAMENTO!
+} 
 
 // ========================================================================
 // 🚀 INICIALIZAÇÃO SEGURA (DEVE FICAR FORA DE QUALQUER FUNÇÃO)

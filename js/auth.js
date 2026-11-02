@@ -92,6 +92,7 @@ function sair() {
 }
 
 function mostrarPrincipal(email) {
+    alert("✅ SISTEMA INICIALIZADO COM SUCESSO!\n\nLogado como: " + email);
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('mainScreen').classList.remove('hidden');
     document.getElementById('userEmail').textContent = email;
