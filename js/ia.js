@@ -127,6 +127,7 @@ async function carregarTurmasPlanejamento() {
 }
 
 // Carrega habilidades e descritores do banco no multi-select
+// Carrega habilidades e descritores da tabela matriz_curricular
 async function carregarHabilidadesPlanejamento() {
     const lista = document.getElementById('listaHabilidadesPlanejamento');
     if (!lista) return;
@@ -134,34 +135,149 @@ async function carregarHabilidadesPlanejamento() {
     lista.innerHTML = '<p style="text-align: center; color: #666;">Carregando...</p>';
     
     try {
-        // Busca habilidades BNCC
-        const rHabilidades = await sbFetch('GET', '/rest/v1/habilidades?select=codigo,descricao,ano&order=codigo.asc');
-        const habilidades = await rHabilidades.json();
+        // 🎯 Query usando os nomes EXATOS das suas colunas
+        const r = await sbFetch('GET', '/rest/v1/matriz_curricular?select=id,fonte,componente,ano,codigo,tema,habilidade,objetos_de_conhecimento&order=codigo.asc');
+        const dados = await r.json();
         
-        // Busca descritores SAEB
-        const rDescritores = await sbFetch('GET', '/rest/v1/descritores?select=codigo,descricao&order=codigo.asc');
-        const descritores = await rDescritores.json();
+        if (!dados || dados.length === 0) {
+            lista.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Nenhuma habilidade encontrada na matriz curricular</p>';
+            return;
+        }
         
-        // Guarda no window para uso global
-        window._habilidadesPlanejamento = habilidades.map(h => ({
-            tipo: 'BNCC',
-            codigo: h.codigo,
-            descricao: h.descricao,
-            ano: h.ano
+        // Guarda no window para uso global (busca e filtros)
+        window._habilidadesPlanejamento = dados.map(item => ({
+            id: item.id,
+            fonte: item.fonte || 'BNCC',
+            componente: item.componente || '',
+            ano: item.ano || '',
+            codigo: item.codigo || '',
+            tema: item.tema || '',
+            descricao: item.habilidade || '',
+            objetos: item.objetos_de_conhecimento || ''
         }));
         
-        window._descritoresPlanejamento = (descritores || []).map(d => ({
-            tipo: 'SAEB',
-            codigo: d.codigo,
-            descricao: d.descricao,
-            ano: ''
-        }));
+        // Renderiza todas de uma vez
+        renderizarListaHabilidades(window._habilidadesPlanejamento);
         
-        renderizarListaHabilidades([...window._habilidadesPlanejamento, ...window._descritoresPlanejamento]);
+        // Atualiza os selects de filtro (componente e ano)
+        atualizarFiltrosMatriz();
+        
     } catch (e) {
-        console.error('Erro ao carregar habilidades:', e);
-        lista.innerHTML = '<p style="text-align: center; color: #dc3545;">Erro ao carregar. Tente novamente.</p>';
+        console.error('Erro ao carregar matriz curricular:', e);
+        lista.innerHTML = `<p style="text-align: center; color: #dc3545;">❌ Erro ao carregar: ${e.message}</p>`;
     }
+}
+
+// Atualiza os selects de filtro com base nos dados carregados
+function atualizarFiltrosMatriz() {
+    const selectComponente = document.getElementById('filtroComponente');
+    const selectAno = document.getElementById('filtroAno');
+    
+    if (!selectComponente || !selectAno) return;
+    
+    // Pega componentes únicos
+    const componentes = [...new Set(window._habilidadesPlanejamento.map(h => h.componente).filter(c => c))];
+    selectComponente.innerHTML = '<option value="">Todos os componentes</option>';
+    componentes.forEach(c => {
+        selectComponente.innerHTML += `<option value="${c}">${c}</option>`;
+    });
+    
+    // Pega anos únicos
+    const anos = [...new Set(window._habilidadesPlanejamento.map(h => h.ano).filter(a => a))].sort((a, b) => a - b);
+    selectAno.innerHTML = '<option value="">Todos os anos</option>';
+    anos.forEach(a => {
+        selectAno.innerHTML += `<option value="${a}">${a}º Ano</option>`;
+    });
+}
+
+// Renderiza a lista de habilidades com checkboxes
+function renderizarListaHabilidades(lista) {
+    const container = document.getElementById('listaHabilidadesPlanejamento');
+    if (!container) return;
+    
+    if (lista.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #666;">Nenhuma habilidade encontrada com esses filtros</p>';
+        return;
+    }
+    
+    container.innerHTML = '';
+    lista.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'habilidade-checkbox-item';
+        
+        // Cor de fundo baseada na fonte
+        const corFonte = item.fonte === 'SAEB' ? '#fef3c7' : 
+                         item.fonte === 'CP' ? '#dcfce7' : '#e0e7ff';
+        const corTexto = item.fonte === 'SAEB' ? '#92400e' : 
+                         item.fonte === 'CP' ? '#166534' : '#4f46e5';
+        
+        div.innerHTML = `
+            <input type="checkbox" value="${item.codigo}" data-codigo="${item.codigo}" data-fonte="${item.fonte}" onchange="atualizarContadorHabilidades()">
+            <span class="codigo">${item.codigo}</span>
+            <span class="descricao">${item.descricao || 'Sem descrição'}</span>
+            <span style="font-size: 11px; color: ${corTexto}; background: ${corFonte}; padding: 2px 6px; border-radius: 4px; white-space: nowrap;">${item.fonte}</span>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// Filtra habilidades conforme digita na busca + filtros de componente/ano
+function filtrarHabilidadesPlanejamento() {
+    const termo = (document.getElementById('buscaHabilidade')?.value || '').toLowerCase();
+    const componenteFiltro = document.getElementById('filtroComponente')?.value || '';
+    const anoFiltro = document.getElementById('filtroAno')?.value || '';
+    
+    const todas = window._habilidadesPlanejamento || [];
+    const filtradas = todas.filter(item => {
+        const matchTermo = !termo || 
+            item.codigo.toLowerCase().includes(termo) || 
+            (item.descricao && item.descricao.toLowerCase().includes(termo)) ||
+            (item.tema && item.tema.toLowerCase().includes(termo)) ||
+            (item.objetos && item.objetos.toLowerCase().includes(termo));
+        const matchComponente = !componenteFiltro || item.componente === componenteFiltro;
+        const matchAno = !anoFiltro || String(item.ano) === String(anoFiltro);
+        return matchTermo && matchComponente && matchAno;
+    });
+    
+    renderizarListaHabilidades(filtradas);
+}
+
+// Seleciona todas as habilidades visíveis
+function selecionarTodasHabilidades() {
+    document.querySelectorAll('#listaHabilidadesPlanejamento input[type="checkbox"]').forEach(cb => cb.checked = true);
+    atualizarContadorHabilidades();
+}
+
+// Limpa seleção
+function limparHabilidadesSelecionadas() {
+    document.querySelectorAll('#listaHabilidadesPlanejamento input[type="checkbox"]').forEach(cb => cb.checked = false);
+    atualizarContadorHabilidades();
+}
+
+// Atualiza contador
+function atualizarContadorHabilidades() {
+    const total = document.querySelectorAll('#listaHabilidadesPlanejamento input[type="checkbox"]:checked').length;
+    const contador = document.getElementById('contadorHabilidades');
+    if (contador) contador.textContent = `${total} selecionada${total !== 1 ? 's' : ''}`;
+}
+
+// Pega as habilidades selecionadas
+function getHabilidadesSelecionadas() {
+    const selecionadas = [];
+    document.querySelectorAll('#listaHabilidadesPlanejamento input[type="checkbox"]:checked').forEach(cb => {
+        const codigo = cb.dataset.codigo || cb.value;
+        const fonte = cb.dataset.fonte || 'BNCC';
+        // Busca a habilidade completa no array
+        const completa = (window._habilidadesPlanejamento || []).find(h => h.codigo === codigo);
+        selecionadas.push({
+            codigo: codigo,
+            fonte: fonte,
+            descricao: completa?.descricao || '',
+            tema: completa?.tema || '',
+            objetos: completa?.objetos || ''
+        });
+    });
+    return selecionadas;
 }
 
 // Renderiza a lista de habilidades com checkboxes
@@ -317,13 +433,16 @@ function montarPromptPlanoAula(dados) {
     if (dados.material) sb.push(`Material Disponível: ${dados.material}`);
     if (dados.observacoes) sb.push(`Observações: ${dados.observacoes}`);
     sb.push('');
-    sb.push('=== HABILIDADES E DESCRITORES A TRABALHAR ===');
-    if (dados.habilidades.length > 0) {
-        dados.habilidades.forEach(h => sb.push(`- [${h.tipo}] ${h.codigo}`));
-    } else {
-        sb.push('(Nenhuma habilidade específica informada - escolha as mais adequadas ao tema)');
-    }
-    sb.push('');
+   sb.push('=== HABILIDADES DA MATRIZ CURRICULAR A TRABALHAR ===');
+if (dados.habilidades.length > 0) {
+    dados.habilidades.forEach(h => {
+        sb.push(`- [${h.fonte}] ${h.codigo}: ${h.descricao}`);
+        if (h.tema) sb.push(`  Tema: ${h.tema}`);
+        if (h.objetos) sb.push(`  Objetos de conhecimento: ${h.objetos}`);
+    });
+} else {
+    sb.push('(Nenhuma habilidade específica informada - escolha as mais adequadas ao tema)');
+}
     sb.push('=== ESTRUTURA OBRIGATÓRIA DA RESPOSTA ===');
     sb.push('Use EXATAMENTE estes títulos de seção (com ## na frente):');
     sb.push('');

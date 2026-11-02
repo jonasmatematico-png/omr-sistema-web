@@ -583,22 +583,32 @@ RECALCULAR E CLASSIFICAR TURMA
     </div>
     
     <!-- SELEÇÃO DE HABILIDADES E DESCRITORES -->
-    <h3 style="color: #4f46e5; margin: 20px 0 12px 0; font-size: 18px;">🎯 Habilidades e Descritores</h3>
+<h3 style="color: #4f46e5; margin: 20px 0 12px 0; font-size: 18px;">🎯 Habilidades da Matriz Curricular</h3>
+
+<div class="form-group">
+    <label>🔍 Buscar habilidade:</label>
+    <input type="text" id="buscaHabilidade" placeholder="Digite código (ex: EF05MA01) ou palavra-chave..." oninput="filtrarHabilidadesPlanejamento()" style="margin-bottom: 8px;">
     
-    <div class="form-group">
-        <label>🔍 Buscar habilidade ou descritor:</label>
-        <input type="text" id="buscaHabilidade" placeholder="Digite código (ex: EF05MA01) ou palavra-chave..." oninput="filtrarHabilidadesPlanejamento()" style="margin-bottom: 8px;">
-        
-        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-            <button type="button" class="btn btn-sm btn-secondary" onclick="selecionarTodasHabilidades()">✅ Selecionar todas visíveis</button>
-            <button type="button" class="btn btn-sm btn-secondary" onclick="limparHabilidadesSelecionadas()">❌ Limpar seleção</button>
-            <span id="contadorHabilidades" style="align-self: center; font-weight: bold; color: #4f46e5;">0 selecionadas</span>
-        </div>
-        
-        <div id="listaHabilidadesPlanejamento" style="max-height: 220px; overflow-y: auto; border: 1px solid #ddd; padding: 12px; border-radius: 6px; background: #fafafa;">
-            <p style="text-align: center; color: #666;">Carregando habilidades...</p>
-        </div>
+    <!-- FILTROS DE COMPONENTE E ANO -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+        <select id="filtroComponente" onchange="filtrarHabilidadesPlanejamento()" style="padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;">
+            <option value="">Todos os componentes</option>
+        </select>
+        <select id="filtroAno" onchange="filtrarHabilidadesPlanejamento()" style="padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;">
+            <option value="">Todos os anos</option>
+        </select>
     </div>
+    
+    <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+        <button type="button" class="btn btn-sm btn-secondary" onclick="selecionarTodasHabilidades()">✅ Selecionar todas visíveis</button>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="limparHabilidadesSelecionadas()">❌ Limpar seleção</button>
+        <span id="contadorHabilidades" style="align-self: center; font-weight: bold; color: #4f46e5;">0 selecionadas</span>
+    </div>
+    
+    <div id="listaHabilidadesPlanejamento" style="max-height: 220px; overflow-y: auto; border: 1px solid #ddd; padding: 12px; border-radius: 6px; background: #fafafa;">
+        <p style="text-align: center; color: #666;">Carregando habilidades...</p>
+    </div>
+</div>
     
     <!-- CONTEXTO DA TURMA E RECURSOS -->
     <h3 style="color: #4f46e5; margin: 20px 0 12px 0; font-size: 18px;">🛠️ Contexto e Recursos</h3>
