@@ -399,8 +399,16 @@ async function gerarPlanoAula() {
         const data = await response.json();
         
         if (data.sucesso) {
-            // Renderiza o plano formatado
+            // 1. Renderiza o plano formatado no HTML
             areaResultado.innerHTML = renderizarPlanoAula(dados, data.texto);
+            
+            // 2. 🚨 NOVO: Aguarda o HTML ser inserido e renderiza a matemática (KaTeX)
+            setTimeout(() => {
+                if (typeof renderizarMatematicaNaTela === 'function') {
+                    renderizarMatematicaNaTela();
+                }
+            }, 100); // 100ms é suficiente para o DOM atualizar
+            
         } else {
             areaResultado.innerHTML = `<div style="background:#fee2e2; padding:16px; border-radius:8px; color:#991b1b;">❌ Erro: ${data.erro}</div>`;
         }
@@ -414,12 +422,12 @@ async function gerarPlanoAula() {
 }
 
 // Monta o prompt rico para a IA
+// Monta o prompt rico para a IA (VERSÃO COM REGRA DE LATEX)
 function montarPromptPlanoAula(dados) {
     const sb = [];
-    sb.push('Você é um professor especialista em elaboração de planos de aula.');
-    sb.push('Elabore um PLANO DE AULA COMPLETO, DIDÁTICO E PRÁTICO seguindo rigorosamente a estrutura abaixo.');
+    sb.push('Você é um professor especialista em elaboração de planos de aula e atividades didáticas.');
+    sb.push('Elabore um conteúdo COMPLETO, DIDÁTICO E PRÁTICO seguindo rigorosamente a estrutura solicitada.');
     sb.push('Use linguagem clara, objetiva e adequada ao ano/série informado.');
-    sb.push('Inclua exemplos concretos, estratégias diversificadas e avaliação formativa.');
     sb.push('');
     sb.push('=== DADOS DA AULA ===');
     if (dados.escola) sb.push(`Escola: ${dados.escola}`);
@@ -433,16 +441,27 @@ function montarPromptPlanoAula(dados) {
     if (dados.material) sb.push(`Material Disponível: ${dados.material}`);
     if (dados.observacoes) sb.push(`Observações: ${dados.observacoes}`);
     sb.push('');
-   sb.push('=== HABILIDADES DA MATRIZ CURRICULAR A TRABALHAR ===');
-if (dados.habilidades.length > 0) {
-    dados.habilidades.forEach(h => {
-        sb.push(`- [${h.fonte}] ${h.codigo}: ${h.descricao}`);
-        if (h.tema) sb.push(`  Tema: ${h.tema}`);
-        if (h.objetos) sb.push(`  Objetos de conhecimento: ${h.objetos}`);
-    });
-} else {
-    sb.push('(Nenhuma habilidade específica informada - escolha as mais adequadas ao tema)');
-}
+    
+    sb.push('=== HABILIDADES DA MATRIZ CURRICULAR A TRABALHAR ===');
+    if (dados.habilidades && dados.habilidades.length > 0) {
+        dados.habilidades.forEach(h => {
+            sb.push(`- [${h.fonte}] ${h.codigo}: ${h.descricao}`);
+            if (h.tema) sb.push(`  Tema: ${h.tema}`);
+            if (h.objetos) sb.push(`  Objetos de conhecimento: ${h.objetos}`);
+        });
+    } else {
+        sb.push('(Nenhuma habilidade específica informada - escolha as mais adequadas ao tema)');
+    }
+    sb.push('');
+
+    // 🚨 AQUI ESTÁ A REGRA MÁGICA QUE FALTAVA 🚨
+    sb.push('📐 REGRA DE FORMATAÇÃO MATEMÁTICA (CRÍTICA):');
+    sb.push('Para frações, equações ou qualquer símbolo matemático, use EXCLUSIVAMENTE a sintaxe LaTeX.');
+    sb.push('Use $ para matemática no meio do texto (ex: A fração $\\frac{1}{3}$ é igual a...)');
+    sb.push('Use $$ para fórmulas isoladas em uma linha própria.');
+    sb.push('NUNCA use formato de texto simples como 1/3 ou 12/20 quando puder usar LaTeX.');
+    sb.push('');
+
     sb.push('=== ESTRUTURA OBRIGATÓRIA DA RESPOSTA ===');
     sb.push('Use EXATAMENTE estes títulos de seção (com ## na frente):');
     sb.push('');
@@ -455,15 +474,12 @@ if (dados.habilidades.length > 0) {
     sb.push('### Fechamento (síntese e consolidação)');
     sb.push('');
     sb.push('## 3. RECURSOS DIDÁTICOS');
-    sb.push('(liste todos os materiais necessários)');
     sb.push('');
     sb.push('## 4. AVALIAÇÃO');
-    sb.push('(como verificar a aprendizagem - formativa, contínua)');
     sb.push('');
     sb.push('## 5. ADAPTAÇÕES (se aplicável)');
-    sb.push('(sugestões para alunos com dificuldades ou necessidades específicas)');
     sb.push('');
-    sb.push('Responda APENAS o plano, sem comentários extras. Use formatação Markdown clara.');
+    sb.push('Responda APENAS o conteúdo solicitado, sem conversas ou introduções extras. Use formatação Markdown clara.');
     
     return sb.join('\n');
 }
@@ -545,17 +561,139 @@ function renderizarPlanoAula(dados, textoIA) {
 }
 
 // ========================================================================
-// 📝 GERAR ATIVIDADES DA AULA (Preparação para o próximo commit)
+// 📝 GERAR ATIVIDADES DA AULA (BASEADO NO PLANO GERADO)
 // ========================================================================
-
 function gerarAtividadesDaAula() {
     if (!window._planoAtual) {
         alert('⚠️ Gere um plano de aula primeiro!');
         return;
     }
     
-    // Por enquanto, apenas um alerta confirmando. No próximo commit vamos implementar de verdade.
-    alert('🚀 Em breve: Esta função vai abrir a aba "Atividades da Aula" e gerar exercícios personalizados com base no plano!\n\n(Implementação no próximo commit)');
+    const dados = window._planoAtual.dados;
+    const areaResultado = document.getElementById('iaResultadoPlanejar');
+    const idLoading = 'loadingAtividades';
+    
+    // 1. Mostra indicador de carregamento
+    areaResultado.innerHTML += `
+        <div id="${idLoading}" style="text-align:center; padding: 30px; color: #4f46e5; margin-top: 20px; border-top: 2px dashed #e5e7eb;">
+            <div class="spinner" style="margin: 0 auto 10px;"></div>
+            🤖 A IA está criando as atividades personalizadas baseadas no plano...
+        </div>
+    `;
+    
+    // 2. Monta o prompt específico para atividades
+    const promptAtividades = montarPromptAtividades(dados);
+    
+    // 3. Chama a API
+    fetch(API_BASE_URL + '/api/ia_geral', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: promptAtividades })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Remove o loading
+        const loadingEl = document.getElementById(idLoading);
+        if (loadingEl) loadingEl.remove();
+        
+        if (data.sucesso) {
+            // Cria um container bonito e distinto para as atividades
+            const divAtividades = document.createElement('div');
+            divAtividades.className = 'plano-aula-container';
+            divAtividades.style.marginTop = '30px';
+            divAtividades.style.borderTop = '4px solid #10b981'; // Verde para diferenciar do plano
+            
+            // Formata o texto Markdown em HTML
+            let htmlAtividades = formatarMarkdownParaHTML(data.texto);
+            
+            divAtividades.innerHTML = `
+                <h2 style="color: #10b981; text-align: center; margin-bottom: 20px;">📝 ATIVIDADES PRÁTICAS DA AULA</h2>
+                <div style="padding: 10px; font-size: 15px; line-height: 1.7;">${htmlAtividades}</div>
+                <div class="plano-acoes" style="margin-top: 20px; justify-content: center;">
+                    <button class="btn btn-primary" onclick="imprimirApenasAtividades()">🖨️ IMPRIMIR SÓ AS ATIVIDADES</button>
+                    <button class="btn btn-secondary" onclick="this.closest('.plano-aula-container').remove()">🗑️ REMOVER ATIVIDADES</button>
+                </div>
+            `;
+            
+            areaResultado.appendChild(divAtividades);
+            
+            // 🚨 CHAMA A RENDERIZAÇÃO DA MATEMÁTICA (KATEX) NAS NOVAS ATIVIDADES
+            setTimeout(() => {
+                if (typeof renderizarMatematicaNaTela === 'function') {
+                    renderizarMatematicaNaTela();
+                }
+            }, 100);
+            
+        } else {
+            areaResultado.innerHTML += `<div style="background:#fee2e2; padding:16px; border-radius:8px; color:#991b1b; margin-top:20px;">❌ Erro ao gerar atividades: ${data.erro}</div>`;
+        }
+    })
+    .catch(e => {
+        const loadingEl = document.getElementById(idLoading);
+        if (loadingEl) loadingEl.remove();
+        console.error('Erro ao gerar atividades:', e);
+        areaResultado.innerHTML += `<div style="background:#fee2e2; padding:16px; border-radius:8px; color:#991b1b; margin-top:20px;">❌ Erro de conexão: ${e.message}</div>`;
+    });
+}
+
+// ========================================================================
+// 🧠 FUNÇÃO AUXILIAR: MONTAR PROMPT DE ATIVIDADES
+// ========================================================================
+function montarPromptAtividades(dados) {
+    const sb = [];
+    sb.push('Você é um professor especialista em criar atividades práticas, lúdicas e engajadoras.');
+    sb.push('Crie uma lista de EXERCÍCIOS/ATIVIDADES baseada EXATAMENTE no contexto da aula abaixo.');
+    sb.push('');
+    sb.push('=== CONTEXTO DA AULA ===');
+    sb.push(`Disciplina: ${dados.disciplina}`);
+    sb.push(`Ano/Série: ${dados.anoSerie}`);
+    sb.push(`Tema: ${dados.tema}`);
+    if (dados.habilidades && dados.habilidades.length > 0) {
+        sb.push('Habilidades focadas: ' + dados.habilidades.map(h => h.codigo).join(', '));
+    }
+    if (dados.perfilTurma) sb.push(`Perfil da Turma: ${dados.perfilTurma}`);
+    sb.push('');
+    sb.push('=== REGRAS DE FORMATAÇÃO CRÍTICA ===');
+    sb.push('1. Crie entre 5 a 7 questões progressivas (da mais fácil para a mais desafiadora).');
+    sb.push('2. Para matemática e frações, USE EXCLUSIVAMENTE a sintaxe LaTeX: use $ para inline (ex: A fração $\\frac{1}{3}$) e $$ para fórmulas isoladas.');
+    sb.push('3. Para séries iniciais (1º ao 5º ano), USE EMOJIS (🍎, 🚗, ⭐, 🍕) para representar quantidades e tornar visual.');
+    sb.push('4. No final da resposta, inclua uma seção "## GABARITO" com as respostas corretas e uma breve explicação.');
+    sb.push('5. Responda APENAS com o conteúdo das atividades em formato Markdown, sem conversas ou introduções extras.');
+    
+    return sb.join('\n');
+}
+
+// ========================================================================
+// 🛠️ FUNÇÃO AUXILIAR: FORMATAR MARKDOWN SIMPLES EM HTML
+// ========================================================================
+function formatarMarkdownParaHTML(texto) {
+    return texto
+        .replace(/^### (.+)$/gm, '<h4 style="color:#4f46e5; margin: 16px 0 8px 0;">$1</h4>')
+        .replace(/^## (.+)$/gm, '<h3 style="color:#10b981; margin: 20px 0 10px 0; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">$1</h3>')
+        .replace(/^\- (.+)$/gm, '<li style="margin-bottom: 6px;">$1</li>')
+        .replace(/^\d+\.\s(.+)$/gm, '<li style="margin-bottom: 8px; font-weight: 500;">$1</li>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+}
+
+// ========================================================================
+// 🖨️ FUNÇÃO AUXILIAR: IMPRIMIR APENAS AS ATIVIDADES
+// ========================================================================
+function imprimirApenasAtividades() {
+    // Esconde temporariamente o plano de aula e os botões para imprimir limpo
+    const plano = document.querySelector('#iaResultadoPlanejar > .plano-aula-container:not([style*="border-top"])');
+    const acoes = document.querySelectorAll('.plano-acoes');
+    
+    if (plano) plano.style.display = 'none';
+    acoes.forEach(a => a.style.display = 'none');
+    
+    // Aciona a impressão do navegador (que já está configurada no CSS para imprimir só o conteúdo visível)
+    window.print();
+    
+    // Restaura a visualização
+    if (plano) plano.style.display = 'block';
+    acoes.forEach(a => a.style.display = 'flex');
 }
 
 // ========================================================================
@@ -613,4 +751,21 @@ function toggleAlternativas() {
     var tipo = document.getElementById('iaTipoQuestao').value;
     var grupo = document.getElementById('grupoNumAlternativas');
     if (grupo) grupo.style.display = (tipo === 'objetiva') ? 'block' : 'none';
+}
+// ========================================================================
+// 📐 FUNÇÃO PARA RENDERIZAR MATEMÁTICA (KATEX)
+// ========================================================================
+function renderizarMatematicaNaTela() {
+    // Verifica se o KaTeX já carregou
+    if (typeof renderMathInElement !== 'undefined') {
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},   // Fórmulas em bloco
+                {left: '$', right: '$', display: false},     // Fórmulas no meio do texto
+                {left: '\\(', right: '\\)', display: false}, // Alternativa inline
+                {left: '\\[', right: '\\]', display: true}   // Alternativa bloco
+            ],
+            throwOnError: false // Se houver um erro de sintaxe na fórmula, não quebra a página
+        });
+    }
 }
