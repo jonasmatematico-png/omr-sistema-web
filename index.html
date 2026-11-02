@@ -295,58 +295,74 @@ RECALCULAR E CLASSIFICAR TURMA
 
 <!-- VIEW: QR CODES -->
 <div id="view-qr" class="view">
-<h2>🔲 Gerador de QR Codes</h2>
-<div class="card">
-<div class="ia-tabs">
-<button class="ia-tab active" onclick="mudarAbaQR('prova')">QR da Prova</button>
-<button class="ia-tab" onclick="mudarAbaQR('aluno')">QR do Aluno</button>
-<button class="ia-tab" onclick="mudarAbaQR('cartoes')">Cartões</button>
-</div>
-<div id="abaQRProva">
-<div class="form-group">
-<label>Prova</label>
-<select id="selProvaQR" onchange="atualizarQRProva()"></select>
-</div>
-<button class="btn btn-primary" style="width: 100%;" onclick="gerarQRProva()">🔲 GERAR QR CODE</button>
-</div>
-<div id="abaQRAluno" class="hidden">
-<div class="form-row">
-<div class="form-group">
-<label>Turma</label>
-<select id="selTurmaQR" onchange="carregarAlunosQR()"></select>
-</div>
-<div class="form-group">
-<label>Aluno</label>
-<select id="selAlunoQR"></select>
-</div>
-</div>
-<div class="form-group">
-<label>Prova (opcional)</label>
-<select id="selProvaQRAluno">
-<option value="">Nenhuma (QR genérico)</option>
-</select>
-</div>
-<button class="btn btn-primary" style="width: 100%;" onclick="gerarQRAluno()">🔲 GERAR QR CODE</button>
-</div>
-<div id="abaQRCartoes" class="hidden">
-<div class="form-row">
-<div class="form-group">
-<label>Turma</label>
-<select id="selTurmaCartoes"></select>
-</div>
-<div class="form-group">
-<label>Prova (opcional)</label>
-<select id="selProvaCartoes">
-<option value="">Nenhuma (QR genérico)</option>
-</select>
-</div>
-</div>
-<button class="btn btn-primary" style="width: 100%;" onclick="gerarCartoes()">🖨️ GERAR CARTÕES</button>
-</div>
-</div>
-<!-- 🚨 CORREÇÃO: ÁREAS DE RESULTADO FORA DA CARD -->
-<div id="areaQR"></div>
-<div id="areaCartoes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;"></div>
+    <h2>🔲 Gerador de QR Codes</h2>
+    
+    <!-- 🚨 BOTÃO RECUPERADO: GABARITO PERSONALIZADO -->
+    <div style="margin-bottom: 24px; text-align: center; background: #f0f4ff; padding: 20px; border-radius: 12px; border: 2px dashed #667eea;">
+        <h3 style="color: #4f46e5; margin: 0 0 8px 0; font-size: 18px;">📥 Gabaritos Personalizados</h3>
+        <p style="color: #6b7280; font-size: 14px; margin: 0 0 16px 0;">
+            Baixe folhas de resposta prontas para impressão, já com os QR Codes únicos dos seus alunos.
+        </p>
+        <a href="https://omr-sistema-api.onrender.com/baixar_gabaritos" target="_blank" class="btn btn-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); font-size: 16px; padding: 14px 28px;">
+            🖨️ GERAR E BAIXAR GABARITOS (PDF)
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="ia-tabs">
+            <button class="ia-tab active" onclick="mudarAbaQR('prova')">QR da Prova</button>
+            <button class="ia-tab" onclick="mudarAbaQR('aluno')">QR do Aluno</button>
+            <button class="ia-tab" onclick="mudarAbaQR('cartoes')">Cartões</button>
+        </div>
+        
+        <div id="abaQRProva">
+            <div class="form-group">
+                <label>Prova</label>
+                <select id="selProvaQR" onchange="atualizarQRProva()"></select>
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="gerarQRProva()">🔲 GERAR QR CODE</button>
+        </div>
+        
+        <div id="abaQRAluno" class="hidden">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Turma</label>
+                    <select id="selTurmaQR" onchange="carregarAlunosQR()"></select>
+                </div>
+                <div class="form-group">
+                    <label>Aluno</label>
+                    <select id="selAlunoQR"></select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Prova (opcional)</label>
+                <select id="selProvaQRAluno">
+                    <option value="">Nenhuma (QR genérico)</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="gerarQRAluno()">🔲 GERAR QR CODE</button>
+        </div>
+        
+        <div id="abaQRCartoes" class="hidden">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Turma</label>
+                    <select id="selTurmaCartoes"></select>
+                </div>
+                <div class="form-group">
+                    <label>Prova (opcional)</label>
+                    <select id="selProvaCartoes">
+                        <option value="">Nenhuma (QR genérico)</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="gerarCartoes()">🖨️ GERAR CARTÕES</button>
+        </div>
+    </div>
+    
+    <!-- ÁREAS DE RESULTADO (FORA DA CARD, COMO JÁ AJUSTAMOS) -->
+    <div id="areaQR"></div>
+    <div id="areaCartoes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;"></div>
 </div>
 
 <!-- VIEW: GESTÃO -->
