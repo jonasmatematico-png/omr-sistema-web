@@ -30,6 +30,7 @@
 </div>
 </div>
 </div>
+
 <!-- TELA PRINCIPAL -->
 <div id="mainScreen" class="main-screen hidden">
 <div class="sidebar">
@@ -44,7 +45,7 @@
 <div class="menu-item" onclick="navegarPara('view-corretor', this)">✏️ Corretor Manual</div>
 <div class="menu-item" onclick="navegarPara('view-qr', this)">🔲 QR Codes</div>
 <div class="menu-item" onclick="window.open('correcao-objetiva.html', '_blank')" style="background: #e8f5e9; border-left-color: #28a745; color: #28a745; font-weight: 600;">📝 Correção Objetiva (OMR)</div>
-<div class="menu-item" onclick="navegarPara('view-pida', this)" style="background: #e0f7fa; border-left-color: #008080; color: #008080; font-weight: 600;">📱 Correção dissertativa</div>
+<div class="menu-item" onclick="window.open('correcao-dissertativa.html', '_blank')" style="background: #e0f7fa; border-left-color: #008080; color: #008080; font-weight: 600;"> Correção Dissertativa</div>
 <div class="menu-item" onclick="navegarPara('view-gestao', this)" style="display:none;">👥 Gestão</div>
 <div class="sidebar-footer">
 <div class="user-info">
@@ -54,6 +55,7 @@
 <button class="btn-logout" onclick="sair()">Sair</button>
 </div>
 </div>
+
 <div class="content">
 <!-- VIEW: PROVAS ABERTAS -->
 <div id="view-provas" class="view active">
@@ -101,6 +103,7 @@ Questões (<span id="totalQuestoes">1</span>)
 <div id="provasLista" class="loading">Carregando...</div>
 </div>
 </div>
+
 <!-- VIEW: PROVAS OBJETIVAS -->
 <div id="view-objetivas" class="view">
 <h2>✅ Provas Objetivas (Múltipla Escolha)</h2>
@@ -154,6 +157,7 @@ Questões (<span id="totalQuestoesObj">1</span>)
 <div id="provasObjLista" class="loading">Carregando...</div>
 </div>
 </div>
+
 <!-- VIEW: DIAGNÓSTICO -->
 <div id="view-diagnostico" class="view">
 <h2>📊 Diagnóstico de Desempenho</h2>
@@ -241,11 +245,11 @@ RECALCULAR E CLASSIFICAR TURMA
 </div>
 <button class="btn btn-primary" style="width: 100%;" onclick="carregarDiagnosticoAluno()">📊 GERAR DIAGNÓSTICO DO ALUNO</button>
 </div>
-</div>
+<!-- ÁREAS DE RESULTADO FORA DA CARD -->
 <div id="areaDiagnosticoTurma"></div>
 <div id="areaGraficoDiagnosticoAluno"></div>
 </div>
-</div>
+
 <!-- VIEW: PLANILHA -->
 <div id="view-planilha" class="view">
 <h2>📋 Exportar para Planilha</h2>
@@ -262,8 +266,10 @@ RECALCULAR E CLASSIFICAR TURMA
 </div>
 <button class="btn btn-primary" style="width: 100%;" onclick="gerarTabelaPlanilha()">📊 GERAR TABELA</button>
 </div>
+<!-- 🚨 CORREÇÃO: ÁREA DE RESULTADO FORA DA CARD -->
 <div id="areaTabelaPlanilha"></div>
 </div>
+
 <!-- VIEW: CORRETOR MANUAL -->
 <div id="view-corretor" class="view">
 <h2>✏️ Corretor Manual de Prova</h2>
@@ -283,8 +289,10 @@ RECALCULAR E CLASSIFICAR TURMA
 <select id="selAlunoCorretor" onchange="carregarRespostasAluno()"></select>
 </div>
 </div>
+<!-- 🚨 CORREÇÃO: ÁREA DE RESULTADO FORA DA CARD -->
 <div id="areaCorretorManual"></div>
 </div>
+
 <!-- VIEW: QR CODES -->
 <div id="view-qr" class="view">
 <h2>🔲 Gerador de QR Codes</h2>
@@ -335,9 +343,12 @@ RECALCULAR E CLASSIFICAR TURMA
 </div>
 <button class="btn btn-primary" style="width: 100%;" onclick="gerarCartoes()">🖨️ GERAR CARTÕES</button>
 </div>
+</div>
+<!-- 🚨 CORREÇÃO: ÁREAS DE RESULTADO FORA DA CARD -->
 <div id="areaQR"></div>
 <div id="areaCartoes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;"></div>
 </div>
+
 <!-- VIEW: GESTÃO -->
 <div id="view-gestao" class="view">
 <h2>👥 Gestão de Usuários</h2>
@@ -373,28 +384,12 @@ RECALCULAR E CLASSIFICAR TURMA
 <div id="listaUsuariosGestao"></div>
 </div>
 </div>
-<!-- VIEW: CORREÇÃO RÁPIDA MOBILE -->
-<div id="view-pida" class="view">
-<h2>📱 Correção dissertativa Inteligente</h2>
-<div class="card" style="border: 3px solid #008080; background: #f0fdfa; text-align: center;">
-<h3 style="color: #008080; margin-bottom: 16px;">Corretor Mobile com IA</h3>
-<p style="font-size: 15px; color: #666; margin-bottom: 20px; line-height: 1.6;">
-Acesse a versão otimizada para celular com:<br>
-✅ Leitura automática de QR Code<br>
-✅ Captura de múltiplas páginas<br>
-✅ Correção por IA (Gemini)<br>
-✅ Sugestão de notas e justificativas<br>
-✅ Salvamento automático no banco
-</p>
-<a href="correcao-dissertativa.html" target="_blank" class="btn btn-success" style="width: 100%; padding: 18px; font-size: 18px; font-weight: bold; text-decoration: none; display: inline-block; box-shadow: 0 4px 12px rgba(0,128,128,0.3); margin-bottom: 16px;">
-📱 ABRIR CORRETOR RÁPIDO
-</a>
-</div>
-</div>
-</div>
-</div>
+</div> <!-- Fecha div.content -->
+</div> <!-- Fecha div.main-screen -->
+
 <!-- FAB IA -->
 <div id="meuRobo" class="fab-ia" onclick="abrirModalIA()" style="display:none;">🤖</div>
+
 <!-- MODAL: COLAR DO WORD -->
 <div id="modalColar" class="modal">
 <div class="modal-content">
@@ -409,6 +404,7 @@ Acesse a versão otimizada para celular com:<br>
 </div>
 </div>
 </div>
+
 <!-- MODAL: IA -->
 <div id="modalIA" class="modal">
 <div class="modal-content" style="max-width: 800px;">
@@ -528,6 +524,7 @@ Acesse a versão otimizada para celular com:<br>
 </div>
 </div>
 </div>
+
 <!-- MODAL: QR CODE -->
 <div id="modalQR" class="modal">
 <div class="modal-content" style="max-width: 400px;">
@@ -541,6 +538,7 @@ Acesse a versão otimizada para celular com:<br>
 </div>
 </div>
 </div>
+
 <!-- MODAL: CARTÕES -->
 <div id="modalCartoes" class="modal">
 <div class="modal-content" style="max-width: 900px;">
@@ -553,6 +551,7 @@ Acesse a versão otimizada para celular com:<br>
 </div>
 </div>
 </div>
+
 <!-- MODAL: RECUPERAÇÃO -->
 <div id="modalRecuperacao" class="modal">
 <div class="modal-content" style="max-width: 800px;">
@@ -565,6 +564,7 @@ Acesse a versão otimizada para celular com:<br>
 </div>
 </div>
 </div>
+
 <!-- MODAL: EDITAR TURMAS -->
 <div id="modalEditTurmas" class="modal">
 <div class="modal-content" style="max-width: 500px;">
@@ -582,6 +582,7 @@ Acesse a versão otimizada para celular com:<br>
 </div>
 </div>
 </div>
+
 <!-- MODAL: SELECIONAR ALUNO PARA INTERVENÇÃO -->
 <div id="modalSeletorAluno" class="modal">
 <div class="modal-content" style="max-width: 500px;">
@@ -604,6 +605,7 @@ Acesse a versão otimizada para celular com:<br>
 </div>
 </div>
 </div>
+
 <!-- MODAL: PLANO DE INTERVENÇÃO -->
 <div id="modalIntervencao" class="modal">
 <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
@@ -635,18 +637,9 @@ Acesse a versão otimizada para celular com:<br>
 </div>
 </div>
 
-</div>
-    </div>
-</div>
-
-<!-- FAB IA -->
-<div id="meuRobo" class="fab-ia" onclick="abrirModalIA()" style="display:none;">🤖</div>
-
 <!-- ======================================================================== -->
-<!-- CARREGUE OS ARQUIVOS JAVASCRIPT NA ORDEM CORRETA (ANTES DO </body>) -->
+<!-- CARREGUE OS ARQUIVOS JAVASCRIPT NA ORDEM CORRETA -->
 <!-- ======================================================================== -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="js/config.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/auth.js"></script>
@@ -659,6 +652,5 @@ Acesse a versão otimizada para celular com:<br>
 <script src="js/gestao.js"></script>
 <script src="js/main.js"></script>
 
-</script>
 </body>
 </html>
