@@ -15,6 +15,10 @@ function abrirModalIA() {
     document.getElementById('iaResultadoGerar').innerHTML = ''; 
     document.getElementById('iaResultadoIdentificar').innerHTML = ''; 
     document.getElementById('iaResultadoPlanejar').innerHTML = ''; 
+    
+    // 🆕 Carregar dados do planejamento ao abrir o modal
+    if (typeof carregarTurmasPlanejamento === 'function') carregarTurmasPlanejamento();
+    if (typeof carregarHabilidadesPlanejamento === 'function') carregarHabilidadesPlanejamento();
 }
 
 async function carregarMatrizIA() {
@@ -101,29 +105,350 @@ async function identificarHabilidadeIA() {
     finally { btn.textContent = '🔍 IDENTIFICAR HABILIDADE'; btn.disabled = false; }
 }
 
-async function gerarPlanoAula() {
-    var tema = document.getElementById('iaTemaAula').value.trim();
-    if (!tema) { toast('Digite o tema da aula!', 'error'); return; }
-    var btn = document.getElementById('btnPlanejarIA'); btn.textContent = '⏳ Planejando...'; btn.disabled = true;
-    document.getElementById('iaResultadoPlanejar').innerHTML = '<p style="text-align:center; color:#666; padding: 20px;">🤖 A IA está montando seu plano de aula...</p>';
+// ========================================================================
+// 📋 PLANEJAR AULA - CARREGAR TURMAS E HABILIDADES
+// ========================================================================
+
+// Carrega as turmas no select do planejamento
+async function carregarTurmasPlanejamento() {
+    const select = document.getElementById('iaTurmaPlanejamento');
+    if (!select) return;
+    
     try {
-        var r = await fetch(API_BASE_URL + '/api/gerar_plano_aula', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tema: tema, material: document.getElementById('iaMaterial').value, perfil_turma: document.getElementById('iaPerfilTurma').value, duracao: document.getElementById('iaDuracao').value }) });
-        var j = await r.json();
-        if (j.sucesso && j.plano) {
-            var p = j.plano;
-            var html = '<div style="background:#f3f0ff; padding:20px; border-radius:8px; border:1px solid #d6bfff;">';
-            html += '<h4 style="color:#6f42c1; margin-bottom:8px;">🎯 Objetivos de Aprendizagem:</h4><ul style="margin-bottom:16px; padding-left:20px;">';
-            (p.objetivos || []).forEach(o => html += '<li style="margin-bottom:4px;">' + o + '</li>');
-            html += '</ul><h4 style="color:#6f42c1; margin-bottom:8px;">️ Passo a Passo da Aula:</h4>';
-            (p.passo_a_passo || []).forEach((etapa, idx) => { html += '<div style="background:white; padding:12px; margin-bottom:10px; border-radius:6px; border-left:4px solid #6f42c1; box-shadow: 0 1px 2px rgba(0,0,0,0.05);"><strong style="color:#4A148C;">' + (etapa.tempo || '') + ' - ' + (etapa.etapa || 'Etapa ' + (idx+1)) + '</strong><br><span style="font-size:14px; color:#333; margin-top:4px; display:block;">' + (etapa.acao || '') + '</span></div>'; });
-            html += '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:16px;"><div style="background:#FFF8E1; padding:12px; border-radius:6px; border-left:4px solid #FF6F00;"><h4 style="color:#E65100; margin:0 0 8px 0; font-size:14px;">📝 Avaliação:</h4><p style="font-size:13px; margin:0;">' + (p.avaliacao || '-') + '</p></div><div style="background:#E8F5E9; padding:12px; border-radius:6px; border-left:4px solid #2E7D32;"><h4 style="color:#2E7D32; margin:0 0 8px 0; font-size:14px;">🏠 Tarefa de Casa:</h4><p style="font-size:13px; margin:0;">' + (p.tarefa_casa || '-') + '</p></div></div>';
-            html += '<p style="text-align: center; color: #999; font-size: 11px; margin-top: 16px; font-style: italic;">Gerado por IA</p></div>';
-            document.getElementById('iaResultadoPlanejar').innerHTML = html;
-            toast('Plano de aula gerado com sucesso!', 'success');
-        } else { toast('Erro: ' + (j.erro || 'Falha ao gerar plano'), 'error'); }
-    } catch(e) { toast('Erro de conexão com a IA: ' + e.message, 'error'); }
-    finally { btn.textContent = '📚 GERAR PLANO DE AULA'; btn.disabled = false; }
+        const r = await sbFetch('GET', '/rest/v1/turmas?select=id,nome&order=nome.asc');
+        const turmas = await r.json();
+        select.innerHTML = '<option value="">Selecione a turma...</option>';
+        turmas.forEach(t => {
+            select.innerHTML += `<option value="${t.id}">${t.nome}</option>`;
+        });
+    } catch (e) {
+        console.error('Erro ao carregar turmas:', e);
+    }
 }
+
+// Carrega habilidades e descritores do banco no multi-select
+async function carregarHabilidadesPlanejamento() {
+    const lista = document.getElementById('listaHabilidadesPlanejamento');
+    if (!lista) return;
+    
+    lista.innerHTML = '<p style="text-align: center; color: #666;">Carregando...</p>';
+    
+    try {
+        // Busca habilidades BNCC
+        const rHabilidades = await sbFetch('GET', '/rest/v1/habilidades?select=codigo,descricao,ano&order=codigo.asc');
+        const habilidades = await rHabilidades.json();
+        
+        // Busca descritores SAEB
+        const rDescritores = await sbFetch('GET', '/rest/v1/descritores?select=codigo,descricao&order=codigo.asc');
+        const descritores = await rDescritores.json();
+        
+        // Guarda no window para uso global
+        window._habilidadesPlanejamento = habilidades.map(h => ({
+            tipo: 'BNCC',
+            codigo: h.codigo,
+            descricao: h.descricao,
+            ano: h.ano
+        }));
+        
+        window._descritoresPlanejamento = (descritores || []).map(d => ({
+            tipo: 'SAEB',
+            codigo: d.codigo,
+            descricao: d.descricao,
+            ano: ''
+        }));
+        
+        renderizarListaHabilidades([...window._habilidadesPlanejamento, ...window._descritoresPlanejamento]);
+    } catch (e) {
+        console.error('Erro ao carregar habilidades:', e);
+        lista.innerHTML = '<p style="text-align: center; color: #dc3545;">Erro ao carregar. Tente novamente.</p>';
+    }
+}
+
+// Renderiza a lista de habilidades com checkboxes
+function renderizarListaHabilidades(lista) {
+    const container = document.getElementById('listaHabilidadesPlanejamento');
+    if (!container) return;
+    
+    if (lista.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #666;">Nenhuma habilidade encontrada</p>';
+        return;
+    }
+    
+    container.innerHTML = '';
+    lista.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'habilidade-checkbox-item';
+        div.innerHTML = `
+            <input type="checkbox" value="${item.codigo}" data-tipo="${item.tipo}" onchange="atualizarContadorHabilidades()">
+            <span class="codigo">${item.codigo}</span>
+            <span class="descricao">${item.descricao || 'Sem descrição'}</span>
+            <span style="font-size: 11px; color: #6b7280; background: ${item.tipo === 'BNCC' ? '#e0e7ff' : '#fef3c7'}; padding: 2px 6px; border-radius: 4px;">${item.tipo}</span>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// Filtra habilidades conforme digita na busca
+function filtrarHabilidadesPlanejamento() {
+    const termo = document.getElementById('buscaHabilidade').value.toLowerCase();
+    const todas = [...(window._habilidadesPlanejamento || []), ...(window._descritoresPlanejamento || [])];
+    const filtradas = todas.filter(item => 
+        item.codigo.toLowerCase().includes(termo) || 
+        (item.descricao && item.descricao.toLowerCase().includes(termo))
+    );
+    renderizarListaHabilidades(filtradas);
+}
+
+// Seleciona todas as habilidades visíveis
+function selecionarTodasHabilidades() {
+    document.querySelectorAll('#listaHabilidadesPlanejamento input[type="checkbox"]').forEach(cb => cb.checked = true);
+    atualizarContadorHabilidades();
+}
+
+// Limpa seleção
+function limparHabilidadesSelecionadas() {
+    document.querySelectorAll('#listaHabilidadesPlanejamento input[type="checkbox"]').forEach(cb => cb.checked = false);
+    atualizarContadorHabilidades();
+}
+
+// Atualiza contador
+function atualizarContadorHabilidades() {
+    const total = document.querySelectorAll('#listaHabilidadesPlanejamento input[type="checkbox"]:checked').length;
+    const contador = document.getElementById('contadorHabilidades');
+    if (contador) contador.textContent = `${total} selecionada${total !== 1 ? 's' : ''}`;
+}
+
+// Pega as habilidades selecionadas
+function getHabilidadesSelecionadas() {
+    const selecionadas = [];
+    document.querySelectorAll('#listaHabilidadesPlanejamento input[type="checkbox"]:checked').forEach(cb => {
+        selecionadas.push({
+            codigo: cb.value,
+            tipo: cb.dataset.tipo
+        });
+    });
+    return selecionadas;
+}
+
+// ========================================================================
+// 🤖 GERAR PLANO DE AULA (VERSÃO APRIMORADA)
+// ========================================================================
+
+async function gerarPlanoAula() {
+    const tema = document.getElementById('iaTemaAula').value.trim();
+    if (!tema) {
+        alert('⚠️ Informe o tema da aula!');
+        return;
+    }
+    
+    const habilidadesSelecionadas = getHabilidadesSelecionadas();
+    if (habilidadesSelecionadas.length === 0) {
+        if (!confirm('⚠️ Nenhuma habilidade selecionada. Deseja continuar mesmo assim?')) return;
+    }
+    
+    // Coleta todos os dados do formulário
+    const dados = {
+        escola: document.getElementById('iaEscola').value.trim(),
+        disciplina: document.getElementById('iaDisciplina').value,
+        anoSerie: document.getElementById('iaAnoSerie').value,
+        turmaId: document.getElementById('iaTurmaPlanejamento').value,
+        turmaNome: document.getElementById('iaTurmaPlanejamento').options[document.getElementById('iaTurmaPlanejamento').selectedIndex]?.text || '',
+        bimestre: document.getElementById('iaBimestre').value,
+        duracao: document.getElementById('iaDuracao').value,
+        tema: tema,
+        perfilTurma: document.getElementById('iaPerfilTurma').value.trim(),
+        material: document.getElementById('iaMaterial').value.trim(),
+        observacoes: document.getElementById('iaObservacoes').value.trim(),
+        habilidades: habilidadesSelecionadas
+    };
+    
+    const btn = document.getElementById('btnPlanejarIA');
+    const textoOriginal = btn.innerHTML;
+    btn.innerHTML = '⏳ Gerando plano...';
+    btn.disabled = true;
+    
+    const areaResultado = document.getElementById('iaResultadoPlanejar');
+    areaResultado.innerHTML = '<div style="text-align:center; padding: 20px; color: #4f46e5;"><div class="spinner" style="margin: 0 auto 10px;"></div>🤖 A IA está montando seu plano de aula...</div>';
+    
+    try {
+        // Monta o prompt estruturado
+        const prompt = montarPromptPlanoAula(dados);
+        
+        const response = await fetch(API_BASE_URL + '/api/ia_geral', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: prompt })
+        });
+        
+        const data = await response.json();
+        
+        if (data.sucesso) {
+            // Renderiza o plano formatado
+            areaResultado.innerHTML = renderizarPlanoAula(dados, data.texto);
+        } else {
+            areaResultado.innerHTML = `<div style="background:#fee2e2; padding:16px; border-radius:8px; color:#991b1b;">❌ Erro: ${data.erro}</div>`;
+        }
+    } catch (e) {
+        console.error('Erro ao gerar plano:', e);
+        areaResultado.innerHTML = `<div style="background:#fee2e2; padding:16px; border-radius:8px; color:#991b1b;">❌ Erro de conexão: ${e.message}</div>`;
+    } finally {
+        btn.innerHTML = textoOriginal;
+        btn.disabled = false;
+    }
+}
+
+// Monta o prompt rico para a IA
+function montarPromptPlanoAula(dados) {
+    const sb = [];
+    sb.push('Você é um professor especialista em elaboração de planos de aula.');
+    sb.push('Elabore um PLANO DE AULA COMPLETO, DIDÁTICO E PRÁTICO seguindo rigorosamente a estrutura abaixo.');
+    sb.push('Use linguagem clara, objetiva e adequada ao ano/série informado.');
+    sb.push('Inclua exemplos concretos, estratégias diversificadas e avaliação formativa.');
+    sb.push('');
+    sb.push('=== DADOS DA AULA ===');
+    if (dados.escola) sb.push(`Escola: ${dados.escola}`);
+    sb.push(`Disciplina: ${dados.disciplina}`);
+    sb.push(`Ano/Série: ${dados.anoSerie}`);
+    if (dados.turmaNome) sb.push(`Turma: ${dados.turmaNome}`);
+    sb.push(`Bimestre: ${dados.bimestre}`);
+    sb.push(`Duração: ${dados.duracao}`);
+    sb.push(`Tema: ${dados.tema}`);
+    if (dados.perfilTurma) sb.push(`Perfil da Turma: ${dados.perfilTurma}`);
+    if (dados.material) sb.push(`Material Disponível: ${dados.material}`);
+    if (dados.observacoes) sb.push(`Observações: ${dados.observacoes}`);
+    sb.push('');
+    sb.push('=== HABILIDADES E DESCRITORES A TRABALHAR ===');
+    if (dados.habilidades.length > 0) {
+        dados.habilidades.forEach(h => sb.push(`- [${h.tipo}] ${h.codigo}`));
+    } else {
+        sb.push('(Nenhuma habilidade específica informada - escolha as mais adequadas ao tema)');
+    }
+    sb.push('');
+    sb.push('=== ESTRUTURA OBRIGATÓRIA DA RESPOSTA ===');
+    sb.push('Use EXATAMENTE estes títulos de seção (com ## na frente):');
+    sb.push('');
+    sb.push('## 1. OBJETIVOS DE APRENDIZAGEM');
+    sb.push('(liste 3 a 5 objetivos claros, começando com verbos no infinitivo)');
+    sb.push('');
+    sb.push('## 2. DESENVOLVIMENTO METODOLÓGICO');
+    sb.push('### Introdução (10-15 min)');
+    sb.push('### Desenvolvimento (atividade principal)');
+    sb.push('### Fechamento (síntese e consolidação)');
+    sb.push('');
+    sb.push('## 3. RECURSOS DIDÁTICOS');
+    sb.push('(liste todos os materiais necessários)');
+    sb.push('');
+    sb.push('## 4. AVALIAÇÃO');
+    sb.push('(como verificar a aprendizagem - formativa, contínua)');
+    sb.push('');
+    sb.push('## 5. ADAPTAÇÕES (se aplicável)');
+    sb.push('(sugestões para alunos com dificuldades ou necessidades específicas)');
+    sb.push('');
+    sb.push('Responda APENAS o plano, sem comentários extras. Use formatação Markdown clara.');
+    
+    return sb.join('\n');
+}
+
+// Renderiza o plano em HTML formatado para impressão
+function renderizarPlanoAula(dados, textoIA) {
+    // Converte markdown simples para HTML
+    let html = textoIA
+        .replace(/^## (.+)$/gm, '<h2 class="secao-titulo">$1</h2>')
+        .replace(/^### (.+)$/gm, '<h3 style="color:#4f46e5; margin: 12px 0 6px 0; font-size: 15px;">$1</h3>')
+        .replace(/^\- (.+)$/gm, '<li>$1</li>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+    
+    // Agrupa listas
+    html = html.replace(/(<li>.*?<\/li>)+/gs, match => `<ul>${match}</ul>`);
+    
+    // Monta cabeçalho
+    let cabecalho = '';
+    if (dados.escola) {
+        cabecalho += `<div class="escola-nome">${dados.escola}</div>`;
+    }
+    cabecalho += `<h1>📚 PLANO DE AULA</h1>`;
+    
+    // Monta grid de identificação
+    const infoGrid = `
+        <div class="secao">
+            <div class="secao-titulo">📋 IDENTIFICAÇÃO</div>
+            <div class="info-grid">
+                <div class="info-item"><strong>Disciplina:</strong> ${dados.disciplina}</div>
+                <div class="info-item"><strong>Ano/Série:</strong> ${dados.anoSerie}</div>
+                <div class="info-item"><strong>Turma:</strong> ${dados.turmaNome || '-'}</div>
+                <div class="info-item"><strong>Bimestre:</strong> ${dados.bimestre}</div>
+                <div class="info-item"><strong>Duração:</strong> ${dados.duracao}</div>
+                <div class="info-item"><strong>Tema:</strong> ${dados.tema}</div>
+                <div class="info-item"><strong>Professor:</strong> ${userEmail || '-'}</div>
+                <div class="info-item"><strong>Data:</strong> ${new Date().toLocaleDateString('pt-BR')}</div>
+            </div>
+        </div>
+    `;
+    
+    // Monta tags de habilidades
+    let habilidadesHTML = '';
+    if (dados.habilidades.length > 0) {
+        habilidadesHTML = `
+            <div class="secao">
+                <div class="secao-titulo">🎯 HABILIDADES TRABALHADAS</div>
+                <div style="padding: 10px;">
+                    ${dados.habilidades.map(h => `<span class="habilidade-tag">[${h.tipo}] ${h.codigo}</span>`).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Monta o HTML final
+    const htmlFinal = `
+        <div class="plano-aula-container" id="planoAulaImpressao">
+            ${cabecalho}
+            ${infoGrid}
+            ${habilidadesHTML}
+            <div class="secao">
+                <div class="secao-titulo">📖 CONTEÚDO DO PLANO</div>
+                <div style="padding: 10px;">${html}</div>
+            </div>
+        </div>
+        
+        <div class="plano-acoes">
+            <button class="btn btn-primary" onclick="window.print()">🖨️ IMPRIMIR PLANO</button>
+            <button class="btn btn-success" onclick="gerarAtividadesDaAula()">📝 GERAR ATIVIDADES DESTA AULA</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('iaResultadoPlanejar').innerHTML = ''">🗑️ LIMPAR</button>
+        </div>
+    `;
+    
+    // Guarda os dados para uso posterior (gerar atividades)
+    window._planoAtual = { dados, textoIA };
+    
+    return htmlFinal;
+}
+
+// ========================================================================
+// 📝 GERAR ATIVIDADES DA AULA (Preparação para o próximo commit)
+// ========================================================================
+
+function gerarAtividadesDaAula() {
+    if (!window._planoAtual) {
+        alert('⚠️ Gere um plano de aula primeiro!');
+        return;
+    }
+    
+    // Por enquanto, apenas um alerta confirmando. No próximo commit vamos implementar de verdade.
+    alert('🚀 Em breve: Esta função vai abrir a aba "Atividades da Aula" e gerar exercícios personalizados com base no plano!\n\n(Implementação no próximo commit)');
+}
+
+// ========================================================================
+// 🚀 INICIALIZAÇÃO - Chamar quando o modal de IA abrir
+// ========================================================================
+
+// Modifique sua função abrirModalIA() para incluir estas chamadas:
+// (adicione estas linhas dentro da função abrirModalIA existente)
+/*
+    carregarTurmasPlanejamento();
+    carregarHabilidadesPlanejamento();
+*/
 
 function atualizarFormularioExpert() {
     const expert = document.getElementById('expertSelector').value;

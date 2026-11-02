@@ -505,19 +505,127 @@ RECALCULAR E CLASSIFICAR TURMA
 <button id="btnIdentificarIA" class="btn btn-primary" style="width: 100%;" onclick="identificarHabilidadeIA()">🔍 IDENTIFICAR HABILIDADE</button>
 <div id="iaResultadoIdentificar" style="margin-top: 16px;"></div>
 </div>
+
 <div id="abaPlanejar" class="hidden">
-<div class="form-group"><label>Tema da Aula</label><input type="text" id="iaTemaAula" placeholder="Ex: Frações equivalentes"></div>
-<div class="form-group"><label>Material Disponível</label><input type="text" id="iaMaterial" placeholder="Ex: quadro, caderno"></div>
-<div class="form-group"><label>Perfil da Turma</label><textarea id="iaPerfilTurma" rows="3" placeholder="Ex: turma agitada, 30 alunos"></textarea></div>
-<div class="form-group">
-<label>Duração</label>
-<select id="iaDuracao">
-<option value="50 minutos" selected>50 minutos (1 aula)</option>
-<option value="100 minutos">100 minutos (2 aulas)</option>
-</select>
-</div>
-<button id="btnPlanejarIA" class="btn btn-primary" style="width: 100%;" onclick="gerarPlanoAula()">📚 GERAR PLANO DE AULA</button>
-<div id="iaResultadoPlanejar" style="margin-top: 16px;"></div>
+    <h3 style="color: #4f46e5; margin: 0 0 16px 0; font-size: 18px;">📋 Identificação da Aula</h3>
+    
+    <!-- CABEÇALHO OPCIONAL DA ESCOLA -->
+    <div class="form-group">
+        <label>🏫 Nome da Escola (opcional - aparece no cabeçalho)</label>
+        <input type="text" id="iaEscola" placeholder="Ex: E.E. Professor João Silva">
+    </div>
+    
+    <!-- DADOS BÁSICOS -->
+    <div class="form-row">
+        <div class="form-group">
+            <label>📚 Disciplina</label>
+            <select id="iaDisciplina">
+                <option value="Matemática" selected>Matemática</option>
+                <option value="Português">Português</option>
+                <option value="Ciências">Ciências</option>
+                <option value="História">História</option>
+                <option value="Geografia">Geografia</option>
+                <option value="Artes">Artes</option>
+                <option value="Educação Física">Educação Física</option>
+                <option value="Ensino Religioso">Ensino Religioso</option>
+                <option value="Inglês">Inglês</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>🎓 Ano / Série</label>
+            <select id="iaAnoSerie">
+                <option value="1º Ano EF">1º Ano EF</option>
+                <option value="2º Ano EF">2º Ano EF</option>
+                <option value="3º Ano EF">3º Ano EF</option>
+                <option value="4º Ano EF">4º Ano EF</option>
+                <option value="5º Ano EF" selected>5º Ano EF</option>
+                <option value="6º Ano EF">6º Ano EF</option>
+                <option value="7º Ano EF">7º Ano EF</option>
+                <option value="8º Ano EF">8º Ano EF</option>
+                <option value="9º Ano EF">9º Ano EF</option>
+                <option value="1º Ano EM">1º Ano EM</option>
+                <option value="2º Ano EM">2º Ano EM</option>
+                <option value="3º Ano EM">3º Ano EM</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="form-row">
+        <div class="form-group">
+            <label>🏫 Turma</label>
+            <select id="iaTurmaPlanejamento">
+                <option value="">Carregando turmas...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>📅 Bimestre</label>
+            <select id="iaBimestre">
+                <option value="1º Bimestre">1º Bimestre</option>
+                <option value="2º Bimestre">2º Bimestre</option>
+                <option value="3º Bimestre" selected>3º Bimestre</option>
+                <option value="4º Bimestre">4º Bimestre</option>
+            </select>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label>⏱️ Duração</label>
+            <select id="iaDuracao">
+                <option value="50 minutos" selected>50 minutos (1 aula)</option>
+                <option value="100 minutos">100 minutos (2 aulas)</option>
+                <option value="150 minutos">150 minutos (3 aulas)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>🎯 Tema da Aula</label>
+            <input type="text" id="iaTemaAula" placeholder="Ex: Frações equivalentes">
+        </div>
+    </div>
+    
+    <!-- SELEÇÃO DE HABILIDADES E DESCRITORES -->
+    <h3 style="color: #4f46e5; margin: 20px 0 12px 0; font-size: 18px;">🎯 Habilidades e Descritores</h3>
+    
+    <div class="form-group">
+        <label>🔍 Buscar habilidade ou descritor:</label>
+        <input type="text" id="buscaHabilidade" placeholder="Digite código (ex: EF05MA01) ou palavra-chave..." oninput="filtrarHabilidadesPlanejamento()" style="margin-bottom: 8px;">
+        
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+            <button type="button" class="btn btn-sm btn-secondary" onclick="selecionarTodasHabilidades()">✅ Selecionar todas visíveis</button>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="limparHabilidadesSelecionadas()">❌ Limpar seleção</button>
+            <span id="contadorHabilidades" style="align-self: center; font-weight: bold; color: #4f46e5;">0 selecionadas</span>
+        </div>
+        
+        <div id="listaHabilidadesPlanejamento" style="max-height: 220px; overflow-y: auto; border: 1px solid #ddd; padding: 12px; border-radius: 6px; background: #fafafa;">
+            <p style="text-align: center; color: #666;">Carregando habilidades...</p>
+        </div>
+    </div>
+    
+    <!-- CONTEXTO DA TURMA E RECURSOS -->
+    <h3 style="color: #4f46e5; margin: 20px 0 12px 0; font-size: 18px;">🛠️ Contexto e Recursos</h3>
+    
+    <div class="form-group">
+        <label>👥 Perfil da Turma</label>
+        <textarea id="iaPerfilTurma" rows="2" placeholder="Ex: 30 alunos, agitados, gostam de jogos e competições"></textarea>
+    </div>
+    
+    <div class="form-group">
+        <label>🧰 Material Disponível</label>
+        <input type="text" id="iaMaterial" placeholder="Ex: quadro, caderno, projetor, lápis de cor">
+    </div>
+    
+    <div class="form-group">
+        <label>💡 Observações Adicionais (opcional)</label>
+        <textarea id="iaObservacoes" rows="2" placeholder="Ex: Incluir aluno com dislexia, usar exemplos do cotidiano..."></textarea>
+    </div>
+    
+    <!-- BOTÕES DE AÇÃO -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+        <button id="btnPlanejarIA" class="btn btn-primary" style="padding: 14px;" onclick="gerarPlanoAula()">🤖 GERAR PLANO DE AULA</button>
+        <button class="btn btn-success" style="padding: 14px;" onclick="gerarAtividadesDaAula()">📝 GERAR ATIVIDADES</button>
+    </div>
+    
+    <!-- ÁREA DO RESULTADO -->
+    <div id="iaResultadoPlanejar" style="margin-top: 20px;"></div>
 </div>
 <div id="abaExperts" class="hidden">
 <div class="form-group">
