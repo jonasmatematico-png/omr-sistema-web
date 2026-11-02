@@ -12,6 +12,16 @@
         h2 { color: #4f46e5; margin-bottom: 8px; }
         p { color: #6b7280; margin-bottom: 24px; font-size: 15px; }
 
+        /* CARD DE INTRODUÇÃO */
+        .card-intro {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px 0 24px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+        }
+
         /* CARD DE INFO */
         .info-card { background: white; border-radius: 12px; padding: 16px; margin: 12px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .info-row { display: flex; justify-content: space-between; margin: 8px 0; }
@@ -105,8 +115,39 @@
 <body>
 
 <div class="container">
-    <h2>📸 Correção dissertativa Inteligente</h2>
-    <p id="instrucaoTexto">Aponte a câmera para o QR Code da 1ª página.</p>
+    <h2>📝 Correção Dissertativa com IA</h2>
+    
+    <!-- CARD DE INTRODUÇÃO -->
+    <div class="card-intro">
+        <h3 style="color: #4f46e5; margin: 0 0 12px 0; font-size: 18px;">🤖 Corretor Inteligente para Provas Escritas</h3>
+        <p style="color: #6b7280; margin: 0 0 16px 0; font-size: 14px; line-height: 1.5;">
+            Esta ferramenta usa Inteligência Artificial (Gemini) para corrigir provas dissertativas automaticamente. 
+            Basta fotografar as respostas manuscritas do aluno!
+        </p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: left;">
+            <div style="background: #f0fdfa; padding: 10px; border-radius: 8px; border-left: 3px solid #008080;">
+                <strong style="font-size: 13px; color: #008080;">📷 Multi-páginas</strong><br>
+                <small style="color: #6b7280;">Fotografe várias folhas</small>
+            </div>
+            <div style="background: #f0fdfa; padding: 10px; border-radius: 8px; border-left: 3px solid #008080;">
+                <strong style="font-size: 13px; color: #008080;">🤖 IA Gemini</strong><br>
+                <small style="color: #6b7280;">Correção automática</small>
+            </div>
+            <div style="background: #f0fdfa; padding: 10px; border-radius: 8px; border-left: 3px solid #008080;">
+                <strong style="font-size: 13px; color: #008080;">📊 Nota Sugerida</strong><br>
+                <small style="color: #6b7280;">Com justificativa</small>
+            </div>
+            <div style="background: #f0fdfa; padding: 10px; border-radius: 8px; border-left: 3px solid #008080;">
+                <strong style="font-size: 13px; color: #008080;">💾 Salva no Banco</strong><br>
+                <small style="color: #6b7280;">Registro automático</small>
+            </div>
+        </div>
+        <p style="color: #f59e0b; margin: 16px 0 0 0; font-size: 13px; font-weight: 600;">
+            👉 Passo 1: Aponte a câmera para o QR Code da 1ª página da prova do aluno.
+        </p>
+    </div>
+    
+    <p id="instrucaoTexto" style="margin-top: 16px;">Aponte a câmera para o QR Code da 1ª página.</p>
 
     <!-- MODO FILA QR -->
     <div class="modo-fila-toggle" onclick="toggleModoFila()">
