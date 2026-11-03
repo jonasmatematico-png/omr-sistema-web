@@ -127,44 +127,62 @@ async function carregarTurmasPlanejamento() {
 }
 
 // Carrega habilidades e descritores do banco no multi-select
-// Carrega habilidades e descritores da tabela matriz_curricular
+// ========================================================================
+// 📚 CARREGAR HABILIDADES DA MATRIZ CURRICULAR (VERSÃO BLINDADA)
+// ========================================================================
 async function carregarHabilidadesPlanejamento() {
     const lista = document.getElementById('listaHabilidadesPlanejamento');
     if (!lista) return;
     
-    lista.innerHTML = '<p style="text-align: center; color: #666;">Carregando...</p>';
+    // 1. Mostra indicador de carregamento
+    lista.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">⏳ Carregando habilidades da matriz...</p>';
     
     try {
-        // 🎯 Query usando os nomes EXATOS das suas colunas
-        const r = await sbFetch('GET', '/rest/v1/matriz_curricular?select=id,fonte,componente,ano,codigo,tema,habilidade,objetos_de_conhecimento&order=codigo.asc');
-        const dados = await r.json();
+        // 2. Usa o cliente Supabase DIRETAMENTE (muito mais seguro que sbFetch)
+        const { data, error } = await supabase
+            .from('matriz_curricular')
+            .select('id, fonte, componente, ano, codigo, tema, habilidade, objetos_de_conhecimento')
+            .order('codigo', { ascending: true });
+            
+        // 3. Trata erros do Supabase
+        if (error) {
+            throw new Error(error.message);
+        }
         
-        if (!dados || dados.length === 0) {
-            lista.innerHTML = '<p style="text-align: center; color: #dc3545;">⚠️ Nenhuma habilidade encontrada na matriz curricular</p>';
+        // 4. Verifica se veio dados
+        if (!data || data.length === 0) {
+            lista.innerHTML = '<p style="text-align: center; color: #dc3545; padding: 20px;">⚠️ Nenhuma habilidade encontrada na tabela "matriz_curricular"</p>';
             return;
         }
         
-        // Guarda no window para uso global (busca e filtros)
-        window._habilidadesPlanejamento = dados.map(item => ({
+        // 5. Guarda no window para uso global (busca e filtros)
+        // Nota: Mapeamos 'habilidade' para 'descricao' para manter compatibilidade com o resto do seu código
+        window._habilidadesPlanejamento = data.map(item => ({
             id: item.id,
             fonte: item.fonte || 'BNCC',
             componente: item.componente || '',
             ano: item.ano || '',
             codigo: item.codigo || '',
             tema: item.tema || '',
-            descricao: item.habilidade || '',
+            descricao: item.habilidade || '', 
             objetos: item.objetos_de_conhecimento || ''
         }));
         
-        // Renderiza todas de uma vez
-        renderizarListaHabilidades(window._habilidadesPlanejamento);
+        // 6. Renderiza a lista na tela
+        if (typeof renderizarListaHabilidades === 'function') {
+            renderizarListaHabilidades(window._habilidadesPlanejamento);
+        }
         
-        // Atualiza os selects de filtro (componente e ano)
-        atualizarFiltrosMatriz();
+        // 7. Atualiza os selects de filtro (componente e ano)
+        if (typeof atualizarFiltrosMatriz === 'function') {
+            atualizarFiltrosMatriz();
+        }
+        
+        console.log(`✅ Sucesso! ${window._habilidadesPlanejamento.length} habilidades carregadas.`);
         
     } catch (e) {
-        console.error('Erro ao carregar matriz curricular:', e);
-        lista.innerHTML = `<p style="text-align: center; color: #dc3545;">❌ Erro ao carregar: ${e.message}</p>`;
+        console.error('❌ Erro ao carregar matriz curricular:', e);
+        lista.innerHTML = `<p style="text-align: center; color: #dc3545; padding: 20px;">❌ Erro ao carregar: ${e.message}<br><small>Verifique se a tabela "matriz_curricular" existe e tem dados.</small></p>`;
     }
 }
 
