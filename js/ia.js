@@ -225,9 +225,9 @@ function renderizarListaHabilidades(lista) {
         
         // Cor de fundo baseada na fonte
         const corFonte = item.fonte === 'SAEB' ? '#fef3c7' : 
-                         item.fonte === 'CP' ? '#dcfce7' : '#e0e7ff';
+                         item.fonte === 'Currículo Paulista' ? '#dcfce7' : '#e0e7ff';
         const corTexto = item.fonte === 'SAEB' ? '#92400e' : 
-                         item.fonte === 'CP' ? '#166534' : '#4f46e5';
+                         item.fonte === 'Currículo Paulista' ? '#166534' : '#4f46e5';
         
         div.innerHTML = `
             <input type="checkbox" value="${item.codigo}" data-codigo="${item.codigo}" data-fonte="${item.fonte}" onchange="atualizarContadorHabilidades()">
