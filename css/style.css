@@ -150,3 +150,43 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
         max-height: none !important;
     }
 }
+/* ======================================================================== */
+/* ️ PLANO B: FORÇAR LAYOUT SIMPLES NA IMPRESSÃO (SEM KATEX COMPLEXO)      */
+/* ======================================================================== */
+
+@media print {
+    /* Remove TODAS as classes do KaTeX e substitui por texto simples */
+    .katex {
+        display: inline !important;
+        font-family: 'Times New Roman', Times, serif !important;
+        font-size: 14pt !important;
+    }
+    
+    .katex .frac {
+        display: inline-block !important;
+        vertical-align: middle !important;
+    }
+    
+    .katex .numerator {
+        display: block !important;
+        text-align: center !important;
+        border-bottom: 1px solid black !important;
+    }
+    
+    .katex .denominator {
+        display: block !important;
+        text-align: center !important;
+    }
+    
+    /* Garante que cada página comece limpa */
+    .plano-aula-container > * {
+        page-break-after: auto !important;
+        page-break-before: auto !important;
+    }
+    
+    /* Força quebra de página limpa */
+    .plano-aula-container {
+        display: block !important;
+        width: 100% !important;
+    }
+}

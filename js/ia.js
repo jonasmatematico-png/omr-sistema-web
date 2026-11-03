@@ -399,19 +399,49 @@ async function gerarPlanoAula() {
         const data = await response.json();
         
         if (data.sucesso) {
-            // 1. Renderiza o plano formatado no HTML
-            areaResultado.innerHTML = renderizarPlanoAula(dados, data.texto);
-            
-            // 2. 🚨 NOVO: Aguarda o HTML ser inserido e renderiza a matemática (KaTeX)
-            setTimeout(() => {
-                if (typeof renderizarMatematicaNaTela === 'function') {
-                    renderizarMatematicaNaTela();
-                }
-            }, 100); // 100ms é suficiente para o DOM atualizar
-            
-        } else {
-            areaResultado.innerHTML = `<div style="background:#fee2e2; padding:16px; border-radius:8px; color:#991b1b;">❌ Erro: ${data.erro}</div>`;
+    // 1. Renderiza o plano formatado na tela
+    areaResultado.innerHTML = renderizarPlanoAula(dados, data.texto);
+    
+    // 2. 🚨 O TRUQUE MÁGICO: ADICIONAR O BOTÃO DE PDF AUTOMATICAMENTE 🚨
+    // O código abaixo procura o plano que acabou de ser criado e cola o botão nele
+    const containerPlano = areaResultado.querySelector('.plano-aula-container');
+    
+    if (containerPlano) {
+        // Cria a barra de botões
+        const divBotoes = document.createElement('div');
+        divBotoes.className = 'plano-acoes';
+        divBotoes.style.marginTop = '30px';
+        divBotoes.style.paddingTop = '20px';
+        divBotoes.style.borderTop = '2px dashed #e5e7eb';
+        divBotoes.style.display = 'flex';
+        divBotoes.style.gap = '10px';
+        divBotoes.style.justifyContent = 'center';
+        divBotoes.style.flexWrap = 'wrap';
+
+        // Coloca o HTML dos botões
+        divBotoes.innerHTML = `
+            <button class="btn btn-primary" onclick="baixarPlanoComoPDF()" style="background-color: #dc2626;">
+                📄 BAIXAR PDF PERFEITO (SEM SOBREPOSIÇÃO)
+            </button>
+            <button class="btn btn-secondary" onclick="window.print()">
+                🖨️ IMPRIMIR PELO NAVEGADOR
+            </button>
+        `;
+        
+        // Adiciona a barra de botões no final do plano
+        containerPlano.appendChild(divBotoes);
+    }
+
+    // 3. Renderiza a matemática (KaTeX) para as frações ficarem bonitas
+    setTimeout(() => {
+        if (typeof renderizarMatematicaNaTela === 'function') {
+            renderizarMatematicaNaTela();
         }
+    }, 100);
+    
+} else {
+    areaResultado.innerHTML = `<div style="background:#fee2e2; padding:16px; border-radius:8px; color:#991b1b;">❌ Erro: ${data.erro}</div>`;
+}
     } catch (e) {
         console.error('Erro ao gerar plano:', e);
         areaResultado.innerHTML = `<div style="background:#fee2e2; padding:16px; border-radius:8px; color:#991b1b;">❌ Erro de conexão: ${e.message}</div>`;
@@ -609,9 +639,18 @@ function gerarAtividadesDaAula() {
             divAtividades.innerHTML = `
                 <h2 style="color: #10b981; text-align: center; margin-bottom: 20px;">📝 ATIVIDADES PRÁTICAS DA AULA</h2>
                 <div style="padding: 10px; font-size: 15px; line-height: 1.7;">${htmlAtividades}</div>
-                <div class="plano-acoes" style="margin-top: 20px; justify-content: center;">
-                    <button class="btn btn-primary" onclick="imprimirApenasAtividades()">🖨️ IMPRIMIR SÓ AS ATIVIDADES</button>
-                    <button class="btn btn-secondary" onclick="this.closest('.plano-aula-container').remove()">🗑️ REMOVER ATIVIDADES</button>
+                
+                <div class="plano-acoes" style="margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <!-- 🚨 AQUI ESTÁ O NOVO BOTÃO DE PDF 🚨 -->
+                    <button class="btn btn-primary" onclick="baixarPlanoComoPDF()">
+                        📄 BAIXAR PDF PERFEITO
+                    </button>
+                    <button class="btn btn-secondary" onclick="imprimirApenasAtividades()">
+                        🖨️ IMPRIMIR PELO NAVEGADOR
+                    </button>
+                    <button class="btn btn-danger" onclick="this.closest('.plano-aula-container').remove()">
+                        🗑️ REMOVER
+                    </button>
                 </div>
             `;
             
@@ -768,4 +807,54 @@ function renderizarMatematicaNaTela() {
             throwOnError: false // Se houver um erro de sintaxe na fórmula, não quebra a página
         });
     }
+}
+// ========================================================================
+// 📄 FUNÇÃO PARA BAIXAR O PLANO/ATIVIDADES COMO PDF PERFEITO
+// ========================================================================
+function baixarPlanoComoPDF() {
+    // Pega o container do plano de aula ou atividades
+    const elemento = document.querySelector('.plano-aula-container');
+    
+    if (!elemento) {
+        alert('⚠️ Nenhum plano ou atividade gerado ainda!');
+        return;
+    }
+    
+    // Configurações do PDF para ficar lindo e sem sobreposição
+    const opt = {
+        margin: [15, 15, 15, 15], // Margens em mm (topo, esquerda, baixo, direita)
+        filename: 'plano_de_aula_com_atividades.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 2, // Melhora a resolução
+            useCORS: true,
+            letterRendering: true,
+            scrollY: 0 // Evita bugs de rolagem na captura
+        },
+        jsPDF: { 
+            unit: 'mm', 
+            format: 'a4', 
+            orientation: 'portrait',
+            compress: true
+        },
+        // Garante que o KaTeX seja renderizado antes de tirar o "print"
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+    
+    // Mostra um aviso visual
+    const btn = event.target;
+    const textoOriginal = btn.innerHTML;
+    btn.innerHTML = '⏳ Gerando PDF...';
+    btn.disabled = true;
+    
+    // Gera e baixa o PDF
+    html2pdf().set(opt).from(elemento).save().then(() => {
+        btn.innerHTML = textoOriginal;
+        btn.disabled = false;
+    }).catch(err => {
+        console.error("Erro ao gerar PDF:", err);
+        alert("❌ Erro ao gerar PDF. Tente novamente.");
+        btn.innerHTML = textoOriginal;
+        btn.disabled = false;
+    });
 }
