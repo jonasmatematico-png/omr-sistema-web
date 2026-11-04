@@ -876,3 +876,24 @@ function baixarPlanoComoPDF() {
         btn.disabled = false;
     });
 }
+// ========================================================================
+// 📊 FUNÇÃO: EXPORTAR PLANILHA COM RESULTADOS
+// ========================================================================
+function gerarTabelaPlanilha() {
+    // Pega os valores dos selects (ajuste os IDs conforme seu HTML)
+    const idTurma = document.getElementById('selectTurma')?.value;
+    const idAvaliacao = document.getElementById('selectAvaliacao')?.value;
+    
+    if (!idTurma || !idAvaliacao) {
+        alert('⚠️ Selecione a turma e a avaliação primeiro!');
+        return;
+    }
+    
+    // Monta a URL da API
+    const url = `https://omr-sistema-api.onrender.com/api/exportar_planilha?id_turma=${idTurma}&id_avaliacao=${idAvaliacao}`;
+    
+    // Abre a URL em nova aba (o navegador vai baixar o CSV automaticamente)
+    window.open(url, '_blank');
+    
+    console.log('📊 Planilha exportada:', url);
+}
