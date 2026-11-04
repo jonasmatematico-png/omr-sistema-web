@@ -878,32 +878,23 @@ function baixarPlanoComoPDF() {
 }
 
 // ========================================================================
-// 📊 FUNÇÃO: EXPORTAR PLANILHA COM RESULTADOS (VERSÃO BLINDADA)
+// 📊 FUNÇÃO: EXPORTAR PLANILHA COM RESULTADOS (COM OS IDs CORRETOS)
 // ========================================================================
 function gerarTabelaPlanilha() {
-    // 🚨 Tenta encontrar o ID da turma em várias variações comuns
-    const idTurma = document.getElementById('selectTurma')?.value || 
-                    document.getElementById('turma')?.value || 
-                    document.getElementById('filtroTurma')?.value ||
-                    document.getElementById('sel_turma')?.value;
-                    
-    // 🚨 Tenta encontrar o ID da avaliação em várias variações comuns
-    const idAvaliacao = document.getElementById('selectAvaliacao')?.value || 
-                        document.getElementById('avaliacao')?.value || 
-                        document.getElementById('filtroAvaliacao')?.value ||
-                        document.getElementById('sel_avaliacao')?.value;
+    // Pega os valores EXATOS dos IDs que você me mostrou no HTML
+    const idTurma = document.getElementById('selTurmaPlanilha')?.value;
+    const idProva = document.getElementById('selProvaPlanilha')?.value;
     
-    if (!idTurma || !idAvaliacao) {
-        alert('⚠️ Selecione a turma e a avaliação primeiro!\n\n(Dica: Se o erro persistir, verifique o "id" exato dos campos <select> no seu HTML)');
-        console.error("IDs não encontrados. Turma:", idTurma, "Avaliação:", idAvaliacao);
+    if (!idTurma || !idProva) {
+        alert('⚠️ Por favor, selecione a Turma e a Prova antes de gerar a tabela!');
         return;
     }
     
-    // Monta a URL da API
-    const url = `https://omr-sistema-api.onrender.com/api/exportar_planilha?id_turma=${idTurma}&id_avaliacao=${idAvaliacao}`;
+    // Monta a URL da API no seu backend Render
+    const url = `https://omr-sistema-api.onrender.com/api/exportar_planilha?id_turma=${idTurma}&id_avaliacao=${idProva}`;
     
-    console.log('📊 Tentando exportar planilha:', url);
+    console.log("📊 Exportando planilha:", url);
     
-    // Abre a URL em nova aba (o navegador vai baixar o CSV automaticamente)
+    // Abre em nova aba para forçar o download do arquivo CSV pelo navegador
     window.open(url, '_blank');
 }
