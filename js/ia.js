@@ -876,24 +876,34 @@ function baixarPlanoComoPDF() {
         btn.disabled = false;
     });
 }
+
 // ========================================================================
-// 📊 FUNÇÃO: EXPORTAR PLANILHA COM RESULTADOS
+// 📊 FUNÇÃO: EXPORTAR PLANILHA COM RESULTADOS (VERSÃO BLINDADA)
 // ========================================================================
 function gerarTabelaPlanilha() {
-    // Pega os valores dos selects (ajuste os IDs conforme seu HTML)
-    const idTurma = document.getElementById('selectTurma')?.value;
-    const idAvaliacao = document.getElementById('selectAvaliacao')?.value;
+    // 🚨 Tenta encontrar o ID da turma em várias variações comuns
+    const idTurma = document.getElementById('selectTurma')?.value || 
+                    document.getElementById('turma')?.value || 
+                    document.getElementById('filtroTurma')?.value ||
+                    document.getElementById('sel_turma')?.value;
+                    
+    // 🚨 Tenta encontrar o ID da avaliação em várias variações comuns
+    const idAvaliacao = document.getElementById('selectAvaliacao')?.value || 
+                        document.getElementById('avaliacao')?.value || 
+                        document.getElementById('filtroAvaliacao')?.value ||
+                        document.getElementById('sel_avaliacao')?.value;
     
     if (!idTurma || !idAvaliacao) {
-        alert('⚠️ Selecione a turma e a avaliação primeiro!');
+        alert('⚠️ Selecione a turma e a avaliação primeiro!\n\n(Dica: Se o erro persistir, verifique o "id" exato dos campos <select> no seu HTML)');
+        console.error("IDs não encontrados. Turma:", idTurma, "Avaliação:", idAvaliacao);
         return;
     }
     
     // Monta a URL da API
     const url = `https://omr-sistema-api.onrender.com/api/exportar_planilha?id_turma=${idTurma}&id_avaliacao=${idAvaliacao}`;
     
+    console.log('📊 Tentando exportar planilha:', url);
+    
     // Abre a URL em nova aba (o navegador vai baixar o CSV automaticamente)
     window.open(url, '_blank');
-    
-    console.log('📊 Planilha exportada:', url);
 }
