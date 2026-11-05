@@ -898,3 +898,156 @@ function gerarTabelaPlanilha() {
     // Abre em nova aba para forçar o download do arquivo CSV pelo navegador
     window.open(url, '_blank');
 }
+
+// ========================================================================
+// 📊 FUNÇÃO: GERAR MATRIZ DE RESPOSTAS (PARA COPIAR E COLAR)
+// ========================================================================
+async function gerarMatrizRespostas() {
+    const idTurma = document.getElementById('selTurmaPlanilha')?.value;
+    const idProva = document.getElementById('selProvaPlanilha')?.value;
+    
+    if (!idTurma || !idProva) {
+        alert('⚠️ Por favor, selecione a Turma e a Prova primeiro!');
+        return;
+    }
+    
+    const areaTabela = document.getElementById('areaTabelaPlanilha');
+    if (areaTabela) {
+        areaTabela.innerHTML = '<p style="text-align:center; padding:20px; color:#666;">⏳ Carregando matriz de respostas...</p>';
+        areaTabela.style.display = 'block';
+    }
+    
+    try {
+        // Chama a nova rota da matriz
+        const response = await fetch(`https://omr-sistema-api.onrender.com/api/matriz_respostas/${idProva}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_turma: parseInt(idTurma) })
+        });
+        
+        const data = await response.json();
+        
+        if (!data.sucesso || !data.matriz || data.matriz.length === 0) {
+            if (areaTabela) {
+                areaTabela.innerHTML = '<p style="text-align:center; padding:20px; color:#dc3545;">️ Nenhuma resposta encontrada.</p>';
+            }
+            return;
+        }
+        
+        const totalQuestoes = data.total_questoes;
+        const matriz = data.matriz;
+        
+        // Monta a tabela HTML
+        let html = `
+            <div style="margin:20px 0;">
+                <h3 style="color:#4A148C; margin-bottom:16px;">📊 MATRIZ DE RESPOSTAS - PARA COPIAR E COLAR</h3>
+                <p style="color:#666; margin-bottom:16px; font-size:14px;">
+                     <strong>Dica:</strong> Selecione a tabela abaixo (Ctrl+A), copie (Ctrl+C) e cole no Excel ou na planilha da escola.
+                </p>
+                <div style="overflow-x:auto; border:1px solid #ddd; border-radius:8px;">
+                    <table id="tabelaMatrizRespostas" style="width:100%; border-collapse:collapse; background:white; font-size:12px;">
+                        <thead>
+                            <tr style="background:#4A148C; color:white;">
+                                <th style="padding:8px; border:1px solid #ddd; text-align:center;">Nº</th>
+                                <th style="padding:8px; border:1px solid #ddd; text-align:left;">Nome do Aluno</th>
+        `;
+        
+        // Cabeçalho das questões (Q1, Q2, Q3...)
+        for (let i = 1; i <= totalQuestoes; i++) {
+            html += `<th style="padding:6px; border:1px solid #ddd; text-align:center; background:#7B1FA2; color:white; min-width:40px;">Q${i}</th>`;
+        }
+        
+        html += `
+                            </tr>
+                        </thead>
+                        <tbody>
+        `;
+        
+        // Linhas dos alunos
+        matriz.forEach((aluno, index) => {
+            const corFundo = index % 2 === 0 ? '#f9f9f9' : 'white';
+            html += `<tr style="background:${corFundo};">`;
+            html += `<td style="padding:6px; border:1px solid #ddd; text-align:center; font-weight:bold;">${aluno.numero_chamada || '-'}</td>`;
+            html += `<td style="padding:6px; border:1px solid #ddd;">${aluno.nome}</td>`;
+            
+            // Respostas de cada questão
+            aluno.respostas.forEach(resp => {
+                const corResposta = resp.correta ? '#2E7D32' : '#C62828';
+                const corFundoResposta = resp.correta ? '#E8F5E9' : '#FFEBEE';
+                html += `
+                    <td style="padding:6px; border:1px solid #ddd; text-align:center; background:${corFundoResposta};">
+                        <span style="color:${corResposta}; font-weight:bold; font-size:14px;">${resp.resposta || '-'}</span>
+                    </td>
+                `;
+            });
+            
+            html += `</tr>`;
+        });
+        
+        html += `
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-top:16px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                    <button class="btn btn-primary" onclick="copiarMatrizParaAreaTransferencia()" style="background:#008080; color:white; padding:10px 20px; border:none; border-radius:6px; cursor:pointer;">
+                        📋 COPIAR TABELA
+                    </button>
+                    <button class="btn btn-secondary" onclick="window.print()" style="background:#6c757d; color:white; padding:10px 20px; border:none; border-radius:6px; cursor:pointer;">
+                        🖨️ IMPRIMIR
+                    </button>
+                </div>
+                <p style="text-align:center; color:#666; font-size:12px; margin-top:12px;">
+                    ✅ As respostas corretas estão em <span style="color:#2E7D32; font-weight:bold;">verde</span> | 
+                    ❌ As erradas estão em <span style="color:#C62828; font-weight:bold;">vermelho</span>
+                </p>
+            </div>
+        `;
+        
+        if (areaTabela) {
+            areaTabela.innerHTML = html;
+        }
+        
+        console.log('✅ Matriz de respostas gerada:', data.matriz.length, 'alunos');
+        
+    } catch (error) {
+        console.error('❌ Erro ao gerar matriz:', error);
+        if (areaTabela) {
+            areaTabela.innerHTML = `<p style="text-align:center; padding:20px; color:#dc3545;">❌ Erro ao carregar: ${error.message}</p>`;
+        }
+    }
+}
+
+// ========================================================================
+// 📋 FUNÇÃO AUXILIAR: COPIAR MATRIZ PARA ÁREA DE TRANSFERÊNCIA
+// ========================================================================
+function copiarMatrizParaAreaTransferencia() {
+    const tabela = document.getElementById('tabelaMatrizRespostas');
+    if (!tabela) {
+        alert('❌ Tabela não encontrada!');
+        return;
+    }
+    
+    // Converte a tabela HTML em texto formatado (tab-separated)
+    let texto = '';
+    const linhas = tabela.querySelectorAll('tr');
+    
+    linhas.forEach((linha, index) => {
+        const celulas = linha.querySelectorAll('th, td');
+        const valores = [];
+        
+        celulas.forEach(celula => {
+            // Pega apenas o texto, ignorando spans e formatação
+            valores.push(celula.innerText.trim());
+        });
+        
+        texto += valores.join('\t') + '\n';
+    });
+    
+    // Copia para a área de transferência
+    navigator.clipboard.writeText(texto).then(() => {
+        alert('✅ Tabela copiada! Agora é só colar (Ctrl+V) no Excel ou na planilha da escola.');
+    }).catch(err => {
+        console.error('Erro ao copiar:', err);
+        alert('❌ Erro ao copiar. Tente selecionar a tabela manualmente (Ctrl+A) e copiar (Ctrl+C).');
+    });
+}
