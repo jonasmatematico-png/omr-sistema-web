@@ -1018,7 +1018,7 @@ async function gerarMatrizRespostas() {
 }
 
 // ========================================================================
-// 📋 FUNÇÃO AUXILIAR: COPIAR MATRIZ PARA ÁREA DE TRANSFERÊNCIA
+// 📋 FUNÇÃO AUXILIAR: COPIAR MATRIZ PARA ÁREA DE TRANSFERÊNCIA (LIMITADO À Q10)
 // ========================================================================
 function copiarMatrizParaAreaTransferencia() {
     const tabela = document.getElementById('tabelaMatrizRespostas');
@@ -1027,7 +1027,6 @@ function copiarMatrizParaAreaTransferencia() {
         return;
     }
     
-    // Converte a tabela HTML em texto formatado (tab-separated)
     let texto = '';
     const linhas = tabela.querySelectorAll('tr');
     
@@ -1035,19 +1034,64 @@ function copiarMatrizParaAreaTransferencia() {
         const celulas = linha.querySelectorAll('th, td');
         const valores = [];
         
-        celulas.forEach(celula => {
+        // 🚨 LIMITA A CÓPIA ÀS 12 PRIMEIRAS COLUNAS: 
+        // 0=Nº, 1=Nome, 2=Q1, 3=Q2 ... 11=Q10
+        // Se a prova tiver menos de 10 questões, ele copia todas as que existirem.
+        const maxColunas = Math.min(celulas.length, 12); 
+        
+        for (let i = 0; i < maxColunas; i++) {
             // Pega apenas o texto, ignorando spans e formatação
-            valores.push(celula.innerText.trim());
-        });
+            valores.push(celulas[i].innerText.trim());
+        }
         
         texto += valores.join('\t') + '\n';
     });
     
     // Copia para a área de transferência
     navigator.clipboard.writeText(texto).then(() => {
-        alert('✅ Tabela copiada! Agora é só colar (Ctrl+V) no Excel ou na planilha da escola.');
+        alert('✅ Tabela copiada com sucesso!\n\n(Inclui apenas: Nº, Nome e respostas da Q1 até a Q10)\nAgora é só colar (Ctrl+V) no Excel ou na planilha da escola.');
     }).catch(err => {
         console.error('Erro ao copiar:', err);
         alert('❌ Erro ao copiar. Tente selecionar a tabela manualmente (Ctrl+A) e copiar (Ctrl+C).');
+    });
+}
+
+// ========================================================================
+// 📋 FUNÇÃO MÁGICA: COPIAR APENAS AS COLUNAS Q1 A Q10 (IGNORA Nº E NOME)
+// ========================================================================
+function copiarMatrizTSV() {
+    const dados = window._dadosMatrizParaCopia;
+    if (!dados || !dados.matriz) {
+        alert('❌ Dados não encontrados. Gere a tabela primeiro.');
+        return;
+    }
+    
+    let textoTSV = "";
+    
+    // 1. Cabeçalho: APENAS Q1, Q2, Q3... (sem Nº e sem Nome)
+    let cabecalho = [];
+    for (let i = 1; i <= dados.totalQuestoes; i++) {
+        cabecalho.push(`Q${i}`);
+    }
+    textoTSV += cabecalho.join("\t") + "\n";
+    
+    // 2. Linhas dos alunos: APENAS as respostas (ignora Nº e Nome)
+    dados.matriz.forEach(aluno => {
+        let linha = [];
+        
+        // Adiciona apenas as respostas das questões
+        aluno.respostas.forEach(resp => {
+            linha.push(resp.resposta || "-");
+        });
+        
+        textoTSV += linha.join("\t") + "\n";
+    });
+    
+    // 3. Copiar para a área de transferência
+    navigator.clipboard.writeText(textoTSV).then(() => {
+        alert('✅ COPIADO COM SUCESSO!\n\nAgora abra a planilha da escola, clique na primeira célula da coluna Q1 e aperte Ctrl + V.\n\nAs respostas serão coladas apenas nas colunas das questões!');
+    }).catch(err => {
+        console.error('Erro ao copiar:', err);
+        alert('❌ Erro ao copiar automaticamente. Por favor, selecione apenas as colunas Q1 a Q10 na tabela com o mouse, aperte Ctrl+C e cole na planilha.');
     });
 }
