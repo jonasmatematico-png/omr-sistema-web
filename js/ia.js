@@ -1017,44 +1017,7 @@ async function gerarMatrizRespostas() {
     }
 }
 
-// ========================================================================
-// 📋 FUNÇÃO AUXILIAR: COPIAR MATRIZ PARA ÁREA DE TRANSFERÊNCIA (LIMITADO À Q10)
-// ========================================================================
-function copiarMatrizParaAreaTransferencia() {
-    const tabela = document.getElementById('tabelaMatrizRespostas');
-    if (!tabela) {
-        alert('❌ Tabela não encontrada!');
-        return;
-    }
-    
-    let texto = '';
-    const linhas = tabela.querySelectorAll('tr');
-    
-    linhas.forEach((linha, index) => {
-        const celulas = linha.querySelectorAll('th, td');
-        const valores = [];
-        
-        // 🚨 LIMITA A CÓPIA ÀS 12 PRIMEIRAS COLUNAS: 
-        // 0=Nº, 1=Nome, 2=Q1, 3=Q2 ... 11=Q10
-        // Se a prova tiver menos de 10 questões, ele copia todas as que existirem.
-        const maxColunas = Math.min(celulas.length, 12); 
-        
-        for (let i = 0; i < maxColunas; i++) {
-            // Pega apenas o texto, ignorando spans e formatação
-            valores.push(celulas[i].innerText.trim());
-        }
-        
-        texto += valores.join('\t') + '\n';
-    });
-    
-    // Copia para a área de transferência
-    navigator.clipboard.writeText(texto).then(() => {
-        alert('✅ Tabela copiada com sucesso!\n\n(Inclui apenas: Nº, Nome e respostas da Q1 até a Q10)\nAgora é só colar (Ctrl+V) no Excel ou na planilha da escola.');
-    }).catch(err => {
-        console.error('Erro ao copiar:', err);
-        alert('❌ Erro ao copiar. Tente selecionar a tabela manualmente (Ctrl+A) e copiar (Ctrl+C).');
-    });
-}
+
 
 // ========================================================================
 // 📋 FUNÇÃO MÁGICA: COPIAR APENAS AS COLUNAS Q1 A Q10 (IGNORA Nº E NOME)
