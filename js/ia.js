@@ -900,7 +900,7 @@ function gerarTabelaPlanilha() {
 }
 
 // ========================================================================
-// 📊 FUNÇÃO: GERAR MATRIZ DE RESPOSTAS (PARA COPIAR E COLAR)
+// 📊 FUNÇÃO 1: BUSCAR E MONTAR A TABELA NA TELA
 // ========================================================================
 async function gerarMatrizRespostas() {
     const idTurma = document.getElementById('selTurmaPlanilha')?.value;
@@ -913,12 +913,12 @@ async function gerarMatrizRespostas() {
     
     const areaTabela = document.getElementById('areaTabelaPlanilha');
     if (areaTabela) {
-        areaTabela.innerHTML = '<p style="text-align:center; padding:20px; color:#666;">⏳ Carregando matriz de respostas...</p>';
+        areaTabela.innerHTML = '<p style="text-align:center; padding:20px; color:#666;">⏳ Carregando matriz...</p>';
         areaTabela.style.display = 'block';
     }
     
     try {
-        // Chama a nova rota da matriz
+        // Chama o backend
         const response = await fetch(`https://omr-sistema-api.onrender.com/api/matriz_respostas/${idProva}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -928,99 +928,66 @@ async function gerarMatrizRespostas() {
         const data = await response.json();
         
         if (!data.sucesso || !data.matriz || data.matriz.length === 0) {
-            if (areaTabela) {
-                areaTabela.innerHTML = '<p style="text-align:center; padding:20px; color:#dc3545;">️ Nenhuma resposta encontrada.</p>';
-            }
+            if (areaTabela) areaTabela.innerHTML = '<p style="text-align:center; padding:20px; color:#dc3545;">⚠️ Nenhuma resposta encontrada.</p>';
             return;
         }
         
         const totalQuestoes = data.total_questoes;
         const matriz = data.matriz;
         
-        // Monta a tabela HTML
+        // 1. Monta o HTML da tabela visual
         let html = `
             <div style="margin:20px 0;">
-                <h3 style="color:#4A148C; margin-bottom:16px;">📊 MATRIZ DE RESPOSTAS - PARA COPIAR E COLAR</h3>
+                <h3 style="color:#4A148C; margin-bottom:10px;">📊 MATRIZ DE RESPOSTAS</h3>
                 <p style="color:#666; margin-bottom:16px; font-size:14px;">
-                     <strong>Dica:</strong> Selecione a tabela abaixo (Ctrl+A), copie (Ctrl+C) e cole no Excel ou na planilha da escola.
+                    💡 Clique no botão verde abaixo. Depois, vá na planilha da escola e aperte <strong>Ctrl + V</strong>.
                 </p>
+                <button class="btn btn-primary" onclick="copiarMatrizTSV()" style="background:#28a745; color:white; padding:12px 24px; border:none; border-radius:6px; cursor:pointer; font-size:16px; font-weight:bold; margin-bottom:15px;">
+                    📋 COPIAR APENAS AS RESPOSTAS (Q1 a Q${totalQuestoes})
+                </button>
+                
                 <div style="overflow-x:auto; border:1px solid #ddd; border-radius:8px;">
-                    <table id="tabelaMatrizRespostas" style="width:100%; border-collapse:collapse; background:white; font-size:12px;">
+                    <table id="tabelaMatrizRespostas" style="width:100%; border-collapse:collapse; background:white; font-size:13px;">
                         <thead>
                             <tr style="background:#4A148C; color:white;">
                                 <th style="padding:8px; border:1px solid #ddd; text-align:center;">Nº</th>
                                 <th style="padding:8px; border:1px solid #ddd; text-align:left;">Nome do Aluno</th>
         `;
         
-        // Cabeçalho das questões (Q1, Q2, Q3...)
+        // Cabeçalho das questões
         for (let i = 1; i <= totalQuestoes; i++) {
-            html += `<th style="padding:6px; border:1px solid #ddd; text-align:center; background:#7B1FA2; color:white; min-width:40px;">Q${i}</th>`;
+            html += `<th style="padding:6px; border:1px solid #ddd; text-align:center; width:40px;">Q${i}</th>`;
         }
-        
-        html += `
-                            </tr>
-                        </thead>
-                        <tbody>
-        `;
+        html += `</tr></thead><tbody>`;
         
         // Linhas dos alunos
         matriz.forEach((aluno, index) => {
-            const corFundo = index % 2 === 0 ? '#f9f9f9' : 'white';
+            const corFundo = index % 2 === 0 ? '#ffffff' : '#f9f9f9';
             html += `<tr style="background:${corFundo};">`;
-            html += `<td style="padding:6px; border:1px solid #ddd; text-align:center; font-weight:bold;">${aluno.numero_chamada || '-'}</td>`;
+            html += `<td style="padding:6px; border:1px solid #ddd; text-align:center;">${aluno.numero_chamada || '-'}</td>`;
             html += `<td style="padding:6px; border:1px solid #ddd;">${aluno.nome}</td>`;
             
-            // Respostas de cada questão
             aluno.respostas.forEach(resp => {
-                const corResposta = resp.correta ? '#2E7D32' : '#C62828';
-                const corFundoResposta = resp.correta ? '#E8F5E9' : '#FFEBEE';
-                html += `
-                    <td style="padding:6px; border:1px solid #ddd; text-align:center; background:${corFundoResposta};">
-                        <span style="color:${corResposta}; font-weight:bold; font-size:14px;">${resp.resposta || '-'}</span>
-                    </td>
-                `;
+                html += `<td style="padding:6px; border:1px solid #ddd; text-align:center;">${resp.resposta || '-'}</td>`;
             });
-            
             html += `</tr>`;
         });
         
-        html += `
-                        </tbody>
-                    </table>
-                </div>
-                <div style="margin-top:16px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                    <button class="btn btn-primary" onclick="copiarMatrizParaAreaTransferencia()" style="background:#008080; color:white; padding:10px 20px; border:none; border-radius:6px; cursor:pointer;">
-                        📋 COPIAR TABELA
-                    </button>
-                    <button class="btn btn-secondary" onclick="window.print()" style="background:#6c757d; color:white; padding:10px 20px; border:none; border-radius:6px; cursor:pointer;">
-                        🖨️ IMPRIMIR
-                    </button>
-                </div>
-                <p style="text-align:center; color:#666; font-size:12px; margin-top:12px;">
-                    ✅ As respostas corretas estão em <span style="color:#2E7D32; font-weight:bold;">verde</span> | 
-                    ❌ As erradas estão em <span style="color:#C62828; font-weight:bold;">vermelho</span>
-                </p>
-            </div>
-        `;
+        html += `</tbody></table></div></div>`;
         
-        if (areaTabela) {
-            areaTabela.innerHTML = html;
-        }
+        if (areaTabela) areaTabela.innerHTML = html;
         
-        console.log('✅ Matriz de respostas gerada:', data.matriz.length, 'alunos');
+        // Guarda os dados "limpos" na memória do navegador para a função de cópia usar
+        window._dadosMatrizParaCopia = { matriz, totalQuestoes };
         
     } catch (error) {
         console.error('❌ Erro ao gerar matriz:', error);
-        if (areaTabela) {
-            areaTabela.innerHTML = `<p style="text-align:center; padding:20px; color:#dc3545;">❌ Erro ao carregar: ${error.message}</p>`;
-        }
+        if (areaTabela) areaTabela.innerHTML = `<p style="text-align:center; padding:20px; color:#dc3545;">❌ Erro: ${error.message}</p>`;
     }
 }
 
-
-
 // ========================================================================
-// 📋 FUNÇÃO MÁGICA: COPIAR APENAS AS COLUNAS Q1 A Q10 (IGNORA Nº E NOME)
+// 📋 FUNÇÃO 2: COPIAR APENAS AS COLUNAS Q1, Q2, Q3... (IGNORA NOME E Nº)
 // ========================================================================
 function copiarMatrizTSV() {
     const dados = window._dadosMatrizParaCopia;
@@ -1031,30 +998,27 @@ function copiarMatrizTSV() {
     
     let textoTSV = "";
     
-    // 1. Cabeçalho: APENAS Q1, Q2, Q3... (sem Nº e sem Nome)
+    // 1. Cabeçalho: APENAS Q1, Q2, Q3...
     let cabecalho = [];
     for (let i = 1; i <= dados.totalQuestoes; i++) {
         cabecalho.push(`Q${i}`);
     }
     textoTSV += cabecalho.join("\t") + "\n";
     
-    // 2. Linhas dos alunos: APENAS as respostas (ignora Nº e Nome)
+    // 2. Linhas: APENAS as respostas (ignora Nº e Nome)
     dados.matriz.forEach(aluno => {
         let linha = [];
-        
-        // Adiciona apenas as respostas das questões
         aluno.respostas.forEach(resp => {
             linha.push(resp.resposta || "-");
         });
-        
         textoTSV += linha.join("\t") + "\n";
     });
     
     // 3. Copiar para a área de transferência
     navigator.clipboard.writeText(textoTSV).then(() => {
-        alert('✅ COPIADO COM SUCESSO!\n\nAgora abra a planilha da escola, clique na primeira célula da coluna Q1 e aperte Ctrl + V.\n\nAs respostas serão coladas apenas nas colunas das questões!');
+        alert('✅ COPIADO COM SUCESSO!\n\nAgora abra a planilha da escola, clique na célula da coluna Q1 e aperte Ctrl + V.');
     }).catch(err => {
         console.error('Erro ao copiar:', err);
-        alert('❌ Erro ao copiar automaticamente. Por favor, selecione apenas as colunas Q1 a Q10 na tabela com o mouse, aperte Ctrl+C e cole na planilha.');
+        alert('❌ Erro ao copiar. Tente selecionar a tabela manualmente.');
     });
 }
