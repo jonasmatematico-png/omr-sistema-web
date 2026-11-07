@@ -111,7 +111,7 @@ async function carregarTurmasPermitidas(selectId) {
     select.innerHTML = '<option value="">⏳ Carregando turmas...</option>';
     
     try {
-        // 1. Pega o email do usuário logado (garantindo que esteja em minúsculas para bater com o banco)
+        // 1. Pega o email do usuário logado
         const emailLogado = (typeof userEmail !== 'undefined' && userEmail) ? userEmail.toLowerCase() : (localStorage.getItem('sb_email') || '').toLowerCase();
         
         if (!emailLogado) {
@@ -119,15 +119,13 @@ async function carregarTurmasPermitidas(selectId) {
             return;
         }
 
-        // 2. CHAMADA AO NOSSO BACKEND SEGURO DO LABORATÓRIO
-        const BACKEND_URL = "https://omr-backend-laboratorio.onrender.com";
-        const response = await fetch(`${BACKEND_URL}/api/turmas?email=${encodeURIComponent(emailLogado)}`);
+        // 2. USA A VARIÁVEL GLOBAL DO CONFIG.JS (QUE AGORA ESTÁ LIMPA E CORRETA!)
+        const response = await fetch(`${API_BASE_URL}/api/turmas?email=${encodeURIComponent(emailLogado)}`);
         const resultado = await response.json();
 
-        // 3. Limpa o select e coloca a opção padrão
+        // 3. Limpa e preenche o select
         select.innerHTML = '<option value="">Selecione a turma...</option>';
 
-        // 4. Preenche APENAS com as turmas que o backend autorizou
         if (resultado.sucesso && resultado.turmas && resultado.turmas.length > 0) {
             resultado.turmas.forEach(t => {
                 select.innerHTML += `<option value="${t.id}">${t.nome}</option>`;
@@ -135,7 +133,6 @@ async function carregarTurmasPermitidas(selectId) {
             console.log(`✅ Carregadas ${resultado.turmas.length} turmas para ${emailLogado}`);
         } else {
             select.innerHTML += '<option value="" disabled>⚠️ Nenhuma turma vinculada ao seu perfil</option>';
-            console.log("⚠️ Nenhuma turma encontrada para este professor.");
         }
     } catch (e) {
         console.error("Erro ao carregar turmas permitidas:", e);
