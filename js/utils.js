@@ -107,31 +107,38 @@ async function uploadImagem(file) {
 async function carregarTurmasPermitidas(selectId) {
     const select = document.getElementById(selectId);
     if (!select) return;
-    select.innerHTML = '<option value="">Carregando turmas...</option>';
+    
+    select.innerHTML = '<option value="">⏳ Carregando turmas...</option>';
+    
     try {
-        const rTurmas = await sbFetch('GET', '/rest/v1/turmas?select=id,nome&order=nome.asc');
-        const todasTurmas = await rTurmas.json();
-        let turmasPermitidas = [];
-        if (userEmail === EMAIL_ADMIN_MASTER) {
-            turmasPermitidas = todasTurmas;
-        } else {
-            const rPerfil = await sbFetch('GET', '/rest/v1/perfis?email=eq.' + userEmail + '&select=turmas_id');
-            const perfilData = await rPerfil.json();
-            if (perfilData && perfilData[0] && Array.isArray(perfilData[0].turmas_id)) {
-                const idsPermitidos = perfilData[0].turmas_id;
-                turmasPermitidas = todasTurmas.filter(t => idsPermitidos.includes(t.id));
-            }
+        // 1. Pega o email do usuário logado (garantindo que esteja em minúsculas para bater com o banco)
+        const emailLogado = (typeof userEmail !== 'undefined' && userEmail) ? userEmail.toLowerCase() : (localStorage.getItem('sb_email') || '').toLowerCase();
+        
+        if (!emailLogado) {
+            select.innerHTML = '<option value="">⚠️ Usuário não identificado</option>';
+            return;
         }
+
+        // 2. CHAMADA AO NOSSO BACKEND SEGURO DO LABORATÓRIO
+        const BACKEND_URL = "https://omr-backend-laboratorio.onrender.com";
+        const response = await fetch(`${BACKEND_URL}/api/turmas?email=${encodeURIComponent(emailLogado)}`);
+        const resultado = await response.json();
+
+        // 3. Limpa o select e coloca a opção padrão
         select.innerHTML = '<option value="">Selecione a turma...</option>';
-        if (turmasPermitidas.length === 0) {
-            select.innerHTML += '<option value="" disabled>Nenhuma turma vinculada ao seu perfil</option>';
-        } else {
-            turmasPermitidas.forEach(t => {
-                select.innerHTML += '<option value="' + t.id + '">' + t.nome + '</option>';
+
+        // 4. Preenche APENAS com as turmas que o backend autorizou
+        if (resultado.sucesso && resultado.turmas && resultado.turmas.length > 0) {
+            resultado.turmas.forEach(t => {
+                select.innerHTML += `<option value="${t.id}">${t.nome}</option>`;
             });
+            console.log(`✅ Carregadas ${resultado.turmas.length} turmas para ${emailLogado}`);
+        } else {
+            select.innerHTML += '<option value="" disabled>⚠️ Nenhuma turma vinculada ao seu perfil</option>';
+            console.log("⚠️ Nenhuma turma encontrada para este professor.");
         }
     } catch (e) {
         console.error("Erro ao carregar turmas permitidas:", e);
-        select.innerHTML = '<option value="">Erro ao carregar</option>';
+        select.innerHTML = '<option value="">❌ Erro ao carregar</option>';
     }
 }
