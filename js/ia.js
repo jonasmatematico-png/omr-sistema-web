@@ -109,20 +109,46 @@ async function identificarHabilidadeIA() {
 // 📋 PLANEJAR AULA - CARREGAR TURMAS E HABILIDADES
 // ========================================================================
 
-// Carrega as turmas no select do planejamento
+// Carrega as turmas no select do planejamento (VERSÃO SEGURA POR PERFIL)
 async function carregarTurmasPlanejamento() {
     const select = document.getElementById('iaTurmaPlanejamento');
     if (!select) return;
     
+    // 1. Mostrar estado de carregamento
+    select.innerHTML = '<option value="">⏳ Carregando turmas...</option>';
+    
     try {
-        const r = await sbFetch('GET', '/rest/v1/turmas?select=id,nome&order=nome.asc');
-        const turmas = await r.json();
+        // 2. Obter o email do usuário logado de forma segura
+        const emailLogado = (typeof userEmail !== 'undefined' && userEmail) 
+            ? userEmail.toLowerCase() 
+            : (localStorage.getItem('sb_email') || '').toLowerCase();
+
+        if (!emailLogado) {
+            select.innerHTML = '<option value="">⚠️ Usuário não identificado</option>';
+            return;
+        }
+
+        // 3. Chamar o backend seguro que já filtra as turmas por este email
+        // (API_BASE_URL já está configurada no config.js apontando para o laboratório)
+        const response = await fetch(`${API_BASE_URL}/api/turmas?email=${encodeURIComponent(emailLogado)}`);
+        const resultado = await response.json();
+
+        // 4. Limpar o select e colocar a opção padrão
         select.innerHTML = '<option value="">Selecione a turma...</option>';
-        turmas.forEach(t => {
-            select.innerHTML += `<option value="${t.id}">${t.nome}</option>`;
-        });
+
+        // 5. Preencher APENAS com as turmas autorizadas pelo backend
+        if (resultado.sucesso && resultado.turmas && resultado.turmas.length > 0) {
+            resultado.turmas.forEach(t => {
+                select.innerHTML += `<option value="${t.id}">${t.nome}</option>`;
+            });
+            console.log(`✅ [IA] Carregadas ${resultado.turmas.length} turmas permitidas para ${emailLogado}`);
+        } else {
+            select.innerHTML += '<option value="" disabled>⚠️ Nenhuma turma vinculada ao seu perfil</option>';
+            console.log(`⚠️ [IA] Nenhuma turma encontrada para ${emailLogado}`);
+        }
     } catch (e) {
-        console.error('Erro ao carregar turmas:', e);
+        console.error('Erro ao carregar turmas no planejamento:', e);
+        select.innerHTML = '<option value="">❌ Erro ao carregar</option>';
     }
 }
 
