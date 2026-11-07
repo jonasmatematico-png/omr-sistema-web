@@ -105,9 +105,8 @@ async function uploadImagem(file) {
 // 🏫 TURMAS PERMITIDAS
 // ========================================================================
 async function carregarTurmasPermitidas(selectId) {
-    const select = document.getElementById(selectId);
-    if (!select) return;
-    
+       alert("🚨 FUNÇÃO NOVA E SEGURA ESTÁ RODANDO! 🚨"); // <--- ADICIONE ISSO
+       const select = document.getElementById(selectId);
     select.innerHTML = '<option value="">⏳ Carregando turmas...</option>';
     
     try {
