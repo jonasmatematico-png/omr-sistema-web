@@ -132,36 +132,59 @@ async function mostrarPrincipal(email) {
 }
 
 // ========================================================================
-// 🔒 FUNÇÃO: ESCONDE/MOSTRA BOTÕES COM BASE NOS MÓDULOS ATIVOS
+// 🔒 FUNÇÃO: ESCONDE/MOSTRA BOTÕES COM BASE NOS MÓDULOS ATIVOS (VERSÃO DEBUG)
 // ========================================================================
-function aplicarPermissoesNoMenu(modulos, emailUsuario) {
-    // 🛡️ REGRA DE OURO: Se for o e-mail do gestor, libera TUDO sempre!
-    // (Substitua pelo seu e-mail exato de gestor, se for diferente)
-    const emailGestorMaster = 'jonasmatematico@yahoo.com.br'; 
-    
-    if (emailUsuario.toLowerCase() === emailGestorMaster.toLowerCase() || 
-        modulos.includes('admin') || 
-        modulos.includes('todos')) {
-        console.log("🔓 MODO GESTOR ATIVADO: Acesso total garantido.");
-        return; // Sai da função sem esconder nada
+function aplicarPermissoesNoMenu(modulosRaw, emailUsuario) {
+    console.log("🔍 DEBUG 1 - Email recebido:", emailUsuario);
+    console.log("🔍 DEBUG 2 - Módulos brutos do backend:", modulosRaw);
+
+    // 1. NORMALIZAR OS DADOS: Garantir que seja um Array, mesmo que o Supabase mande como String
+    let modulos = [];
+    if (Array.isArray(modulosRaw)) {
+        modulos = modulosRaw;
+    } else if (typeof modulosRaw === 'string') {
+        // Se vier como string "{a, b}", converte para array ["a", "b"]
+        modulos = modulosRaw.replace(/[{}]/g, '').split(',').map(s => s.trim().toLowerCase());
     }
 
-    // Para usuários normais, aplica o filtro
+    console.log("🔍 DEBUG 3 - Módulos normalizados (Array final):", modulos);
+
+    // 2. REGRA DE OURO: Backdoor do Gestor
+    const emailGestorMaster = 'jonasmatematico@yahoo.com.br';
+    if (emailUsuario && emailUsuario.toLowerCase().trim() === emailGestorMaster.toLowerCase().trim()) {
+        console.log("🔓 MODO GESTOR ATIVADO: Acesso total garantido para " + emailUsuario);
+        return; // Sai da função, não esconde nada
+    }
+
+    // 3. REGRA DE ADMIN
+    if (modulos.includes('admin') || modulos.includes('todos')) {
+        console.log("🔓 MODO ADMIN/TODOS ATIVADO: Acesso total garantido.");
+        return;
+    }
+
+    // 4. APLICAR O BLOQUEIO NO MENU
+    console.log("🔒 Iniciando varredura do menu...");
     const itensMenu = document.querySelectorAll('.menu-item[data-modulo]');
     
     itensMenu.forEach(item => {
-        const moduloDoBotao = item.getAttribute('data-modulo');
+        const moduloDoBotao = item.getAttribute('data-modulo').toLowerCase();
+        const temPermissao = modulos.includes(moduloDoBotao);
         
-        // Se o módulo do botão NÃO estiver na lista de permissões, esconde!
-        if (!modulos.includes(moduloDoBotao)) {
+        console.log(`   -> Botão "${moduloDoBotao}": Tem permissão?`, temPermissao);
+
+        if (!temPermissao) {
             item.style.display = 'none';
+            console.log(`      ❌ ESCONDIDO: ${moduloDoBotao}`);
+        } else {
+            console.log(`      ✅ VISÍVEL: ${moduloDoBotao}`);
         }
     });
 
-    // Controle do Robô da IA
+    // 5. CONTROLE DO ROBÔ DA IA (FAB)
     const fabIa = document.querySelector('.fab-ia');
     if (fabIa && !modulos.includes('ia_geral') && !modulos.includes('ia')) {
         fabIa.style.display = 'none';
+        console.log("      ❌ Robô da IA escondido.");
     }
 }
 
