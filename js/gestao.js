@@ -8,7 +8,7 @@ async function carregarListaUsuarios() {
     if (userEmail !== EMAIL_ADMIN_MASTER) { container.innerHTML = '<div style="padding:20px; background:#ffe6e6; border:1px solid #dc3545; border-radius:8px; text-align:center;"><strong>🚫 Acesso Negado</strong><br>Você não é administrador deste sistema.</div>'; return; }
     container.innerHTML = '<p style="text-align:center; color:#666;">⏳ Carregando lista de usuários...</p>';
     try {
-        var r = await sbFetch('GET', '/rest/v1/perfis?select=id,nome_completo,email,tipo_usuario,turmas_id&order=created_at.desc');
+        var r = await sbFetch('GET', '/rest/v1/perfis?select=id,nome_completo,email,tipo_usuario,turmas_ids&order=created_at.desc');
         if (!r.ok) throw new Error('Erro no servidor (' + r.status + ').');
         var usuarios = await r.json();
         if (!Array.isArray(usuarios)) throw new Error('Formato de dados inválido.');
@@ -16,9 +16,9 @@ async function carregarListaUsuarios() {
         var html = '<table style="width:100%; border-collapse: collapse; font-size: 13px; margin-top:10px;"><thead><tr style="background:#f5f5f5; border-bottom:2px solid #ddd;"><th style="padding:10px; text-align:left;">Nome</th><th style="padding:10px; text-align:left;">E-mail</th><th style="padding:10px; text-align:center;">Tipo</th><th style="padding:10px; text-align:center;">Turmas</th><th style="padding:10px; text-align:center;">Ações</th></tr></thead><tbody>';
         usuarios.forEach(function(u) {
             var corBadge = u.tipo_usuario === 'admin' ? '#dc3545' : '#28a745';
-            var qtdTurmas = Array.isArray(u.turmas_id) ? u.turmas_id.length : 0;
+            var qtdTurmas = Array.isArray(u.turmas_ids) ? u.turmas_ids.length : 0;
             html += '<tr style="border-bottom:1px solid #eee;"><td style="padding:10px;"><strong>' + (u.nome_completo || 'Sem Nome') + '</strong></td><td style="padding:10px;">' + u.email + '</td><td style="padding:10px; text-align:center;"><span style="background:' + corBadge + '; color:white; padding:3px 8px; border-radius:12px; font-size:11px; font-weight:bold;">' + u.tipo_usuario.toUpperCase() + '</span></td><td style="padding:10px; text-align:center;">' + qtdTurmas + '</td>';
-            if (u.tipo_usuario !== 'admin') html += '<td style="padding:10px; text-align:center;"><button class="btn btn-sm btn-warn" onclick="abrirEditorTurmas(\'' + u.id + '\', \'' + u.email + '\', ' + JSON.stringify(u.turmas_id || []) + ')">✏️ Editar Turmas</button></td>';
+            if (u.tipo_usuario !== 'admin') html += '<td style="padding:10px; text-align:center;"><button class="btn btn-sm btn-warn" onclick="abrirEditorTurmas(\'' + u.id + '\', \'' + u.email + '\', ' + JSON.stringify(u.turmas_ids || []) + ')">✏️ Editar Turmas</button></td>';
             else html += '<td style="padding:10px; text-align:center;"><small style="color:#999;">Full Access</small></td>';
             html += '</tr>';
         });
@@ -53,7 +53,7 @@ async function salvarEdicaoTurmas() {
     var checkboxes = document.querySelectorAll('.chk-turma:checked');
     var novosIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
     try {
-        var payload = { turmas_id: novosIds };
+        var payload = { turmas_ids: novosIds };
         var r = await sbFetch('PATCH', '/rest/v1/perfis?id=eq.' + usuarioEmEdicaoId, payload);
         if (!r.ok) { var erro = await r.json(); throw new Error(erro.message || 'Falha ao salvar'); }
         toast('✅ Acesso às turmas atualizado com sucesso!', 'success');
