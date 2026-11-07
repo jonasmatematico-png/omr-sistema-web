@@ -121,9 +121,9 @@ function mostrarPrincipal(email) {
     carregarSelectsDiagnosticoDireto(); 
 }
 
-// 🆕 NOVA FUNÇÃO: Carrega Provas e Turmas direto do Supabase para o Diagnóstico
+// 🆕 NOVA FUNÇÃO: Carrega Provas e Turmas de forma SEGURA
 async function carregarSelectsDiagnosticoDireto() {
-    // 1. Carregar Provas
+    // 1. Carregar Provas (Continua direto do Supabase)
     const selProva = document.getElementById('selectAvaliacao');
     if (selProva) {
         const { data: provas, error } = await supabase.from('avaliacoes').select('id, nome').order('id', { ascending: false });
@@ -132,13 +132,33 @@ async function carregarSelectsDiagnosticoDireto() {
             provas.forEach(av => { selProva.innerHTML += `<option value="${av.id}">${av.nome}</option>`; });
         }
     }
-    // 2. Carregar Turmas
+    
+    // 2. Carregar Turmas AGORA PELO BACKEND SEGURO (FILTRADO POR EMAIL)
     const selTurma = document.getElementById('selectTurma');
     if (selTurma) {
-        const { data: turmas, error } = await supabase.from('turmas').select('id, nome').order('nome');
-        selTurma.innerHTML = '<option value="">Todas as turmas</option>';
-        if (!error && turmas) {
-            turmas.forEach(turma => { selTurma.innerHTML += `<option value="${turma.id}">${turma.nome}</option>`; });
+        selTurma.innerHTML = '<option value="">⏳ Carregando turmas...</option>';
+        
+        const emailLogado = localStorage.getItem('sb_email') || userEmail;
+        const BACKEND_URL = "https://omr-backend-laboratorio.onrender.com"; 
+        
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/turmas?email=${encodeURIComponent(emailLogado)}`);
+            const resultado = await response.json();
+            
+            selTurma.innerHTML = '<option value="">Todas as turmas liberadas</option>';
+            
+            if (resultado.sucesso && resultado.turmas && resultado.turmas.length > 0) {
+                resultado.turmas.forEach(turma => { 
+                    selTurma.innerHTML += `<option value="${turma.id}">${turma.nome}</option>`; 
+                });
+                console.log(`✅ Carregadas ${resultado.turmas.length} turmas para ${emailLogado}`);
+            } else {
+                selTurma.innerHTML = '<option value="">⚠️ Nenhuma turma liberada para este perfil</option>';
+                console.log("⚠️ Nenhuma turma encontrada para este professor.");
+            }
+        } catch (e) {
+            selTurma.innerHTML = '<option value="">❌ Erro ao carregar turmas</option>';
+            console.error("Erro ao buscar turmas:", e);
         }
     }
 }
