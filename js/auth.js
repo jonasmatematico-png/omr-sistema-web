@@ -92,34 +92,36 @@ function sair() {
 }
 
 async function mostrarPrincipal(email) {
+    // 🛡️ GARANTIA DE EMAIL: Se não veio por parâmetro, pega do localStorage
+    const emailFinal = (email && email !== 'undefined') ? email : (localStorage.getItem('sb_email') || 'desconhecido');
+    
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('mainScreen').classList.remove('hidden');
-    document.getElementById('userEmail').textContent = email;
-    document.getElementById('userAvatar').textContent = email.charAt(0).toUpperCase();
+    document.getElementById('userEmail').textContent = emailFinal;
+    document.getElementById('userAvatar').textContent = emailFinal.charAt(0).toUpperCase();
     
+    let modulosAtivos = [];
+
     try {
-        // 1. CONSULTAR O BACKEND PARA SABER OS MÓDULOS ATIVOS DESTE USUÁRIO
-        const response = await fetch(`${API_BASE_URL}/api/perfil?email=${encodeURIComponent(email)}`);
-        const resultado = await response.json();
+        // Tenta buscar do backend, mas se falhar (erro 500), não quebra o sistema
+        const response = await fetch(`${API_BASE_URL}/api/perfil?email=${encodeURIComponent(emailFinal)}`);
         
-        let modulosAtivos = [];
-        
-        if (resultado.sucesso && resultado.perfil && resultado.perfil.modulos_ativos) {
-            modulosAtivos = resultado.perfil.modulos_ativos;
-            // Salva no localStorage para o sistema todo saber
-            localStorage.setItem('modulos_ativos', JSON.stringify(modulosAtivos));
-            console.log("✅ Módulos carregados:", modulosAtivos);
+        if (response.ok) {
+            const resultado = await response.json();
+            if (resultado.sucesso && resultado.perfil && resultado.perfil.modulos_ativos) {
+                modulosAtivos = resultado.perfil.modulos_ativos;
+            }
+        } else {
+            console.warn("⚠️ Backend retornou erro ao buscar perfil. Usando modo de fallback.");
         }
-
-        // 2. APLICAR AS PERMISSÕES NO MENU (MÁGICA ACONTECE AQUI!)
-        aplicarPermissoesNoMenu(modulosAtivos);
-
     } catch (e) {
-        console.error("Erro ao buscar permissões do perfil:", e);
-        // Em caso de erro, libera tudo para não travar o sistema, mas avisa no console
+        console.error("Erro na comunicação com o backend de perfil:", e);
     }
 
-    // 3. CARREGAR AS FUNCIONALIDADES INICIAIS
+    // Aplica as permissões passando o emailFinal garantido
+    aplicarPermissoesNoMenu(modulosAtivos, emailFinal);
+
+    // Carrega o resto do sistema
     navegarPara('view-provas', document.querySelector('.menu-item'));
     novoForm();
     carregarProvas();
@@ -131,60 +133,42 @@ async function mostrarPrincipal(email) {
     carregarSelectsDiagnosticoDireto(); 
 }
 
-// ========================================================================
-// 🔒 FUNÇÃO: ESCONDE/MOSTRA BOTÕES COM BASE NOS MÓDULOS ATIVOS (VERSÃO DEBUG)
-// ========================================================================
 function aplicarPermissoesNoMenu(modulosRaw, emailUsuario) {
-    console.log("🔍 DEBUG 1 - Email recebido:", emailUsuario);
-    console.log("🔍 DEBUG 2 - Módulos brutos do backend:", modulosRaw);
+    console.log("🔍 DEBUG - Email final:", emailUsuario);
+    console.log("🔍 DEBUG - Módulos recebidos:", modulosRaw);
 
-    // 1. NORMALIZAR OS DADOS: Garantir que seja um Array, mesmo que o Supabase mande como String
+    // 🚨 REGRA DE OURO ABSOLUTA: Se for o gestor, libera TUDO e nem pergunta pro backend
+    const emailGestorMaster = 'jonasmatematico@yahoo.com.br';
+    if (emailUsuario && emailUsuario.toLowerCase().trim() === emailGestorMaster.toLowerCase().trim()) {
+        console.log("🔓 MODO GESTOR MASTER ATIVADO! Acesso total garantido.");
+        return; // Sai da função, não esconde NADA
+    }
+
+    // Normaliza os dados (caso venha como string do Supabase)
     let modulos = [];
     if (Array.isArray(modulosRaw)) {
         modulos = modulosRaw;
     } else if (typeof modulosRaw === 'string') {
-        // Se vier como string "{a, b}", converte para array ["a", "b"]
         modulos = modulosRaw.replace(/[{}]/g, '').split(',').map(s => s.trim().toLowerCase());
     }
 
-    console.log("🔍 DEBUG 3 - Módulos normalizados (Array final):", modulos);
-
-    // 2. REGRA DE OURO: Backdoor do Gestor
-    const emailGestorMaster = 'jonasmatematico@yahoo.com.br';
-    if (emailUsuario && emailUsuario.toLowerCase().trim() === emailGestorMaster.toLowerCase().trim()) {
-        console.log("🔓 MODO GESTOR ATIVADO: Acesso total garantido para " + emailUsuario);
-        return; // Sai da função, não esconde nada
-    }
-
-    // 3. REGRA DE ADMIN
     if (modulos.includes('admin') || modulos.includes('todos')) {
-        console.log("🔓 MODO ADMIN/TODOS ATIVADO: Acesso total garantido.");
+        console.log("🔓 MODO ADMIN/TODOS ATIVADO!");
         return;
     }
 
-    // 4. APLICAR O BLOQUEIO NO MENU
-    console.log("🔒 Iniciando varredura do menu...");
+    // Aplica o bloqueio para usuários normais
     const itensMenu = document.querySelectorAll('.menu-item[data-modulo]');
-    
     itensMenu.forEach(item => {
         const moduloDoBotao = item.getAttribute('data-modulo').toLowerCase();
-        const temPermissao = modulos.includes(moduloDoBotao);
-        
-        console.log(`   -> Botão "${moduloDoBotao}": Tem permissão?`, temPermissao);
-
-        if (!temPermissao) {
+        if (!modulos.includes(moduloDoBotao)) {
             item.style.display = 'none';
-            console.log(`      ❌ ESCONDIDO: ${moduloDoBotao}`);
-        } else {
-            console.log(`      ✅ VISÍVEL: ${moduloDoBotao}`);
         }
     });
 
-    // 5. CONTROLE DO ROBÔ DA IA (FAB)
     const fabIa = document.querySelector('.fab-ia');
     if (fabIa && !modulos.includes('ia_geral') && !modulos.includes('ia')) {
         fabIa.style.display = 'none';
-        console.log("      ❌ Robô da IA escondido.");
     }
 }
 
