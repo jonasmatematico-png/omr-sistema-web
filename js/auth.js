@@ -132,30 +132,35 @@ async function mostrarPrincipal(email) {
 }
 
 // ========================================================================
-// 🔒 NOVA FUNÇÃO: ESCONDE/MOSTRA BOTÕES COM BASE NOS MÓDULOS ATIVOS
+// 🔒 FUNÇÃO: ESCONDE/MOSTRA BOTÕES COM BASE NOS MÓDULOS ATIVOS
 // ========================================================================
-function aplicarPermissoesNoMenu(modulos) {
-    // Se o usuário for Admin ou tiver permissão 'todos', não esconde nada!
-    if (modulos.includes('admin') || modulos.includes('todos')) {
-        console.log("🔓 Modo Administrador: Todos os menus visíveis.");
-        return;
+function aplicarPermissoesNoMenu(modulos, emailUsuario) {
+    // 🛡️ REGRA DE OURO: Se for o e-mail do gestor, libera TUDO sempre!
+    // (Substitua pelo seu e-mail exato de gestor, se for diferente)
+    const emailGestorMaster = 'jonasmatematico@yahoo.com.br'; 
+    
+    if (emailUsuario.toLowerCase() === emailGestorMaster.toLowerCase() || 
+        modulos.includes('admin') || 
+        modulos.includes('todos')) {
+        console.log("🔓 MODO GESTOR ATIVADO: Acesso total garantido.");
+        return; // Sai da função sem esconder nada
     }
 
-    // Pega todos os itens do menu que têm a etiqueta 'data-modulo'
+    // Para usuários normais, aplica o filtro
     const itensMenu = document.querySelectorAll('.menu-item[data-modulo]');
     
     itensMenu.forEach(item => {
         const moduloDoBotao = item.getAttribute('data-modulo');
         
-        // Se o módulo do botão NÃO estiver na lista de permissões do usuário, esconde!
+        // Se o módulo do botão NÃO estiver na lista de permissões, esconde!
         if (!modulos.includes(moduloDoBotao)) {
             item.style.display = 'none';
         }
     });
 
-    // Controle extra para o Robô da IA (FAB)
+    // Controle do Robô da IA
     const fabIa = document.querySelector('.fab-ia');
-    if (fabIa && !modulos.includes('ia') && !modulos.includes('ia_geral')) {
+    if (fabIa && !modulos.includes('ia_geral') && !modulos.includes('ia')) {
         fabIa.style.display = 'none';
     }
 }
