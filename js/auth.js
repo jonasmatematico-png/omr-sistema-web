@@ -91,23 +91,35 @@ function sair() {
     location.reload(); 
 }
 
-function mostrarPrincipal(email) {
-    alert("✅ SISTEMA INICIALIZADO COM SUCESSO!\n\nLogado como: " + email);
+async function mostrarPrincipal(email) {
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('mainScreen').classList.remove('hidden');
     document.getElementById('userEmail').textContent = email;
     document.getElementById('userAvatar').textContent = email.charAt(0).toUpperCase();
     
-    var fab = document.querySelector('.fab-ia');
-    if(fab) fab.style.display = 'flex';
-    
-    const EMAIL_ADMIN_MASTER = 'jonasmatematico@yahoo.com.br';
-    var btnGestao = document.querySelector('.menu-item[onclick="navegarPara(\'view-gestao\', this)"]');
-    if (btnGestao) {
-        if (email === EMAIL_ADMIN_MASTER) btnGestao.style.display = 'flex';
-        else btnGestao.style.display = 'none';
+    try {
+        // 1. CONSULTAR O BACKEND PARA SABER OS MÓDULOS ATIVOS DESTE USUÁRIO
+        const response = await fetch(`${API_BASE_URL}/api/perfil?email=${encodeURIComponent(email)}`);
+        const resultado = await response.json();
+        
+        let modulosAtivos = [];
+        
+        if (resultado.sucesso && resultado.perfil && resultado.perfil.modulos_ativos) {
+            modulosAtivos = resultado.perfil.modulos_ativos;
+            // Salva no localStorage para o sistema todo saber
+            localStorage.setItem('modulos_ativos', JSON.stringify(modulosAtivos));
+            console.log("✅ Módulos carregados:", modulosAtivos);
+        }
+
+        // 2. APLICAR AS PERMISSÕES NO MENU (MÁGICA ACONTECE AQUI!)
+        aplicarPermissoesNoMenu(modulosAtivos);
+
+    } catch (e) {
+        console.error("Erro ao buscar permissões do perfil:", e);
+        // Em caso de erro, libera tudo para não travar o sistema, mas avisa no console
     }
-    
+
+    // 3. CARREGAR AS FUNCIONALIDADES INICIAIS
     navegarPara('view-provas', document.querySelector('.menu-item'));
     novoForm();
     carregarProvas();
@@ -116,9 +128,36 @@ function mostrarPrincipal(email) {
     carregarSelectsPlanilha();
     carregarSelectsCorretor();
     carregarProvasObj();
-    
-    // Carrega os selects do diagnóstico direto do Supabase
     carregarSelectsDiagnosticoDireto(); 
+}
+
+// ========================================================================
+// 🔒 NOVA FUNÇÃO: ESCONDE/MOSTRA BOTÕES COM BASE NOS MÓDULOS ATIVOS
+// ========================================================================
+function aplicarPermissoesNoMenu(modulos) {
+    // Se o usuário for Admin ou tiver permissão 'todos', não esconde nada!
+    if (modulos.includes('admin') || modulos.includes('todos')) {
+        console.log("🔓 Modo Administrador: Todos os menus visíveis.");
+        return;
+    }
+
+    // Pega todos os itens do menu que têm a etiqueta 'data-modulo'
+    const itensMenu = document.querySelectorAll('.menu-item[data-modulo]');
+    
+    itensMenu.forEach(item => {
+        const moduloDoBotao = item.getAttribute('data-modulo');
+        
+        // Se o módulo do botão NÃO estiver na lista de permissões do usuário, esconde!
+        if (!modulos.includes(moduloDoBotao)) {
+            item.style.display = 'none';
+        }
+    });
+
+    // Controle extra para o Robô da IA (FAB)
+    const fabIa = document.querySelector('.fab-ia');
+    if (fabIa && !modulos.includes('ia') && !modulos.includes('ia_geral')) {
+        fabIa.style.display = 'none';
+    }
 }
 
 // 🆕 NOVA FUNÇÃO: Carrega Provas e Turmas de forma SEGURA

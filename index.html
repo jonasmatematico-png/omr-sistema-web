@@ -40,27 +40,34 @@
 
 <!-- TELA PRINCIPAL -->
 <div id="mainScreen" class="main-screen hidden">
+
 <div class="sidebar">
-<div class="sidebar-header">
-<h1>📊 OMR Sistema</h1>
-<p>Gestão de Avaliações</p>
-</div>
-<div class="menu-item active" onclick="navegarPara('view-provas', this)">📝 Provas Abertas</div>
-<div class="menu-item" onclick="navegarPara('view-objetivas', this)">✅ Provas Objetivas</div>
-<div class="menu-item" onclick="navegarPara('view-diagnostico', this)">📊 Diagnóstico</div>
-<div class="menu-item" onclick="navegarPara('view-planilha', this)">📋 Planilha</div>
-<div class="menu-item" onclick="navegarPara('view-corretor', this)">✏️ Corretor Manual</div>
-<div class="menu-item" onclick="navegarPara('view-qr', this)">🔲 QR Codes</div>
-<div class="menu-item" onclick="window.open('correcao-objetiva.html', '_blank')" style="background: #e8f5e9; border-left-color: #28a745; color: #28a745; font-weight: 600;">📝 Correção Objetiva (OMR)</div>
-<div class="menu-item" onclick="window.open('correcao-dissertativa.html', '_blank')" style="background: #e0f7fa; border-left-color: #008080; color: #008080; font-weight: 600;"> Correção Dissertativa</div>
-<div class="menu-item" onclick="navegarPara('view-gestao', this)" style="display:none;">👥 Gestão</div>
-<div class="sidebar-footer">
-<div class="user-info">
-<div class="user-avatar" id="userAvatar">U</div>
-<div class="user-email" id="userEmail">usuario@email.com</div>
-</div>
-<button class="btn-logout" onclick="sair()">Sair</button>
-</div>
+    <div class="sidebar-header">
+        <h1>📊 OMR Sistema</h1>
+        <p>Gestão de Avaliações</p>
+    </div>
+    
+    <!-- ADICIONAMOS O data-modulo EM CADA ITEM -->
+    <div class="menu-item active" data-modulo="dissertativa" onclick="navegarPara('view-provas', this)">📝 Provas Abertas</div>
+    <div class="menu-item" data-modulo="objetiva" onclick="navegarPara('view-objetivas', this)">✅ Provas Objetivas</div>
+    <div class="menu-item" data-modulo="diagnostico" onclick="navegarPara('view-diagnostico', this)">📊 Diagnóstico</div>
+    <div class="menu-item" data-modulo="planilha" onclick="navegarPara('view-planilha', this)">📋 Planilha</div>
+    <div class="menu-item" data-modulo="corretor" onclick="navegarPara('view-corretor', this)">✏️ Corretor Manual</div>
+    <div class="menu-item" data-modulo="qr" onclick="navegarPara('view-qr', this)">🔲 QR Codes</div>
+    
+    <!-- Links externos também podem ser controlados por classes ou IDs, mas vamos simplificar -->
+    <div class="menu-item" data-modulo="omr" onclick="window.open('correcao-objetiva.html', '_blank')" style="background: #e8f5e9; border-left-color: #28a745; color: #28a745; font-weight: 600;">📝 Correção Objetiva (OMR)</div>
+    <div class="menu-item" data-modulo="dissertativa" onclick="window.open('correcao-dissertativa.html', '_blank')" style="background: #e0f7fa; border-left-color: #008080; color: #008080; font-weight: 600;"> Correção Dissertativa</div>
+    
+    <div class="menu-item" data-modulo="gestao" onclick="navegarPara('view-gestao', this)">👥 Gestão</div>
+    
+    <div class="sidebar-footer">
+        <div class="user-info">
+            <div class="user-avatar" id="userAvatar">U</div>
+            <div class="user-email" id="userEmail">usuario@email.com</div>
+        </div>
+        <button class="btn-logout" onclick="sair()">Sair</button>
+    </div>
 </div>
 
 <div class="content">
