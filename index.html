@@ -726,22 +726,36 @@ RECALCULAR E CLASSIFICAR TURMA
 </div>
 </div>
 
-<!-- MODAL: EDITAR TURMAS -->
-<div id="modalEditTurmas" class="modal">
-<div class="modal-content" style="max-width: 500px;">
-<div class="modal-header">
-<h3>✏️ Editar Acesso às Turmas</h3>
-<button class="btn btn-sm" onclick="fecharModal('modalEditTurmas')">✕</button>
-</div>
-<p style="font-size: 13px; color: #666; margin-bottom: 12px;">Selecione quais turmas este usuário pode visualizar e gerenciar.</p>
-<div id="listaTurmasCheckbox" style="max-height: 300px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 6px; background: #fafafa;">
-<p style="text-align:center; color:#999;">Carregando turmas...</p>
-</div>
-<div style="display: flex; gap: 8px; margin-top: 16px;">
-<button class="btn btn-secondary" style="flex: 1;" onclick="fecharModal('modalEditTurmas')">Cancelar</button>
-<button class="btn btn-primary" style="flex: 1;" onclick="salvarEdicaoTurmas()" id="btnSalvarTurmas">💾 SALVAR ALTERAÇÕES</button>
-</div>
-</div>
+<!-- MODAL: EDITAR PERFIL COMPLETO (TURMAS + MÓDULOS) -->
+<div id="modalEditPerfil" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3>⚙️ Editar Permissões do Professor</h3>
+            <button class="btn btn-sm" onclick="fecharModal('modalEditPerfil')">✕</button>
+        </div>
+        
+        <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
+            Usuário: <strong id="nomeUsuarioEditando">...</strong> (<span id="emailUsuarioEditando">...</span>)
+        </p>
+
+        <!-- SEÇÃO 1: MÓDULOS DO SISTEMA -->
+        <h4 style="margin: 15px 0 8px 0; color: #008080;">📱 Módulos de Acesso:</h4>
+        <div id="listaModulosCheckbox" style="max-height: 150px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 6px; background: #f9f9f9; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <p style="text-align:center; color:#999; grid-column: 1/-1;">Carregando módulos...</p>
+        </div>
+
+        <!-- SEÇÃO 2: TURMAS VINCULADAS -->
+        <h4 style="margin: 20px 0 8px 0; color: #008080;">🏫 Turmas Permitidas:</h4>
+        <div id="listaTurmasCheckbox" style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 6px; background: #fafafa;">
+            <p style="text-align:center; color:#999;">Carregando turmas...</p>
+        </div>
+
+        <!-- BOTÕES DE AÇÃO -->
+        <div style="display: flex; gap: 8px; margin-top: 20px;">
+            <button class="btn btn-secondary" style="flex: 1;" onclick="fecharModal('modalEditPerfil')">Cancelar</button>
+            <button class="btn btn-primary" style="flex: 1;" onclick="salvarPerfilCompleto()" id="btnSalvarPerfil">💾 SALVAR ALTERAÇÕES</button>
+        </div>
+    </div>
 </div>
 
 <!-- MODAL: SELECIONAR ALUNO PARA INTERVENÇÃO -->
