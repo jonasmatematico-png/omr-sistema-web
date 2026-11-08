@@ -74,50 +74,61 @@ async function abrirEditorPerfil(userId, userEmail) {
     document.getElementById('nomeUsuarioEditando').textContent = userEmail.split('@')[0];
     document.getElementById('emailUsuarioEditando').textContent = userEmail;
 
-    // Busca direta e segura no Supabase
-    const { data: perfilData, error: fetchError } = await supabase
-        .from('perfis')
-        .select('turmas_ids, modulos_ativos')
-        .eq('id', userId)
-        .single();
-
-    if (fetchError) {
-        console.error("Erro ao buscar perfil:", fetchError);
-        toast('Erro ao carregar dados do usuário', 'error');
-        return;
-    }
-
-    // Normaliza Módulos (lida com null, string "{a,b}" ou array ["a","b"])
-    let modulosArray = [];
-    if (perfilData && perfilData.modulos_ativos) {
-        if (Array.isArray(perfilData.modulos_ativos)) modulosArray = perfilData.modulos_ativos;
-        else if (typeof perfilData.modulos_ativos === 'string') modulosArray = perfilData.modulos_ativos.replace(/[{}]/g, '').split(',').map(s => s.trim());
-    }
-
-    // Normaliza Turmas
-    let turmasArray = [];
-    if (perfilData && perfilData.turmas_ids) {
-        if (Array.isArray(perfilData.turmas_ids)) turmasArray = perfilData.turmas_ids;
-        else if (typeof perfilData.turmas_ids === 'string') turmasArray = perfilData.turmas_ids.replace(/[{}]/g, '').split(',').map(s => parseInt(s.trim()));
-    }
-
-    // Renderiza Checkboxes de Módulos
-    const containerModulos = document.getElementById('listaModulosCheckbox');
-    containerModulos.innerHTML = '';
-    TODOS_OS_MODULOS.forEach(mod => {
-        const isChecked = modulosArray.includes(mod.id) ? 'checked' : '';
-        containerModulos.innerHTML += `
-            <label style="display:flex; align-items:center; gap:6px; padding:6px; background:#fff; border:1px solid #eee; border-radius:4px; cursor:pointer; font-size:13px;">
-                <input type="checkbox" class="chk-modulo" value="${mod.id}" ${isChecked} style="width:auto; accent-color:#008080;">
-                <span>${mod.nome}</span>
-            </label>`;
-    });
-
-    // Renderiza Checkboxes de Turmas
-    const containerTurmas = document.getElementById('listaTurmasCheckbox');
-    containerTurmas.innerHTML = '<p style="text-align:center; color:#666;">⏳ Carregando turmas...</p>';
-    
     try {
+        // MUDANÇA MÁGICA: Usamos .limit(1) em vez de .single() para evitar o erro 406 se o RLS bloquear
+        const { data: perfilDataArray, error: fetchError } = await supabase
+            .from('perfis')
+            .select('turmas_ids, modulos_ativos')
+            .eq('id', userId)
+            .limit(1);
+
+        if (fetchError) {
+            console.error("❌ Erro ao buscar perfil no Supabase:", fetchError);
+            toast('Erro de conexão ao carregar dados.', 'error');
+            return;
+        }
+
+        // Pega o primeiro item se existir, senão null
+        const perfilData = perfilDataArray && perfilDataArray.length > 0 ? perfilDataArray[0] : null;
+
+        if (!perfilData) {
+            console.warn("⚠️ Nenhum dado de perfil encontrado para este ID. Verifique as permissões do banco (RLS).");
+            toast('Perfil não encontrado ou acesso bloqueado.', 'error');
+            return;
+        }
+
+        // Normaliza Módulos
+        let modulosArray = [];
+        if (perfilData.modulos_ativos) {
+            if (Array.isArray(perfilData.modulos_ativos)) modulosArray = perfilData.modulos_ativos;
+            else if (typeof perfilData.modulos_ativos === 'string') modulosArray = perfilData.modulos_ativos.replace(/[{}]/g, '').split(',').map(s => s.trim());
+        }
+
+        // Normaliza Turmas
+        let turmasArray = [];
+        if (perfilData.turmas_ids) {
+            if (Array.isArray(perfilData.turmas_ids)) turmasArray = perfilData.turmas_ids;
+            else if (typeof perfilData.turmas_ids === 'string') turmasArray = perfilData.turmas_ids.replace(/[{}]/g, '').split(',').map(s => parseInt(s.trim()));
+        }
+
+        console.log("✅ Dados carregados com sucesso:", { modulos: modulosArray, turmas: turmasArray });
+
+        // Renderiza Checkboxes de Módulos
+        const containerModulos = document.getElementById('listaModulosCheckbox');
+        containerModulos.innerHTML = '';
+        TODOS_OS_MODULOS.forEach(mod => {
+            const isChecked = modulosArray.includes(mod.id) ? 'checked' : '';
+            containerModulos.innerHTML += `
+                <label style="display:flex; align-items:center; gap:6px; padding:6px; background:#fff; border:1px solid #eee; border-radius:4px; cursor:pointer; font-size:13px;">
+                    <input type="checkbox" class="chk-modulo" value="${mod.id}" ${isChecked} style="width:auto; accent-color:#008080;">
+                    <span>${mod.nome}</span>
+                </label>`;
+        });
+
+        // Renderiza Checkboxes de Turmas
+        const containerTurmas = document.getElementById('listaTurmasCheckbox');
+        containerTurmas.innerHTML = '<p style="text-align:center; color:#666;">⏳ Carregando turmas...</p>';
+        
         const r = await supabase.from('turmas').select('id, nome').order('nome');
         const todasAsTurmas = r.data || [];
         
@@ -132,11 +143,11 @@ async function abrirEditorPerfil(userId, userEmail) {
         });
         containerTurmas.innerHTML = htmlTurmas || '<p style="text-align:center; color:#999;">Nenhuma turma no sistema.</p>';
         
-        // Abre o modal (ID atualizado para modalEditPerfil)
         document.getElementById('modalEditPerfil').classList.add('active');
         
     } catch(e) { 
-        containerTurmas.innerHTML = '<p style="color:red; text-align:center;">Erro: ' + e.message + '</p>'; 
+        console.error("Erro crítico:", e);
+        toast('Erro inesperado: ' + e.message, 'error');
     }
 }
 
