@@ -92,7 +92,7 @@ function sair() {
 }
 
 async function mostrarPrincipal(email) {
-    // 🛡️ GARANTIA DE EMAIL: Declara emailFinal logo no início, fora de qualquer bloco
+    
     const emailFinal = (email && email !== 'undefined' && email.trim() !== '') 
         ? email 
         : (localStorage.getItem('sb_email') || 'desconhecido');
