@@ -171,28 +171,43 @@ function aplicarPermissoesNoMenu(modulosRaw, emailUsuario) {
     }
 }
 
-// 🆕 NOVA FUNÇÃO: Carrega Provas e Turmas de forma SEGURA
+// 🆕 NOVA FUNÇÃO: Carrega Provas e Turmas de forma SEGURA (COM TIMEOUT DE 15s)
 async function carregarSelectsDiagnosticoDireto() {
-    // 1. Carregar Provas (Continua direto do Supabase)
+    // 1. Carregar Provas (Continua direto do Supabase - é rápido)
     const selProva = document.getElementById('selectAvaliacao');
     if (selProva) {
-        const { data: provas, error } = await supabase.from('avaliacoes').select('id, nome').order('id', { ascending: false });
-        selProva.innerHTML = '<option value="">-- Escolha uma prova --</option>';
-        if (!error && provas) {
-            provas.forEach(av => { selProva.innerHTML += `<option value="${av.id}">${av.nome}</option>`; });
+        try {
+            const { data: provas, error } = await supabase.from('avaliacoes').select('id, nome').order('id', { ascending: false });
+            selProva.innerHTML = '<option value="">-- Escolha uma prova --</option>';
+            if (!error && provas) {
+                provas.forEach(av => { selProva.innerHTML += `<option value="${av.id}">${av.nome}</option>`; });
+            }
+        } catch (e) {
+            console.error("Erro ao carregar provas:", e);
         }
     }
     
-    // 2. Carregar Turmas AGORA PELO BACKEND SEGURO (FILTRADO POR EMAIL)
+    // 2. Carregar Turmas PELO BACKEND SEGURO (COM PROTEÇÃO CONTRA TRAVAMENTO)
     const selTurma = document.getElementById('selectTurma');
     if (selTurma) {
         selTurma.innerHTML = '<option value="">⏳ Carregando turmas...</option>';
         
         const emailLogado = localStorage.getItem('sb_email') || userEmail;
         const BACKEND_URL = "https://omr-backend-laboratorio.onrender.com"; 
+        const url = `${BACKEND_URL}/api/turmas?email=${encodeURIComponent(emailLogado)}`;
         
+        console.log("🔍 Tentando buscar turmas em:", url);
+
+        // Configuração de Timeout (15 segundos)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); 
+
         try {
-            const response = await fetch(`${BACKEND_URL}/api/turmas?email=${encodeURIComponent(emailLogado)}`);
+            const response = await fetch(url, { signal: controller.signal });
+            clearTimeout(timeoutId); // Se deu certo, cancela o timer
+            
+            if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
+            
             const resultado = await response.json();
             
             selTurma.innerHTML = '<option value="">Todas as turmas liberadas</option>';
@@ -207,8 +222,10 @@ async function carregarSelectsDiagnosticoDireto() {
                 console.log("⚠️ Nenhuma turma encontrada para este professor.");
             }
         } catch (e) {
-            selTurma.innerHTML = '<option value="">❌ Erro ao carregar turmas</option>';
-            console.error("Erro ao buscar turmas:", e);
+            clearTimeout(timeoutId);
+            console.error("❌ Erro ao buscar turmas no backend:", e);
+            // Mostra erro na tela em vez de ficar carregando para sempre
+            selTurma.innerHTML = '<option value="">❌ Erro de conexão (Tente recarregar a página)</option>';
         }
     }
 }
