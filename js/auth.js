@@ -139,6 +139,11 @@ function aplicarPermissoesNoMenu(modulosRaw, emailUsuario) {
     const emailGestorMaster = 'jonasmatematico@yahoo.com.br';
     if (emailUsuario && emailUsuario.toLowerCase().trim() === emailGestorMaster.toLowerCase().trim()) {
         console.log("🔓 MODO GESTOR MASTER ATIVADO! Acesso total garantido.");
+        
+        // 🤖 GARANTE QUE O ROBÔ APAREÇA PARA O GESTOR
+        const fabIa = document.querySelector('.fab-ia');
+        if (fabIa) fabIa.style.display = 'flex';
+        
         return; // Sai da função, não esconde NADA
     }
 
