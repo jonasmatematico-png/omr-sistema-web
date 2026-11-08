@@ -13,7 +13,7 @@ const TODOS_OS_MODULOS = [
        { id: 'corretor', nome: '✏️ Corretor Manual' },
        { id: 'qr', nome: '🔲 QR Codes' },
        { id: 'omr', nome: '📝 Correção OMR' },
-       { id: 'correcao_dissertativa', nome: '✍️ Correção Dissertativa' }, // <-- ADICIONADO AQUI!
+       { id: 'correcao_dissertativa', nome: '✍️ Correção Dissertativa' },
        { id: 'ia_geral', nome: '🤖 Assistente IA' },
        { id: 'gestao', nome: '👥 Gestão (Admin)' }
    ];

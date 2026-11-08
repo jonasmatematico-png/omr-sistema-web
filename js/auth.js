@@ -92,7 +92,6 @@ function sair() {
 }
 
 async function mostrarPrincipal(email) {
-    // 🚨 SEM ALERT AQUI! TUDO LIMPO E PROFISSIONAL.
     const emailFinal = (email && email !== 'undefined' && email.trim() !== '') 
         ? email 
         : (localStorage.getItem('sb_email') || 'desconhecido');
@@ -107,16 +106,22 @@ async function mostrarPrincipal(email) {
     let modulosAtivos = [];
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/perfil?email=${encodeURIComponent(emailFinal)}`);
-        if (response.ok) {
-            const resultado = await response.json();
-            if (resultado.sucesso && resultado.perfil && resultado.perfil.modulos_ativos) {
-                modulosAtivos = resultado.perfil.modulos_ativos;
-            }
+    const response = await fetch(`${API_BASE_URL}/api/perfil?email=${encodeURIComponent(emailFinal)}`);
+    if (response.ok) {
+        const resultado = await response.json();
+        if (resultado.sucesso && resultado.perfil && resultado.perfil.modulos_ativos) {
+            modulosAtivos = resultado.perfil.modulos_ativos;
         }
-    } catch (e) {
-        console.error("Erro na comunicação com o backend de perfil:", e);
+    } else {
+        console.warn("⚠️ Backend retornou erro. Usando fallback: libera IA para todos.");
+        // FALLBACK: Se o backend falhar, assume que o usuário tem acesso à IA
+        modulosAtivos = ['ia_geral']; 
     }
+} catch (e) {
+    console.error("Erro na comunicação com o backend de perfil:", e);
+    // FALLBACK: Se der erro de conexão, libera a IA
+    modulosAtivos = ['ia_geral'];
+}
 
     aplicarPermissoesNoMenu(modulosAtivos, emailFinal);
 
