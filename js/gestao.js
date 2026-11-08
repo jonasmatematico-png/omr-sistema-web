@@ -6,16 +6,17 @@ var usuarioEmEdicaoId = null;
 
 // Lista oficial de todos os módulos que o sistema possui
 const TODOS_OS_MODULOS = [
-    { id: 'dissertativa', nome: '📝 Provas Abertas' },
-    { id: 'objetiva', nome: '✅ Provas Objetivas' },
-    { id: 'diagnostico', nome: '📊 Diagnóstico' },
-    { id: 'planilha', nome: '📋 Planilha' },
-    { id: 'corretor', nome: '✏️ Corretor Manual' },
-    { id: 'qr', nome: '🔲 QR Codes' },
-    { id: 'omr', nome: '📝 Correção OMR' },
-    { id: 'ia_geral', nome: '🤖 Assistente IA' },
-    { id: 'gestao', nome: '👥 Gestão (Admin)' }
-];
+       { id: 'dissertativa', nome: '📝 Provas Abertas' },
+       { id: 'objetiva', nome: '✅ Provas Objetivas' },
+       { id: 'diagnostico', nome: '📊 Diagnóstico' },
+       { id: 'planilha', nome: '📋 Planilha' },
+       { id: 'corretor', nome: '✏️ Corretor Manual' },
+       { id: 'qr', nome: '🔲 QR Codes' },
+       { id: 'omr', nome: '📝 Correção OMR' },
+       { id: 'correcao_dissertativa', nome: '✍️ Correção Dissertativa' }, // <-- ADICIONADO AQUI!
+       { id: 'ia_geral', nome: '🤖 Assistente IA' },
+       { id: 'gestao', nome: '👥 Gestão (Admin)' }
+   ];
 
 // 1. CARREGA A LISTA DE USUÁRIOS NA TELA
 async function carregarListaUsuarios() {

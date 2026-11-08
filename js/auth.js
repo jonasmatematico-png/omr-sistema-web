@@ -92,14 +92,13 @@ function sair() {
 }
 
 async function mostrarPrincipal(email) {
-    
+    // 🚨 SEM ALERT AQUI! TUDO LIMPO E PROFISSIONAL.
     const emailFinal = (email && email !== 'undefined' && email.trim() !== '') 
         ? email 
         : (localStorage.getItem('sb_email') || 'desconhecido');
     
     console.log("📧 Email detectado para sessão:", emailFinal);
 
-    // Esconde tela de login e mostra a principal
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('mainScreen').classList.remove('hidden');
     document.getElementById('userEmail').textContent = emailFinal;
@@ -108,26 +107,19 @@ async function mostrarPrincipal(email) {
     let modulosAtivos = [];
 
     try {
-        // Tenta buscar os módulos do backend
         const response = await fetch(`${API_BASE_URL}/api/perfil?email=${encodeURIComponent(emailFinal)}`);
-        
         if (response.ok) {
             const resultado = await response.json();
             if (resultado.sucesso && resultado.perfil && resultado.perfil.modulos_ativos) {
                 modulosAtivos = resultado.perfil.modulos_ativos;
-                console.log("✅ Módulos carregados do backend:", modulosAtivos);
             }
-        } else {
-            console.warn("⚠️ Backend retornou erro ao buscar perfil. Usando modo de fallback.");
         }
     } catch (e) {
         console.error("Erro na comunicação com o backend de perfil:", e);
     }
 
-    // Aplica as permissões no menu (passa o emailFinal que agora está definido)
     aplicarPermissoesNoMenu(modulosAtivos, emailFinal);
 
-    // Carrega as funcionalidades iniciais do sistema
     navegarPara('view-provas', document.querySelector('.menu-item'));
     novoForm();
     carregarProvas();
