@@ -92,13 +92,12 @@ function sair() {
 }
 
 async function mostrarPrincipal(email) {
-    // 🛡️ GARANTIA DE EMAIL: Se não veio por parâmetro, pega do localStorage
-    const emailFinal = (email && email !== 'undefined') ? email : (localStorage.getItem('sb_email') || 'desconhecido');
+    // ✅ ALERTA REMOVIDO PARA UMA EXPERIÊNCIA MAIS LIMPA!
     
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('mainScreen').classList.remove('hidden');
-    document.getElementById('userEmail').textContent = emailFinal;
-    document.getElementById('userAvatar').textContent = emailFinal.charAt(0).toUpperCase();
+    document.getElementById('userEmail').textContent = email;
+    document.getElementById('userAvatar').textContent = email.charAt(0).toUpperCase();
     
     let modulosAtivos = [];
 
