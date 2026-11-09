@@ -629,61 +629,6 @@ async function gerarPDF(modo) {
     }
 }
 
-// ========================================================================
-// 📄 GERADOR DE PDF DA PROVA OBJETIVA (ALUNO E PROFESSOR)
-// ========================================================================
-
-// Função: Pega os dados da prova objetiva atual
-function pegarDadosProvaObjetivaAtual() {
-    const nomeProva = document.getElementById('nomeProvaObj').value || 'Prova Sem Nome';
-    const bimestre = document.getElementById('bimestreObj').value;
-    const disciplina = document.getElementById('disciplinaObj').value || 'Matemática';
-    const peso = document.getElementById('pesoObj').value || '1';
-    const qtdAlternativas = parseInt(document.getElementById('qtdAlternativasObj').value) || 4;
-    
-    const questoesContainer = document.getElementById('questoesObjContainer');
-    const questoesDivs = questoesContainer.querySelectorAll('.questao-item-obj, [class*="questao"]');
-    
-    const questoes = [];
-    questoesDivs.forEach((div, index) => {
-        // Tenta pegar o enunciado (vários seletores possíveis)
-        let enunciado = '';
-        const elEnunciado = div.querySelector('.enunciado-questao-obj, textarea, [name*="enunciado"]');
-        if (elEnunciado) enunciado = elEnunciado.value || '';
-        
-        // Tenta pegar a resposta correta (gabarito)
-        let respostaCorreta = '';
-        const elResposta = div.querySelector('.gabarito-questao-obj, select[name*="gabarito"], input[name*="correta"]:checked, [name*="correta"]');
-        if (elResposta) {
-            respostaCorreta = elResposta.value || '';
-        }
-        
-        // Tenta pegar as alternativas
-        const alternativas = [];
-        const letras = ['A', 'B', 'C', 'D', 'E'];
-        for (let i = 0; i < qtdAlternativas; i++) {
-            const elAlt = div.querySelector(`[name*="alt${letras[i]}"], [data-alt="${letras[i]}"]`);
-            alternativas.push(elAlt ? (elAlt.value || '') : '');
-        }
-        
-        questoes.push({
-            numero: index + 1,
-            enunciado: enunciado,
-            respostaCorreta: respostaCorreta.toUpperCase(),
-            alternativas: alternativas,
-            valor: (10 / questoesDivs.length).toFixed(1) // Divide 10 pontos igualmente
-        });
-    });
-    
-    return {
-        nome: nomeProva,
-        bimestre: bimestre,
-        disciplina: disciplina,
-        peso: peso,
-        qtdAlternativas: qtdAlternativas,
-        questoes: questoes
-    };
-}
 
 // Função: Monta o cabeçalho da prova objetiva (aluno)
 function montarCabecalhoObjetivoAluno(dadosProva) {
@@ -862,192 +807,161 @@ function gerarPDFProvaObjetivaProfessor() {
 }
 
 // ========================================================================
-// 🖨️ SISTEMA DE IMPRESSÃO DEFINITIVO (FUNCIONA 100%)
+// 🖨️ SISTEMA DE IMPRESSÃO UNIFICADO E BLINDADO (RESOLVE CONFLITOS)
 // ========================================================================
 
-function gerarPDFProvaAluno() {
-    imprimirProva('aluno');
+// 1. Função que LIMPA qualquer resquício de impressão anterior
+function limparAmbienteDeImpressao() {
+    const idsParaRemover = ['container-impressao', 'container-impressao-obj', 'style-impressao', 'style-impressao-obj'];
+    idsParaRemover.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    });
 }
 
-function gerarPDFProvaProfessor() {
-    imprimirProva('professor');
-}
-
-function imprimirProva(modo) {
-    const dadosProva = pegarDadosProvaAtual();
+// 2. Função Mestra que executa a impressão
+function executarImpressaoUnificada(htmlContent, containerId, styleId) {
+    limparAmbienteDeImpressao(); // Garante que está limpo
     
-    if (dadosProva.questoes.length === 0) {
-        toast('❌ Adicione pelo menos uma questão!', 'error');
-        return;
-    }
+    const container = document.createElement('div');
+    container.id = containerId;
+    container.innerHTML = htmlContent;
     
-    // Monta o HTML completo
-    let htmlCompleto = '';
-    if (modo === 'aluno') {
-        htmlCompleto = montarCabecalhoAluno(dadosProva) + montarQuestoes(dadosProva, 'aluno');
-    } else {
-        htmlCompleto = montarCabecalhoProfessor(dadosProva) + montarQuestoes(dadosProva, 'professor');
-    }
-    
-    // Cria um elemento temporário NA PRÓPRIA PÁGINA
-    const containerImpressao = document.createElement('div');
-    containerImpressao.id = 'container-impressao';
-    containerImpressao.innerHTML = htmlCompleto;
-    
-    // Adiciona estilos de impressão
     const style = document.createElement('style');
-    style.id = 'style-impressao';
+    style.id = styleId;
     style.textContent = `
         @media screen {
-            #container-impressao {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: white;
-                z-index: 99999;
-                overflow-y: auto;
-                padding: 20px;
-                box-sizing: border-box;
+            #${containerId} {
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: white; z-index: 99999; overflow-y: auto; padding: 20px;
+                box-sizing: border-box; font-family: 'Times New Roman', serif;
             }
-            
-            #container-impressao::before {
-                content: '⏳ Preparando impressão... Feche esta visualização após imprimir (Ctrl+P ou Cmd+P)';
-                display: block;
-                text-align: center;
-                padding: 10px;
-                background: #008080;
-                color: white;
-                font-weight: bold;
-                margin-bottom: 20px;
-                border-radius: 4px;
-            }
-        }
-        
-        @media print {
-            body > *:not(#container-impressao) {
-                display: none !important;
-            }
-            
-            #container-impressao {
-                position: static;
-                width: 100%;
-                height: auto;
-                overflow: visible;
-                padding: 0;
-            }
-            
-            #container-impressao::before {
-                display: none;
-            }
-            
-            @page {
-                size: A4;
-                margin: 15mm;
-            }
-            
-            * {
-                page-break-inside: avoid;
-            }
-            
-            div, table {
-                page-break-inside: avoid;
-            }
-        }
-    `;
-    
-    document.head.appendChild(style);
-    document.body.appendChild(containerImpressao);
-    
-    // Aguarda um momento e abre o diálogo de impressão
-    setTimeout(() => {
-        window.print();
-        
-        // Remove após impressão
-        setTimeout(() => {
-            const container = document.getElementById('container-impressao');
-            const styleEl = document.getElementById('style-impressao');
-            if (container) container.remove();
-            if (styleEl) styleEl.remove();
-        }, 1000);
-    }, 500);
-}
-
-// ========================================================================
-// 🖨️ IMPRESSÃO DA PROVA OBJETIVA (FUNCIONA 100%)
-// ========================================================================
-
-function imprimirProvaObjetiva(modo) {
-    const dadosProva = pegarDadosProvaObjetivaAtual();
-    
-    if (dadosProva.questoes.length === 0) {
-        toast('❌ Adicione pelo menos uma questão!', 'error');
-        return;
-    }
-    
-    let htmlCompleto = '';
-    if (modo === 'aluno') {
-        htmlCompleto = montarCabecalhoObjetivoAluno(dadosProva) + montarQuestoesObjetivas(dadosProva, 'aluno');
-    } else {
-        // Cabeçalho do Professor para Objetiva
-        const emailProfessor = localStorage.getItem('sb_email') || '____________________';
-        const dataHoje = new Date().toLocaleDateString('pt-BR');
-        const nomeEscola = typeof NOME_ESCOLA_PDF !== 'undefined' ? NOME_ESCOLA_PDF : 'ESCOLA ESTADUAL';
-        const secretaria = typeof SECRETARIA_PDF !== 'undefined' ? SECRETARIA_PDF : 'SECRETARIA DE EDUCAÇÃO';
-        
-        htmlCompleto = `
-        <div style="font-family: 'Times New Roman', serif; padding: 20px; color: #000;">
-            <div style="text-align: center; border-bottom: 3px double #000; padding-bottom: 12px; margin-bottom: 15px;">
-                <h2 style="margin: 0; font-size: 16px;">${secretaria}</h2>
-                <h3 style="margin: 5px 0; font-size: 15px;">${nomeEscola}</h3>
-                <p style="margin: 8px 0 0 0; font-size: 15px;"><strong>📋 GABARITO OFICIAL - ${dadosProva.nome.toUpperCase()}</strong></p>
-            </div>
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px; background: #f0f0f0;">
-                <tr><td style="padding: 6px; border: 1px solid #000;"><strong>Professor(a):</strong> ${emailProfessor}</td><td style="padding: 6px; border: 1px solid #000;"><strong>Disciplina:</strong> ${dadosProva.disciplina}</td></tr>
-            </table>
-        ` + montarQuestoesObjetivas(dadosProva, 'professor');
-    }
-    
-    // Cria o container de impressão
-    const containerImpressao = document.createElement('div');
-    containerImpressao.id = 'container-impressao-obj';
-    containerImpressao.innerHTML = htmlCompleto + '</div>'; // Fecha a div principal
-    
-    // CSS de impressão PROFISSIONAL
-    const style = document.createElement('style');
-    style.id = 'style-impressao-obj';
-    style.textContent = `
-        @media screen {
-            #container-impressao-obj {
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white;
-                z-index: 99999; overflow-y: auto; padding: 20px; box-sizing: border-box; font-family: 'Times New Roman', serif;
-            }
-            #container-impressao-obj::before {
-                content: '⏳ Preparando impressão... Use Ctrl+P e escolha "Salvar como PDF". Feche esta aba depois.';
-                display: block; text-align: center; padding: 15px; background: #008080; color: white; font-weight: bold; margin-bottom: 20px; border-radius: 8px; font-family: sans-serif;
+            #${containerId}::before {
+                content: '⏳ Preparando impressão... Use Ctrl+P e escolha "Salvar como PDF". Feche esta visualização depois.';
+                display: block; text-align: center; padding: 15px; background: #008080;
+                color: white; font-weight: bold; margin-bottom: 20px; border-radius: 8px; font-family: sans-serif;
             }
         }
         @media print {
-            body > *:not(#container-impressao-obj) { display: none !important; }
-            #container-impressao-obj { position: static !important; width: 100% !important; height: auto !important; overflow: visible !important; padding: 0 !important; background: white !important; }
-            #container-impressao-obj::before { display: none !important; }
+            body > *:not(#${containerId}) { display: none !important; }
+            #${containerId} {
+                position: static !important; width: 100% !important; height: auto !important;
+                overflow: visible !important; padding: 0 !important; background: white !important;
+            }
+            #${containerId}::before { display: none !important; }
             @page { size: A4; margin: 15mm; }
-            .questao-print-item, .questao-card, table, tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+            .questao-print-item, .questao-card, table, tr {
+                page-break-inside: avoid !important; break-inside: avoid !important;
+            }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
     `;
     
     document.head.appendChild(style);
-    document.body.appendChild(containerImpressao);
+    document.body.appendChild(container);
     
     setTimeout(() => {
         window.print();
         setTimeout(() => {
-            const container = document.getElementById('container-impressao-obj');
-            const styleEl = document.getElementById('style-impressao-obj');
-            if (container) container.remove();
-            if (styleEl) styleEl.remove();
+            limparAmbienteDeImpressao(); // Limpa após imprimir
         }, 1000);
     }, 500);
+}
+
+// ========================================================================
+// 📝 FUNÇÕES DA PROVA DISSERTATIVA (ABERTA)
+// ========================================================================
+
+function gerarPDFProvaAluno() {
+    const dados = pegarDadosProvaAtual();
+    if (dados.questoes.length === 0) return toast('❌ Adicione pelo menos uma questão!', 'error');
+    const html = montarCabecalhoAluno(dados) + montarQuestoes(dados, 'aluno') + '</div>';
+    executarImpressaoUnificada(html, 'container-impressao', 'style-impressao');
+}
+
+function gerarPDFProvaProfessor() {
+    const dados = pegarDadosProvaAtual();
+    if (dados.questoes.length === 0) return toast('❌ Adicione pelo menos uma questão!', 'error');
+    const html = montarCabecalhoProfessor(dados) + montarQuestoes(dados, 'professor') + '</div>';
+    executarImpressaoUnificada(html, 'container-impressao', 'style-impressao');
+}
+
+// ========================================================================
+// ✅ FUNÇÕES DA PROVA OBJETIVA
+// ========================================================================
+
+// Função que lê os dados da tela de Prova Objetiva (Ajustada para o seu HTML)
+function pegarDadosProvaObjetivaAtual() {
+    const nomeProva = document.getElementById('nomeProvaObj')?.value || 'Prova Sem Nome';
+    const bimestre = document.getElementById('bimestreObj')?.value || '1';
+    const disciplina = document.getElementById('disciplinaObj')?.value || 'Matemática';
+    const qtdAlternativas = parseInt(document.getElementById('qtdAlternativasObj')?.value) || 4;
+    
+    // Tenta achar o container de questões objetivas (ajuste o seletor se necessário)
+    const container = document.getElementById('questoesObjContainer') || document.querySelector('.view-objetivas');
+    if (!container) return { questoes: [] };
+    
+    // Pega todos os cards de questão
+    const questoesDivs = container.querySelectorAll('.questao-card, .questao-item-obj, [class*="questao"]');
+    const questoes = [];
+    
+    questoesDivs.forEach((div, index) => {
+        // Tenta pegar o enunciado
+        let enunciado = '';
+        const elEnunciado = div.querySelector('textarea') || div.querySelector('[name*="enunciado"]');
+        if (elEnunciado) enunciado = elEnunciado.value;
+        
+        // Tenta pegar o gabarito (select ou input)
+        let respostaCorreta = '';
+        const elGabarito = div.querySelector('select') || div.querySelector('input[type="radio"]:checked') || div.querySelector('[name*="gabarito"]');
+        if (elGabarito) respostaCorreta = elGabarito.value;
+        
+        // Tenta pegar as alternativas (A, B, C, D)
+        const alternativas = [];
+        const letras = ['A', 'B', 'C', 'D', 'E'];
+        for (let i = 0; i < qtdAlternativas; i++) {
+            const elAlt = div.querySelector(`[name*="alt${letras[i]}"]`) || div.querySelector(`[data-alt="${letras[i]}"]`);
+            alternativas.push(elAlt ? elAlt.value : '');
+        }
+        
+        questoes.push({
+            numero: index + 1,
+            enunciado: enunciado,
+            respostaCorreta: respostaCorreta.toUpperCase(),
+            alternativas: alternativas,
+            valor: (10 / Math.max(questoesDivs.length, 1)).toFixed(1)
+        });
+    });
+    
+    console.log("📦 Dados da Prova Objetiva extraídos:", questoes);
+    return { nome: nomeProva, bimestre: bimestre, disciplina: disciplina, questoes: questoes };
+}
+
+function imprimirProvaObjetivaAluno() {
+    const dados = pegarDadosProvaObjetivaAtual();
+    if (dados.questoes.length === 0) return toast('❌ Adicione pelo menos uma questão objetiva!', 'error');
+    const html = montarCabecalhoObjetivoAluno(dados) + montarQuestoesObjetivas(dados, 'aluno') + '</div>';
+    executarImpressaoUnificada(html, 'container-impressao-obj', 'style-impressao-obj');
+}
+
+function imprimirProvaObjetivaProfessor() {
+    const dados = pegarDadosProvaObjetivaAtual();
+    if (dados.questoes.length === 0) return toast('❌ Adicione pelo menos uma questão objetiva!', 'error');
+    
+    const email = localStorage.getItem('sb_email') || '____________________';
+    const nomeEscola = typeof NOME_ESCOLA_PDF !== 'undefined' ? NOME_ESCOLA_PDF : 'ESCOLA ESTADUAL';
+    
+    let html = `
+    <div style="font-family: 'Times New Roman', serif; padding: 20px; color: #000;">
+        <div style="text-align: center; border-bottom: 3px double #000; padding-bottom: 12px; margin-bottom: 15px;">
+            <h2 style="margin: 0; font-size: 16px;">SECRETARIA DE EDUCAÇÃO</h2>
+            <h3 style="margin: 5px 0; font-size: 15px;">${nomeEscola}</h3>
+            <p style="margin: 8px 0 0 0; font-size: 15px;"><strong>📋 GABARITO OFICIAL - ${dados.nome.toUpperCase()}</strong></p>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px; background: #f0f0f0;">
+            <tr><td style="padding: 6px; border: 1px solid #000;"><strong>Professor(a):</strong> ${email}</td><td style="padding: 6px; border: 1px solid #000;"><strong>Disciplina:</strong> ${dados.disciplina}</td></tr>
+        </table>
+    ` + montarQuestoesObjetivas(dados, 'professor') + '</div>';
+    
+    executarImpressaoUnificada(html, 'container-impressao-obj', 'style-impressao-obj');
 }
