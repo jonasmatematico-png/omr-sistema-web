@@ -274,6 +274,7 @@ async function carregarProvasObj() {
             return '<div class="prova-item"><div class="prova-item-info"><strong>' + p.nome + '</strong><div class="prova-item-meta">' + p.numero_questoes + ' questões • ' + p.bimestre + 'º bimestre' + tipoDisplay + '</div></div>' +
                 '<div style="display:flex;gap:6px;">' +
                 '<button class="btn btn-primary btn-sm" onclick="imprimirGabaritoObj(' + p.id + ')">🖨️ Gabarito</button>' +
+                '<button class="btn btn-secondary" style="padding: 14px;" onclick="imprimirProvaNativa()">🖨️ IMPRIMIR / SALVAR PDF (NATIVO)</button>' +
                 '<button class="btn btn-warn btn-sm" onclick="editarProvaObj(' + p.id + ')">✏️ Editar</button>' +
                 '<button class="btn btn-danger btn-sm" onclick="excluirProvaObj(' + p.id + ')">🗑️</button>' +
                 '</div></div>';
@@ -882,4 +883,48 @@ function gerarPDFProvaObjetivaAluno() {
 
 function gerarPDFProvaObjetivaProfessor() {
     gerarPDFObjetivo('professor');
+}
+
+function imprimirProvaNativa() {
+    const dadosProva = pegarDadosProvaAtual();
+    if (dadosProva.questoes.length === 0) {
+        toast('❌ Adicione pelo menos uma questão!', 'error');
+        return;
+    }
+    
+    const htmlCompleto = montarCabecalhoAluno(dadosProva) + montarQuestoes(dadosProva, 'aluno') + '</div>';
+    
+    // Cria um iframe invisível para imprimir
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+    
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(`
+        <html>
+        <head>
+            <title>Imprimir Prova</title>
+            <style>
+                body { font-family: 'Times New Roman', serif; padding: 20px; color: #000; }
+                /* Adicione aqui os mesmos estilos inline que você usa no montarCabecalhoAluno se precisar */
+            </style>
+        </head>
+        <body>${htmlCompleto}</body>
+        </html>
+    `);
+    doc.close();
+    
+    // Aguarda carregar e imprime
+    iframe.onload = function() {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        // Remove o iframe depois de imprimir
+        setTimeout(() => document.body.removeChild(iframe), 1000);
+    };
 }
