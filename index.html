@@ -112,6 +112,10 @@ Questões (<span id="totalQuestoes">1</span>)
 <div id="questoesContainer"></div>
 <button id="btnSalvar" class="btn btn-success" style="width: 100%; margin-top: 16px;" onclick="salvarProva()">💾 SALVAR PROVA ABERTA</button>
 </div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+    <button class="btn btn-primary" style="padding: 14px;" onclick="gerarPDFProvaAluno()">📄 GERAR PDF (ALUNO)</button>
+    <button class="btn btn-success" style="padding: 14px;" onclick="gerarPDFProvaProfessor()">📋 GERAR GABARITO (PROFESSOR)</button>
+</div>
 <div class="card">
 <h3>Provas Cadastradas</h3>
 <div id="provasLista" class="loading">Carregando...</div>

@@ -321,3 +321,248 @@ async function excluirProvaObj(id) {
 function imprimirGabaritoObj(id) {
     window.open('correcao-objetiva.html?prova=' + id, '_blank');
 }
+
+// ========================================================================
+// 📄 GERADOR DE PDF DA PROVA (ALUNO E PROFESSOR) - VERSÃO PROFISSIONAL
+// ========================================================================
+
+// 🏫 CONFIGURAÇÃO DA ESCOLA (ALTERE AQUI COM O NOME DA SUA ESCOLA)
+const NOME_ESCOLA = "EMEB PROFESSORA ESTHER VIANNA BOLOGNA";
+const SECRETARIA = "SECRETARIA MUNICIPAL DA EDUCAÇÃO DE BATATAIS";
+
+// Função auxiliar: Pega os dados da prova atual
+function pegarDadosProvaAtual() {
+    const nomeProva = document.getElementById('nomeProva').value || 'Prova Sem Nome';
+    const bimestre = document.getElementById('bimestre').value;
+    const disciplina = document.getElementById('disciplina').value || 'Matemática';
+    const peso = document.getElementById('peso').value || '1';
+    
+    const questoesContainer = document.getElementById('questoesContainer');
+    const questoesDivs = questoesContainer.querySelectorAll('.questao-item');
+    
+    const questoes = [];
+    questoesDivs.forEach((div, index) => {
+        const enunciado = div.querySelector('.enunciado-questao')?.value || div.querySelector('textarea')?.value || '';
+        const resposta = div.querySelector('.resposta-questao')?.value || div.querySelector('input[type="text"]')?.value || '';
+        const valor = div.querySelector('.valor-questao')?.value || '1';
+        
+        questoes.push({
+            numero: index + 1,
+            enunciado: enunciado,
+            resposta: resposta,
+            valor: valor
+        });
+    });
+    
+    return {
+        nome: nomeProva,
+        bimestre: bimestre,
+        disciplina: disciplina,
+        peso: peso,
+        questoes: questoes
+    };
+}
+
+// Função auxiliar: Monta o cabeçalho da VERSÃO DO ALUNO
+function montarCabecalhoAluno(dadosProva) {
+    const emailProfessor = localStorage.getItem('sb_email') || '____________________';
+    const dataHoje = new Date().toLocaleDateString('pt-BR');
+    
+    return `
+    <div style="font-family: 'Times New Roman', serif; padding: 20px; color: #000;">
+        <!-- CABEÇALHO INSTITUCIONAL -->
+        <div style="text-align: center; border-bottom: 3px double #000; padding-bottom: 12px; margin-bottom: 15px;">
+            <h2 style="margin: 0; font-size: 16px; letter-spacing: 1px;">${SECRETARIA}</h2>
+            <h3 style="margin: 5px 0; font-size: 15px; font-weight: bold;">${NOME_ESCOLA}</h3>
+            <p style="margin: 8px 0 0 0; font-size: 14px;">
+                <strong>AVALIAÇÃO ${dadosProva.bimestre}º BIMESTRE - ${dadosProva.nome.toUpperCase()}</strong>
+            </p>
+        </div>
+        
+        <!-- DADOS IDENTIFICADORES -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px;">
+            <tr>
+                <td style="padding: 6px; border: 1px solid #000; width: 60%;">
+                    <strong>Professor(a):</strong> ${emailProfessor}
+                </td>
+                <td style="padding: 6px; border: 1px solid #000; width: 40%;">
+                    <strong>Disciplina:</strong> ${dadosProva.disciplina}
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 6px; border: 1px solid #000;">
+                    <strong>Nome Completo do Aluno(a):</strong> _________________________________________________
+                </td>
+                <td style="padding: 6px; border: 1px solid #000;">
+                    <strong>Ano/Turma:</strong> _________
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 6px; border: 1px solid #000;">
+                    <strong>Nº de Chamada:</strong> _________
+                </td>
+                <td style="padding: 6px; border: 1px solid #000;">
+                    <strong>Data:</strong> ___/___/______
+                </td>
+            </tr>
+        </table>
+        
+        <!-- INSTRUÇÕES -->
+        <div style="background: #f9f9f9; border: 1px solid #ccc; padding: 8px; margin-bottom: 15px; font-size: 12px;">
+            <strong>📌 INSTRUÇÕES:</strong>
+            <ul style="margin: 5px 0 0 0; padding-left: 20px;">
+                <li>Leia atentamente cada questão antes de responder.</li>
+                <li>Responda com letra legível e caneta azul ou preta.</li>
+                <li>Não use corretivo. Em caso de erro, risque e refaça.</li>
+                <li>Valor total da prova: <strong>${dadosProva.questoes.reduce((acc, q) => acc + parseFloat(q.valor || 0), 0).toFixed(1)} pontos</strong></li>
+            </ul>
+        </div>
+        
+        <p style="text-align: center; font-style: italic; margin-bottom: 20px; font-size: 13px;">
+            "O sucesso é a soma de pequenos esforços repetidos dia após dia."
+        </p>
+    `;
+}
+
+// Função auxiliar: Monta o cabeçalho do GABARITO DO PROFESSOR
+function montarCabecalhoProfessor(dadosProva) {
+    const emailProfessor = localStorage.getItem('sb_email') || '____________________';
+    const dataHoje = new Date().toLocaleDateString('pt-BR');
+    
+    return `
+    <div style="font-family: 'Times New Roman', serif; padding: 20px; color: #000;">
+        <div style="text-align: center; border-bottom: 3px double #000; padding-bottom: 12px; margin-bottom: 15px;">
+            <h2 style="margin: 0; font-size: 16px;">${SECRETARIA}</h2>
+            <h3 style="margin: 5px 0; font-size: 15px;">${NOME_ESCOLA}</h3>
+            <p style="margin: 8px 0 0 0; font-size: 15px;">
+                <strong>📋 GABARITO OFICIAL - ${dadosProva.nome.toUpperCase()}</strong>
+            </p>
+            <p style="margin: 3px 0 0 0; font-size: 12px; color: #555;">
+                Documento de uso exclusivo do professor | Emitido em: ${dataHoje}
+            </p>
+        </div>
+        
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px; background: #f0f0f0;">
+            <tr>
+                <td style="padding: 6px; border: 1px solid #000;"><strong>Professor(a):</strong> ${emailProfessor}</td>
+                <td style="padding: 6px; border: 1px solid #000;"><strong>Disciplina:</strong> ${dadosProva.disciplina}</td>
+            </tr>
+            <tr>
+                <td style="padding: 6px; border: 1px solid #000;"><strong>Bimestre:</strong> ${dadosProva.bimestre}º</td>
+                <td style="padding: 6px; border: 1px solid #000;"><strong>Valor Total:</strong> ${dadosProva.questoes.reduce((acc, q) => acc + parseFloat(q.valor || 0), 0).toFixed(1)} pontos</td>
+            </tr>
+        </table>
+    `;
+}
+
+// Função auxiliar: Monta as questões
+function montarQuestoes(dadosProva, modo) {
+    let html = '';
+    
+    dadosProva.questoes.forEach(q => {
+        html += `
+        <div style="margin-bottom: 20px; page-break-inside: avoid;">
+            <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px; display: flex; justify-content: space-between;">
+                <span>Questão ${q.numero}</span>
+                <span style="font-size: 12px;">(Valor: ${q.valor} pts)</span>
+            </div>
+            <div style="margin-bottom: 10px; padding: 10px; background: #fafafa; border-left: 3px solid #008080; font-size: 13px; line-height: 1.5;">
+                ${q.enunciado.replace(/\n/g, '<br>')}
+            </div>
+        `;
+        
+        if (modo === 'professor') {
+            html += `
+            <div style="padding: 10px; background: #e8f5e9; border: 1px dashed #28a745; border-radius: 4px;">
+                <strong style="color: #28a745;">✅ RESPOSTA ESPERADA:</strong><br>
+                <span style="color: #1b5e20; font-size: 13px;">${q.resposta || '<em>(Sem resposta cadastrada)</em>'}</span>
+            </div>
+            `;
+        } else {
+            // Versão do aluno: decide entre caixa ou linhas baseado no tamanho da questão
+            const ehDissertativaLonga = q.enunciado.length > 200 || q.enunciado.toLowerCase().includes('dissertativ') || q.enunciado.toLowerCase().includes('justifique') || q.enunciado.toLowerCase().includes('explique');
+            
+            if (ehDissertativaLonga) {
+                html += `
+                <div style="border: 1px solid #000; min-height: 140px; padding: 10px; background: #fff;">
+                    <em style="color: #999; font-size: 11px;">Resposta:</em>
+                </div>
+                `;
+            } else {
+                html += `
+                <div style="margin-top: 8px;">
+                    <div style="border-bottom: 1px solid #000; height: 28px;"></div>
+                    <div style="border-bottom: 1px solid #000; height: 28px;"></div>
+                    <div style="border-bottom: 1px solid #000; height: 28px;"></div>
+                    <div style="border-bottom: 1px solid #000; height: 28px;"></div>
+                    <div style="border-bottom: 1px solid #000; height: 28px;"></div>
+                </div>
+                `;
+            }
+        }
+        
+        html += `</div>`;
+    });
+    
+    return html;
+}
+
+// Função principal: Gera o PDF
+async function gerarPDF(modo) {
+    const dadosProva = pegarDadosProvaAtual();
+    
+    if (dadosProva.questoes.length === 0) {
+        toast('❌ Adicione pelo menos uma questão antes de gerar o PDF!', 'error');
+        return;
+    }
+    
+    // Monta o HTML completo
+    let htmlCompleto = '';
+    
+    if (modo === 'aluno') {
+        htmlCompleto = montarCabecalhoAluno(dadosProva) + montarQuestoes(dadosProva, 'aluno');
+    } else {
+        htmlCompleto = montarCabecalhoProfessor(dadosProva) + montarQuestoes(dadosProva, 'professor');
+    }
+    
+    htmlCompleto += `</div>`; // Fecha a div do container
+    
+    // Cria elemento temporário
+    const elementoTemp = document.createElement('div');
+    elementoTemp.style.position = 'fixed';
+    elementoTemp.style.left = '-9999px';
+    elementoTemp.style.top = '0';
+    elementoTemp.style.width = '210mm';
+    elementoTemp.style.background = '#fff';
+    elementoTemp.innerHTML = htmlCompleto;
+    document.body.appendChild(elementoTemp);
+    
+    const opcoes = {
+        margin: [10, 10, 10, 10],
+        filename: `${dadosProva.nome.replace(/\s+/g, '_')}_${modo === 'aluno' ? 'ALUNO' : 'GABARITO_PROFESSOR'}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'] }
+    };
+    
+    try {
+        toast('⏳ Gerando PDF...', 'info');
+        await html2pdf().set(opcoes).from(elementoTemp).save();
+        toast(`✅ PDF ${modo === 'aluno' ? 'do Aluno' : 'Gabarito'} gerado com sucesso!`, 'success');
+    } catch (e) {
+        console.error('Erro ao gerar PDF:', e);
+        toast('❌ Erro ao gerar PDF: ' + e.message, 'error');
+    } finally {
+        document.body.removeChild(elementoTemp);
+    }
+}
+
+// Funções públicas chamadas pelos botões
+function gerarPDFProvaAluno() {
+    gerarPDF('aluno');
+}
+
+function gerarPDFProvaProfessor() {
+    gerarPDF('professor');
+}
