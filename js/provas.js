@@ -546,6 +546,10 @@ function montarQuestoes(dadosProva, modo) {
 const NOME_ESCOLA_PDF = "ESCOLA ESTADUAL"; 
 const SECRETARIA_PDF = "SECRETARIA DE ESTADO DA EDUCAÇÃO";
 
+// ========================================================================
+// 📄 GERADOR DE PDF DA PROVA (VERSÃO INFALÍVEL - SEM TELA EM BRANCO)
+// ========================================================================
+
 async function gerarPDF(modo) {
     const dadosProva = pegarDadosProvaAtual();
     
@@ -563,28 +567,45 @@ async function gerarPDF(modo) {
     }
     htmlCompleto += `</div>`; // Fecha a div principal
     
-    // 🔍 DEBUG: Verificar se o HTML não está vazio
-    console.log("📄 Tamanho do HTML gerado:", htmlCompleto.length, "caracteres");
-    if (htmlCompleto.length < 500) {
-        console.error("⚠️ HTML muito curto! Algo deu errado na montagem.");
-    }
-
-    // Cria elemento temporário com estilo AMIGO DO HTML2CANVAS
+    // 1. CRIA UM OVERLAY VISÍVEL NA TELA (Isso engana o html2canvas e garante a captura)
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.background = 'rgba(255, 255, 255, 0.95)'; // Fundo branco quase sólido
+    overlay.style.zIndex = '99999';
+    overlay.style.display = 'flex';
+    overlay.style.flexDirection = 'column';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'flex-start'; // Começa do topo
+    overlay.style.overflowY = 'auto'; // Permite rolar se for longo
+    overlay.style.paddingTop = '20px';
+    
+    // Texto de carregamento
+    const loadingText = document.createElement('h3');
+    loadingText.innerText = '⏳ Gerando PDF, por favor aguarde...';
+    loadingText.style.marginBottom = '20px';
+    loadingText.style.color = '#008080';
+    
+    // 2. O ELEMENTO REAL QUE SERÁ IMPRESSO
     const elementoTemp = document.createElement('div');
     elementoTemp.id = 'temp-pdf-gerador';
-    elementoTemp.style.position = 'absolute';
-    elementoTemp.style.top = '0';
-    elementoTemp.style.left = '0';
     elementoTemp.style.width = '210mm'; // Largura A4 exata
     elementoTemp.style.background = '#ffffff';
     elementoTemp.style.padding = '20px';
-    elementoTemp.style.zIndex = '-9999'; // Joga para trás de tudo, mas mantém na tela para renderizar
+    elementoTemp.style.color = '#000000';
+    elementoTemp.style.fontFamily = 'Times New Roman, serif';
+    elementoTemp.style.boxShadow = '0 0 20px rgba(0,0,0,0.2)'; // Sombra para ficar bonito na tela
     elementoTemp.innerHTML = htmlCompleto;
     
-    document.body.appendChild(elementoTemp);
+    overlay.appendChild(loadingText);
+    overlay.appendChild(elementoTemp);
+    document.body.appendChild(overlay);
 
-    // ⏱️ TRUQUE MÁGICO: Aguarda 150ms para o navegador "pintar" o elemento antes de tirar a foto
-    await new Promise(resolve => setTimeout(resolve, 150));
+    // 3. PEQUENO DELAY PARA O NAVEGADOR "PINTAR" O HTML NA TELA
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     const opcoes = {
         margin: [10, 10, 10, 10],
@@ -593,24 +614,24 @@ async function gerarPDF(modo) {
         html2canvas: { 
             scale: 2, 
             useCORS: true,
-            logging: false,
-            backgroundColor: '#ffffff' // Garante fundo branco
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            windowWidth: elementoTemp.scrollWidth,
+            windowHeight: elementoTemp.scrollHeight
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['css', 'legacy'] }
     };
     
     try {
-        toast('⏳ Gerando PDF...', 'info');
         await html2pdf().set(opcoes).from(elementoTemp).save();
         toast(`✅ PDF ${modo === 'aluno' ? 'do Aluno' : 'Gabarito'} gerado com sucesso!`, 'success');
     } catch (e) {
         console.error('❌ Erro ao gerar PDF:', e);
         toast('❌ Erro ao gerar PDF: ' + e.message, 'error');
     } finally {
-        // Limpa o elemento da memória
-        const el = document.getElementById('temp-pdf-gerador');
-        if (el) document.body.removeChild(el);
+        // 4. REMOVE O OVERLAY DA TELA
+        document.body.removeChild(overlay);
     }
 }
 
