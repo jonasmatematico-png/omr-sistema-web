@@ -330,8 +330,7 @@ function imprimirGabaritoObj(id) {
 const NOME_ESCOLA = "EMEB PROFESSORA ESTHER VIANNA BOLOGNA";
 const SECRETARIA = "SECRETARIA MUNICIPAL DA EDUCAÇÃO DE BATATAIS";
 
-// Função auxiliar: Pega os dados da prova atual
-// Função auxiliar: Pega os dados da prova atual (VERSÃO INTELIGENTE)
+// Função auxiliar: Pega os dados da prova atual (VERSÃO CORRIGIDA PARA .questao-card)
 function pegarDadosProvaAtual() {
     const nomeProva = document.getElementById('nomeProva').value || 'Prova Sem Nome';
     const bimestre = document.getElementById('bimestre').value;
@@ -340,97 +339,39 @@ function pegarDadosProvaAtual() {
     
     const questoesContainer = document.getElementById('questoesContainer');
     
-    // 🔍 TENTATIVA INTELIGENTE: Tenta vários seletores possíveis
-    let questoesDivs = [];
-    const seletoresPossiveis = [
-        '.questao-item',
-        '.questao',
-        '[data-questao]',
-        '.questao-container',
-        '.questao-wrapper',
-        '.card-questao',
-        '.question-item'
-    ];
+    // ✅ SELETOR CORRETO ENCONTRADO NO LOG:
+    const questoesDivs = questoesContainer.querySelectorAll('.questao-card');
     
-    for (const seletor of seletoresPossiveis) {
-        const encontrados = questoesContainer.querySelectorAll(seletor);
-        if (encontrados.length > 0) {
-            questoesDivs = encontrados;
-            console.log(`✅ Questões encontradas usando o seletor: "${seletor}" (${encontrados.length} questões)`);
-            break;
-        }
-    }
-    
-    // Se não encontrou nada, mostra um alerta útil no console
     if (questoesDivs.length === 0) {
-        console.error("❌ Nenhuma questão encontrada!");
-        console.log("🔍 Conteúdo atual do container:", questoesContainer.innerHTML.substring(0, 500));
-        console.log("🔍 Classes dos elementos filhos:");
-        Array.from(questoesContainer.children).forEach((child, i) => {
-            console.log(`  Filho ${i}: <${child.tagName}> class="${child.className}"`);
-        });
-        
-        toast('❌ Não consegui identificar as questões. Verifique o console (F12) para detalhes.', 'error');
+        toast('❌ Nenhuma questão encontrada na tela.', 'error');
         return { nome: nomeProva, bimestre: bimestre, disciplina: disciplina, peso: peso, questoes: [] };
     }
     
     const questoes = [];
     questoesDivs.forEach((div, index) => {
-        // 🔍 TENTATIVA INTELIGENTE: Pega o enunciado de várias formas possíveis
+        // 1. Pega o enunciado (geralmente o primeiro textarea do card)
+        const textareas = div.querySelectorAll('textarea');
         let enunciado = '';
-        const seletoresEnunciado = [
-            '.enunciado-questao',
-            '.enunciado',
-            'textarea',
-            '[name*="enunciado"]',
-            '.questao-texto',
-            'textarea[name*="questao"]'
-        ];
-        
-        for (const seletor of seletoresEnunciado) {
-            const el = div.querySelector(seletor);
-            if (el && el.value) {
-                enunciado = el.value;
-                break;
-            }
-        }
-        
-        // 🔍 TENTATIVA INTELIGENTE: Pega a resposta de várias formas possíveis
         let resposta = '';
-        const seletoresResposta = [
-            '.resposta-questao',
-            '.resposta',
-            '.gabarito',
-            'input[type="text"]',
-            'textarea',
-            '[name*="resposta"]',
-            '[name*="gabarito"]'
-        ];
         
-        for (const seletor of seletoresResposta) {
-            const el = div.querySelector(seletor);
-            if (el && el.value && el.value !== enunciado) { // Evita pegar o enunciado de novo
-                resposta = el.value;
-                break;
-            }
+        if (textareas.length >= 1) {
+            enunciado = textareas[0].value || '';
         }
         
-        // 🔍 TENTATIVA INTELIGENTE: Pega o valor de várias formas possíveis
-        let valor = '1';
-        const seletoresValor = [
-            '.valor-questao',
-            '.valor',
-            'input[type="number"]',
-            '[name*="valor"]',
-            '[name*="peso"]'
-        ];
+        // 2. Pega a resposta/gabarito (geralmente o segundo textarea ou input de texto)
+        if (textareas.length >= 2) {
+            resposta = textareas[1].value || '';
+        } else {
+            // Tenta achar um input de texto que possa ser o gabarito
+            const inputResposta = div.querySelector('input[type="text"]');
+            if (inputResposta) resposta = inputResposta.value || '';
+        }
         
-        for (const seletor of seletoresValor) {
-            const el = div.querySelector(seletor);
-            if (el && el.value) {
-                valor = el.value;
-                break;
-            }
+        // 3. Pega o valor da questão (input number)
+        let valor = '1';
+        const inputValor = div.querySelector('input[type="number"]');
+        if (inputValor) {
+            valor = inputValor.value || '1';
         }
         
         questoes.push({
@@ -441,8 +382,8 @@ function pegarDadosProvaAtual() {
         });
     });
     
-    console.log(`📦 Total de questões extraídas: ${questoes.length}`);
-    console.log("📦 Dados da primeira questão:", questoes[0]);
+    console.log(`✅ Sucesso! ${questoes.length} questões encontradas e processadas.`);
+    console.log("📦 Exemplo da primeira questão:", questoes[0]);
     
     return {
         nome: nomeProva,
