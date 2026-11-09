@@ -274,7 +274,6 @@ async function carregarProvasObj() {
             return '<div class="prova-item"><div class="prova-item-info"><strong>' + p.nome + '</strong><div class="prova-item-meta">' + p.numero_questoes + ' questões • ' + p.bimestre + 'º bimestre' + tipoDisplay + '</div></div>' +
                 '<div style="display:flex;gap:6px;">' +
                 '<button class="btn btn-primary btn-sm" onclick="imprimirGabaritoObj(' + p.id + ')">🖨️ Gabarito</button>' +
-                '<button class="btn btn-secondary" style="padding: 14px;" onclick="imprimirProvaNativa()">🖨️ IMPRIMIR / SALVAR PDF (NATIVO)</button>' +
                 '<button class="btn btn-warn btn-sm" onclick="editarProvaObj(' + p.id + ')">✏️ Editar</button>' +
                 '<button class="btn btn-danger btn-sm" onclick="excluirProvaObj(' + p.id + ')">🗑️</button>' +
                 '</div></div>';
