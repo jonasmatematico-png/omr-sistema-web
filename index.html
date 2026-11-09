@@ -48,12 +48,16 @@
     </div>
     
     <!-- ADICIONAMOS O data-modulo EM CADA ITEM -->
-    <div class="menu-item" data-modulo="correcao_dissertativa" onclick="window.open('correcao-dissertativa.html', '_blank')" style="background: #e0f7fa; border-left-color: #008080; color: #008080; font-weight: 600;">✍️ Correção Dissertativa</div>
-    <div class="menu-item" data-modulo="objetiva" onclick="navegarPara('view-objetivas', this)">✅ Provas Objetivas</div>
-    <div class="menu-item" data-modulo="diagnostico" onclick="navegarPara('view-diagnostico', this)">📊 Diagnóstico</div>
-    <div class="menu-item" data-modulo="planilha" onclick="navegarPara('view-planilha', this)">📋 Planilha</div>
-    <div class="menu-item" data-modulo="corretor" onclick="navegarPara('view-corretor', this)">✏️ Corretor Manual</div>
-    <div class="menu-item" data-modulo="qr" onclick="navegarPara('view-qr', this)">🔲 QR Codes</div>
+    <!-- MENU LATERAL ORGANIZADO -->
+<div class="menu-item active" data-modulo="dissertativa" onclick="navegarPara('view-provas', this)">📝 Criar Prova Aberta</div>
+<div class="menu-item" data-modulo="objetiva" onclick="navegarPara('view-objetivas', this)">✅ Criar Prova Objetiva</div>
+<div class="menu-item" data-modulo="diagnostico" onclick="navegarPara('view-diagnostico', this)">📊 Diagnóstico</div>
+<div class="menu-item" data-modulo="planilha" onclick="navegarPara('view-planilha', this)">📋 Planilha</div>
+<div class="menu-item" data-modulo="corretor" onclick="navegarPara('view-corretor', this)">✏️ Corretor Manual</div>
+<div class="menu-item" data-modulo="qr" onclick="navegarPara('view-qr', this)">🔲 QR Codes</div>
+<div class="menu-item" data-modulo="omr" onclick="window.open('correcao-objetiva.html', '_blank')" style="background: #e8f5e9; border-left-color: #28a745; color: #28a745; font-weight: 600;">🔍 Correção Objetiva (OMR)</div>
+<div class="menu-item" data-modulo="correcao_dissertativa" onclick="window.open('correcao-dissertativa.html', '_blank')" style="background: #e0f7fa; border-left-color: #008080; color: #008080; font-weight: 600;">✍️ Correção Dissertativa</div>
+<div class="menu-item" data-modulo="gestao" onclick="navegarPara('view-gestao', this)">👥 Gestão</div>
     
     <!-- Links externos também podem ser controlados por classes ou IDs, mas vamos simplificar -->
     <div class="menu-item" data-modulo="omr" onclick="window.open('correcao-objetiva.html', '_blank')" style="background: #e8f5e9; border-left-color: #28a745; color: #28a745; font-weight: 600;">📝 Correção Objetiva (OMR)</div>
@@ -169,6 +173,10 @@ Questões (<span id="totalQuestoesObj">1</span>)
 </h3>
 <div id="questoesObjContainer"></div>
 <button id="btnSalvarObj" class="btn btn-success" style="width: 100%; margin-top: 16px;" onclick="salvarProvaObjetiva()">💾 SALVAR PROVA OBJETIVA</button>
+</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+    <button class="btn btn-primary" style="padding: 14px;" onclick="gerarPDFProvaObjetivaAluno()">📄 GERAR PDF (ALUNO)</button>
+    <button class="btn btn-success" style="padding: 14px;" onclick="gerarPDFProvaObjetivaProfessor()">📋 GERAR GABARITO (PROFESSOR)</button>
 </div>
 <div class="card">
 <h3>Provas Objetivas Cadastradas</h3>
