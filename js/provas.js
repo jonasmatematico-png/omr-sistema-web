@@ -539,7 +539,7 @@ function montarQuestoes(dadosProva, modo) {
 }
 
 // ========================================================================
-// 📄 GERADOR DE PDF DA PROVA (VERSÃO INFALÍVEL - SEM TELA EM BRANCO)
+// 📄 GERADOR DE PDF DA PROVA (VERSÃO CORREÇÃO DE ESCALA - SEM TELA EM BRANCO)
 // ========================================================================
 
 async function gerarPDF(modo) {
@@ -559,70 +559,78 @@ async function gerarPDF(modo) {
     }
     htmlCompleto += `</div>`; // Fecha a div principal
     
-    // 1. CRIA UM OVERLAY VISÍVEL NA TELA (Isso engana o html2canvas e garante a captura)
+    // 1. CRIA O OVERLAY VISÍVEL
     const overlay = document.createElement('div');
     overlay.style.position = 'fixed';
     overlay.style.top = '0';
     overlay.style.left = '0';
     overlay.style.width = '100vw';
     overlay.style.height = '100vh';
-    overlay.style.background = 'rgba(255, 255, 255, 0.95)'; // Fundo branco quase sólido
+    overlay.style.background = 'rgba(255, 255, 255, 0.95)';
     overlay.style.zIndex = '99999';
     overlay.style.display = 'flex';
     overlay.style.flexDirection = 'column';
     overlay.style.alignItems = 'center';
-    overlay.style.justifyContent = 'flex-start'; // Começa do topo
-    overlay.style.overflowY = 'auto'; // Permite rolar se for longo
+    overlay.style.justifyContent = 'flex-start';
+    overlay.style.overflowY = 'auto';
     overlay.style.paddingTop = '20px';
     
-    // Texto de carregamento
     const loadingText = document.createElement('h3');
-    loadingText.innerText = '⏳ Gerando PDF, por favor aguarde...';
+    loadingText.innerText = '⏳ Processando PDF, por favor aguarde...';
     loadingText.style.marginBottom = '20px';
     loadingText.style.color = '#008080';
     
-    // 2. O ELEMENTO REAL QUE SERÁ IMPRESSO
+    // 2. ELEMENTO REAL (COM DIMENSÕES EM PIXELS PARA O HTML2CANVAS)
     const elementoTemp = document.createElement('div');
     elementoTemp.id = 'temp-pdf-gerador';
-    elementoTemp.style.width = '210mm'; // Largura A4 exata
+    elementoTemp.style.width = '794px'; // Largura A4 em pixels (96 DPI)
     elementoTemp.style.background = '#ffffff';
-    elementoTemp.style.padding = '20px';
+    elementoTemp.style.padding = '40px'; // Padding maior para simular margem
     elementoTemp.style.color = '#000000';
     elementoTemp.style.fontFamily = 'Times New Roman, serif';
-    elementoTemp.style.boxShadow = '0 0 20px rgba(0,0,0,0.2)'; // Sombra para ficar bonito na tela
+    elementoTemp.style.boxShadow = '0 0 20px rgba(0,0,0,0.2)';
     elementoTemp.innerHTML = htmlCompleto;
     
     overlay.appendChild(loadingText);
     overlay.appendChild(elementoTemp);
     document.body.appendChild(overlay);
 
-    // 3. PEQUENO DELAY PARA O NAVEGADOR "PINTAR" O HTML NA TELA
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Aguarda renderização
+    await new Promise(resolve => setTimeout(resolve, 800));
 
+    // 3. CONFIGURAÇÕES QUE PREVINEM A TELA EM BRANCO
     const opcoes = {
-        margin: [10, 10, 10, 10],
+        margin: 0, // Margem 0, pois já usamos padding no elemento
         filename: `${dadosProva.nome.replace(/\s+/g, '_')}_${modo === 'aluno' ? 'ALUNO' : 'GABARITO_PROFESSOR'}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg', quality: 0.95 },
         html2canvas: { 
-            scale: 2, 
+            scale: 1, // 🚨 CRUCIAL: Scale 1 evita estouro de memória e tela em branco
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
-            windowWidth: elementoTemp.scrollWidth,
-            windowHeight: elementoTemp.scrollHeight
+            logging: false,
+            windowWidth: 794, // Força a largura do canvas
+            windowHeight: elementoTemp.scrollHeight,
+            // 🚨 CRUCIAL: onclone garante que o estilo seja aplicado na "foto"
+            onclone: (clonedDoc) {
+                const clonedElement = clonedDoc.getElementById('temp-pdf-gerador');
+                if (clonedElement) {
+                    clonedElement.style.width = '794px';
+                    clonedElement.style.position = 'relative';
+                }
+            }
         },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'] }
+        jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' }, // Formato em pixels para bater com o canvas
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
     
     try {
         await html2pdf().set(opcoes).from(elementoTemp).save();
-        toast(`✅ PDF ${modo === 'aluno' ? 'do Aluno' : 'Gabarito'} gerado com sucesso!`, 'success');
+        toast(`✅ PDF gerado com sucesso!`, 'success');
     } catch (e) {
         console.error('❌ Erro ao gerar PDF:', e);
-        toast('❌ Erro ao gerar PDF: ' + e.message, 'error');
+        toast('❌ Erro ao gerar PDF. Tente usar a impressão do navegador (Ctrl+P).', 'error');
     } finally {
-        // 4. REMOVE O OVERLAY DA TELA
         document.body.removeChild(overlay);
     }
 }
