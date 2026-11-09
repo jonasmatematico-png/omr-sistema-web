@@ -331,6 +331,7 @@ const NOME_ESCOLA = "EMEB PROFESSORA ESTHER VIANNA BOLOGNA";
 const SECRETARIA = "SECRETARIA MUNICIPAL DA EDUCAÇÃO DE BATATAIS";
 
 // Função auxiliar: Pega os dados da prova atual
+// Função auxiliar: Pega os dados da prova atual (VERSÃO INTELIGENTE)
 function pegarDadosProvaAtual() {
     const nomeProva = document.getElementById('nomeProva').value || 'Prova Sem Nome';
     const bimestre = document.getElementById('bimestre').value;
@@ -338,13 +339,99 @@ function pegarDadosProvaAtual() {
     const peso = document.getElementById('peso').value || '1';
     
     const questoesContainer = document.getElementById('questoesContainer');
-    const questoesDivs = questoesContainer.querySelectorAll('.questao-item');
+    
+    // 🔍 TENTATIVA INTELIGENTE: Tenta vários seletores possíveis
+    let questoesDivs = [];
+    const seletoresPossiveis = [
+        '.questao-item',
+        '.questao',
+        '[data-questao]',
+        '.questao-container',
+        '.questao-wrapper',
+        '.card-questao',
+        '.question-item'
+    ];
+    
+    for (const seletor of seletoresPossiveis) {
+        const encontrados = questoesContainer.querySelectorAll(seletor);
+        if (encontrados.length > 0) {
+            questoesDivs = encontrados;
+            console.log(`✅ Questões encontradas usando o seletor: "${seletor}" (${encontrados.length} questões)`);
+            break;
+        }
+    }
+    
+    // Se não encontrou nada, mostra um alerta útil no console
+    if (questoesDivs.length === 0) {
+        console.error("❌ Nenhuma questão encontrada!");
+        console.log("🔍 Conteúdo atual do container:", questoesContainer.innerHTML.substring(0, 500));
+        console.log("🔍 Classes dos elementos filhos:");
+        Array.from(questoesContainer.children).forEach((child, i) => {
+            console.log(`  Filho ${i}: <${child.tagName}> class="${child.className}"`);
+        });
+        
+        toast('❌ Não consegui identificar as questões. Verifique o console (F12) para detalhes.', 'error');
+        return { nome: nomeProva, bimestre: bimestre, disciplina: disciplina, peso: peso, questoes: [] };
+    }
     
     const questoes = [];
     questoesDivs.forEach((div, index) => {
-        const enunciado = div.querySelector('.enunciado-questao')?.value || div.querySelector('textarea')?.value || '';
-        const resposta = div.querySelector('.resposta-questao')?.value || div.querySelector('input[type="text"]')?.value || '';
-        const valor = div.querySelector('.valor-questao')?.value || '1';
+        // 🔍 TENTATIVA INTELIGENTE: Pega o enunciado de várias formas possíveis
+        let enunciado = '';
+        const seletoresEnunciado = [
+            '.enunciado-questao',
+            '.enunciado',
+            'textarea',
+            '[name*="enunciado"]',
+            '.questao-texto',
+            'textarea[name*="questao"]'
+        ];
+        
+        for (const seletor of seletoresEnunciado) {
+            const el = div.querySelector(seletor);
+            if (el && el.value) {
+                enunciado = el.value;
+                break;
+            }
+        }
+        
+        // 🔍 TENTATIVA INTELIGENTE: Pega a resposta de várias formas possíveis
+        let resposta = '';
+        const seletoresResposta = [
+            '.resposta-questao',
+            '.resposta',
+            '.gabarito',
+            'input[type="text"]',
+            'textarea',
+            '[name*="resposta"]',
+            '[name*="gabarito"]'
+        ];
+        
+        for (const seletor of seletoresResposta) {
+            const el = div.querySelector(seletor);
+            if (el && el.value && el.value !== enunciado) { // Evita pegar o enunciado de novo
+                resposta = el.value;
+                break;
+            }
+        }
+        
+        // 🔍 TENTATIVA INTELIGENTE: Pega o valor de várias formas possíveis
+        let valor = '1';
+        const seletoresValor = [
+            '.valor-questao',
+            '.valor',
+            'input[type="number"]',
+            '[name*="valor"]',
+            '[name*="peso"]'
+        ];
+        
+        for (const seletor of seletoresValor) {
+            const el = div.querySelector(seletor);
+            if (el && el.value) {
+                valor = el.value;
+                break;
+            }
+        }
         
         questoes.push({
             numero: index + 1,
@@ -353,6 +440,9 @@ function pegarDadosProvaAtual() {
             valor: valor
         });
     });
+    
+    console.log(`📦 Total de questões extraídas: ${questoes.length}`);
+    console.log("📦 Dados da primeira questão:", questoes[0]);
     
     return {
         nome: nomeProva,
