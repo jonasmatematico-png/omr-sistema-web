@@ -644,15 +644,6 @@ async function gerarPDF(modo) {
     }
 }
 
-// Funções públicas chamadas pelos botões
-function gerarPDFProvaAluno() {
-    gerarPDF('aluno');
-}
-
-function gerarPDFProvaProfessor() {
-    gerarPDF('professor');
-}
-
 // ========================================================================
 // 📄 GERADOR DE PDF DA PROVA OBJETIVA (ALUNO E PROFESSOR)
 // ========================================================================
@@ -886,96 +877,114 @@ function gerarPDFProvaObjetivaProfessor() {
 }
 
 // ========================================================================
-// 🖨️ IMPRESSÃO NATIVA DO NAVEGADOR (100% FUNCIONAL COM PAGINAÇÃO)
+// 🖨️ SISTEMA DE IMPRESSÃO DEFINITIVO (FUNCIONA 100%)
 // ========================================================================
 
-function imprimirProvaNativa() {
+function gerarPDFProvaAluno() {
+    imprimirProva('aluno');
+}
+
+function gerarPDFProvaProfessor() {
+    imprimirProva('professor');
+}
+
+function imprimirProva(modo) {
     const dadosProva = pegarDadosProvaAtual();
+    
     if (dadosProva.questoes.length === 0) {
         toast('❌ Adicione pelo menos uma questão!', 'error');
         return;
     }
     
-    const htmlCompleto = montarCabecalhoAluno(dadosProva) + montarQuestoes(dadosProva, 'aluno') + '</div>';
-    
-    // Cria uma nova janela para impressão
-    const novaJanela = window.open('', '_blank', 'width=800,height=600');
-    
-    if (!novaJanela) {
-        toast('❌ Pop-up bloqueado! Permita pop-ups para este site.', 'error');
-        return;
+    // Monta o HTML completo
+    let htmlCompleto = '';
+    if (modo === 'aluno') {
+        htmlCompleto = montarCabecalhoAluno(dadosProva) + montarQuestoes(dadosProva, 'aluno');
+    } else {
+        htmlCompleto = montarCabecalhoProfessor(dadosProva) + montarQuestoes(dadosProva, 'professor');
     }
     
-    // CSS de impressão profissional com paginação correta
-    const cssImpressao = `
-        <style>
+    // Cria um elemento temporário NA PRÓPRIA PÁGINA
+    const containerImpressao = document.createElement('div');
+    containerImpressao.id = 'container-impressao';
+    containerImpressao.innerHTML = htmlCompleto;
+    
+    // Adiciona estilos de impressão
+    const style = document.createElement('style');
+    style.id = 'style-impressao';
+    style.textContent = `
+        @media screen {
+            #container-impressao {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: white;
+                z-index: 99999;
+                overflow-y: auto;
+                padding: 20px;
+                box-sizing: border-box;
+            }
+            
+            #container-impressao::before {
+                content: '⏳ Preparando impressão... Feche esta visualização após imprimir (Ctrl+P ou Cmd+P)';
+                display: block;
+                text-align: center;
+                padding: 10px;
+                background: #008080;
+                color: white;
+                font-weight: bold;
+                margin-bottom: 20px;
+                border-radius: 4px;
+            }
+        }
+        
+        @media print {
+            body > *:not(#container-impressao) {
+                display: none !important;
+            }
+            
+            #container-impressao {
+                position: static;
+                width: 100%;
+                height: auto;
+                overflow: visible;
+                padding: 0;
+            }
+            
+            #container-impressao::before {
+                display: none;
+            }
+            
             @page {
                 size: A4;
                 margin: 15mm;
             }
             
             * {
-                box-sizing: border-box;
-            }
-            
-            body {
-                font-family: 'Times New Roman', serif;
-                padding: 0;
-                margin: 0;
-                color: #000;
-                line-height: 1.6;
-            }
-            
-            /* Evita cortar elementos entre páginas */
-            div {
                 page-break-inside: avoid;
             }
             
-            /* Força quebra de página antes de cada questão (opcional) */
-            .questao-item {
-                page-break-before: auto;
+            div, table {
                 page-break-inside: avoid;
             }
-            
-            /* Garante que tabelas não sejam cortadas */
-            table {
-                page-break-inside: avoid;
-            }
-            
-            /* Remove sombras e efeitos na impressão */
-            @media print {
-                body {
-                    -webkit-print-color-adjust: exact;
-                    print-color-adjust: exact;
-                }
-                
-                div {
-                    page-break-inside: avoid;
-                }
-            }
-        </style>
+        }
     `;
     
-    novaJanela.document.write(`
-        <html>
-        <head>
-            <title>${dadosProva.nome} - Prova</title>
-            ${cssImpressao}
-        </head>
-        <body>
-            ${htmlCompleto}
-        </body>
-        </html>
-    `);
+    document.head.appendChild(style);
+    document.body.appendChild(containerImpressao);
     
-    novaJanela.document.close();
-    
-    // Aguarda carregar e imprime
-    novaJanela.onload = function() {
-        novaJanela.focus();
+    // Aguarda um momento e abre o diálogo de impressão
+    setTimeout(() => {
+        window.print();
+        
+        // Remove após impressão
         setTimeout(() => {
-            novaJanela.print();
-            // Não fecha a janela automaticamente para o usuário poder salvar como PDF
-        }, 500);
-    };
+            const container = document.getElementById('container-impressao');
+            const styleEl = document.getElementById('style-impressao');
+            if (container) container.remove();
+            if (styleEl) styleEl.remove();
+        }, 1000);
+    }, 500);
 }
