@@ -538,7 +538,14 @@ function montarQuestoes(dadosProva, modo) {
     return html;
 }
 
-// Função principal: Gera o PDF
+// ========================================================================
+// 📄 GERADOR DE PDF DA PROVA (VERSÃO CORRIGIDA CONTRA TELA EM BRANCO)
+// ========================================================================
+
+// 🏫 CONFIGURAÇÃO DA ESCOLA (Certifique-se de que isso está no topo do arquivo)
+const NOME_ESCOLA_PDF = "ESCOLA ESTADUAL"; 
+const SECRETARIA_PDF = "SECRETARIA DE ESTADO DA EDUCAÇÃO";
+
 async function gerarPDF(modo) {
     const dadosProva = pegarDadosProvaAtual();
     
@@ -549,30 +556,46 @@ async function gerarPDF(modo) {
     
     // Monta o HTML completo
     let htmlCompleto = '';
-    
     if (modo === 'aluno') {
         htmlCompleto = montarCabecalhoAluno(dadosProva) + montarQuestoes(dadosProva, 'aluno');
     } else {
         htmlCompleto = montarCabecalhoProfessor(dadosProva) + montarQuestoes(dadosProva, 'professor');
     }
+    htmlCompleto += `</div>`; // Fecha a div principal
     
-    htmlCompleto += `</div>`; // Fecha a div do container
-    
-    // Cria elemento temporário
+    // 🔍 DEBUG: Verificar se o HTML não está vazio
+    console.log("📄 Tamanho do HTML gerado:", htmlCompleto.length, "caracteres");
+    if (htmlCompleto.length < 500) {
+        console.error("⚠️ HTML muito curto! Algo deu errado na montagem.");
+    }
+
+    // Cria elemento temporário com estilo AMIGO DO HTML2CANVAS
     const elementoTemp = document.createElement('div');
-    elementoTemp.style.position = 'fixed';
-    elementoTemp.style.left = '-9999px';
+    elementoTemp.id = 'temp-pdf-gerador';
+    elementoTemp.style.position = 'absolute';
     elementoTemp.style.top = '0';
-    elementoTemp.style.width = '210mm';
-    elementoTemp.style.background = '#fff';
+    elementoTemp.style.left = '0';
+    elementoTemp.style.width = '210mm'; // Largura A4 exata
+    elementoTemp.style.background = '#ffffff';
+    elementoTemp.style.padding = '20px';
+    elementoTemp.style.zIndex = '-9999'; // Joga para trás de tudo, mas mantém na tela para renderizar
     elementoTemp.innerHTML = htmlCompleto;
-    document.body.appendChild(elementoTemp);
     
+    document.body.appendChild(elementoTemp);
+
+    // ⏱️ TRUQUE MÁGICO: Aguarda 150ms para o navegador "pintar" o elemento antes de tirar a foto
+    await new Promise(resolve => setTimeout(resolve, 150));
+
     const opcoes = {
         margin: [10, 10, 10, 10],
         filename: `${dadosProva.nome.replace(/\s+/g, '_')}_${modo === 'aluno' ? 'ALUNO' : 'GABARITO_PROFESSOR'}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
+        html2canvas: { 
+            scale: 2, 
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff' // Garante fundo branco
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['css', 'legacy'] }
     };
@@ -582,10 +605,12 @@ async function gerarPDF(modo) {
         await html2pdf().set(opcoes).from(elementoTemp).save();
         toast(`✅ PDF ${modo === 'aluno' ? 'do Aluno' : 'Gabarito'} gerado com sucesso!`, 'success');
     } catch (e) {
-        console.error('Erro ao gerar PDF:', e);
+        console.error('❌ Erro ao gerar PDF:', e);
         toast('❌ Erro ao gerar PDF: ' + e.message, 'error');
     } finally {
-        document.body.removeChild(elementoTemp);
+        // Limpa o elemento da memória
+        const el = document.getElementById('temp-pdf-gerador');
+        if (el) document.body.removeChild(el);
     }
 }
 
