@@ -539,14 +539,6 @@ function montarQuestoes(dadosProva, modo) {
 }
 
 // ========================================================================
-// 📄 GERADOR DE PDF DA PROVA (VERSÃO CORRIGIDA CONTRA TELA EM BRANCO)
-// ========================================================================
-
-// 🏫 CONFIGURAÇÃO DA ESCOLA (Certifique-se de que isso está no topo do arquivo)
-const NOME_ESCOLA_PDF = "ESCOLA ESTADUAL"; 
-const SECRETARIA_PDF = "SECRETARIA DE ESTADO DA EDUCAÇÃO";
-
-// ========================================================================
 // 📄 GERADOR DE PDF DA PROVA (VERSÃO INFALÍVEL - SEM TELA EM BRANCO)
 // ========================================================================
 
