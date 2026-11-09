@@ -274,7 +274,6 @@ async function carregarProvasObj() {
             return '<div class="prova-item"><div class="prova-item-info"><strong>' + p.nome + '</strong><div class="prova-item-meta">' + p.numero_questoes + ' questões • ' + p.bimestre + 'º bimestre' + tipoDisplay + '</div></div>' +
                 '<div style="display:flex;gap:6px;">' +
                 '<button class="btn btn-primary btn-sm" onclick="imprimirGabaritoObj(' + p.id + ')">🖨️ Gabarito</button>' +
-                <button class="btn btn-secondary" style="padding: 14px;" onclick="imprimirProvaNativa()">🖨️ IMPRIMIR / SALVAR PDF (NATIVO)</button>
                 '<button class="btn btn-warn btn-sm" onclick="editarProvaObj(' + p.id + ')">✏️ Editar</button>' +
                 '<button class="btn btn-danger btn-sm" onclick="excluirProvaObj(' + p.id + ')">🗑️</button>' +
                 '</div></div>';
@@ -540,7 +539,15 @@ function montarQuestoes(dadosProva, modo) {
 }
 
 // ========================================================================
-// 📄 GERADOR DE PDF DA PROVA (VERSÃO CORREÇÃO DE ESCALA - SEM TELA EM BRANCO)
+// 📄 GERADOR DE PDF DA PROVA (VERSÃO CORRIGIDA CONTRA TELA EM BRANCO)
+// ========================================================================
+
+// 🏫 CONFIGURAÇÃO DA ESCOLA (Certifique-se de que isso está no topo do arquivo)
+const NOME_ESCOLA_PDF = "ESCOLA ESTADUAL"; 
+const SECRETARIA_PDF = "SECRETARIA DE ESTADO DA EDUCAÇÃO";
+
+// ========================================================================
+// 📄 GERADOR DE PDF DA PROVA (VERSÃO FINAL E CORRIGIDA)
 // ========================================================================
 
 async function gerarPDF(modo) {
@@ -586,7 +593,7 @@ async function gerarPDF(modo) {
     elementoTemp.id = 'temp-pdf-gerador';
     elementoTemp.style.width = '794px'; // Largura A4 em pixels (96 DPI)
     elementoTemp.style.background = '#ffffff';
-    elementoTemp.style.padding = '40px'; // Padding maior para simular margem
+    elementoTemp.style.padding = '40px';
     elementoTemp.style.color = '#000000';
     elementoTemp.style.fontFamily = 'Times New Roman, serif';
     elementoTemp.style.boxShadow = '0 0 20px rgba(0,0,0,0.2)';
@@ -601,19 +608,19 @@ async function gerarPDF(modo) {
 
     // 3. CONFIGURAÇÕES QUE PREVINEM A TELA EM BRANCO
     const opcoes = {
-        margin: 0, // Margem 0, pois já usamos padding no elemento
+        margin: 0,
         filename: `${dadosProva.nome.replace(/\s+/g, '_')}_${modo === 'aluno' ? 'ALUNO' : 'GABARITO_PROFESSOR'}.pdf`,
         image: { type: 'jpeg', quality: 0.95 },
         html2canvas: { 
-            scale: 1, // 🚨 CRUCIAL: Scale 1 evita estouro de memória e tela em branco
+            scale: 1, // 🚨 CRUCIAL: Scale 1 evita estouro de memória
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
             logging: false,
-            windowWidth: 794, // Força a largura do canvas
+            windowWidth: 794,
             windowHeight: elementoTemp.scrollHeight,
-            // 🚨 CRUCIAL: onclone garante que o estilo seja aplicado na "foto"
-            onclone: (clonedDoc) {
+            // ✅ CORREÇÃO DA SETINHA AQUI:
+            onclone: (clonedDoc) => {
                 const clonedElement = clonedDoc.getElementById('temp-pdf-gerador');
                 if (clonedElement) {
                     clonedElement.style.width = '794px';
@@ -621,7 +628,7 @@ async function gerarPDF(modo) {
                 }
             }
         },
-        jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' }, // Formato em pixels para bater com o canvas
+        jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
     
@@ -630,7 +637,7 @@ async function gerarPDF(modo) {
         toast(`✅ PDF gerado com sucesso!`, 'success');
     } catch (e) {
         console.error('❌ Erro ao gerar PDF:', e);
-        toast('❌ Erro ao gerar PDF. Tente usar a impressão do navegador (Ctrl+P).', 'error');
+        toast('❌ Erro ao gerar PDF.', 'error');
     } finally {
         document.body.removeChild(overlay);
     }
@@ -866,50 +873,6 @@ async function gerarPDFObjetivo(modo) {
     } finally {
         document.body.removeChild(elementoTemp);
     }
-}
-
-function imprimirProvaNativa() {
-    const dadosProva = pegarDadosProvaAtual();
-    if (dadosProva.questoes.length === 0) {
-        toast('❌ Adicione pelo menos uma questão!', 'error');
-        return;
-    }
-    
-    const htmlCompleto = montarCabecalhoAluno(dadosProva) + montarQuestoes(dadosProva, 'aluno') + '</div>';
-    
-    // Cria um iframe invisível para imprimir
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    document.body.appendChild(iframe);
-    
-    const doc = iframe.contentWindow.document;
-    doc.open();
-    doc.write(`
-        <html>
-        <head>
-            <title>Imprimir Prova</title>
-            <style>
-                body { font-family: 'Times New Roman', serif; padding: 20px; color: #000; }
-                /* Adicione aqui os mesmos estilos inline que você usa no montarCabecalhoAluno se precisar */
-            </style>
-        </head>
-        <body>${htmlCompleto}</body>
-        </html>
-    `);
-    doc.close();
-    
-    // Aguarda carregar e imprime
-    iframe.onload = function() {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-        // Remove o iframe depois de imprimir
-        setTimeout(() => document.body.removeChild(iframe), 1000);
-    };
 }
 
 // Funções públicas para os botões
