@@ -492,7 +492,7 @@ function montarQuestoes(dadosProva, modo) {
     
     dadosProva.questoes.forEach(q => {
         html += `
-        <div style="margin-bottom: 20px; page-break-inside: avoid;">
+        <div class="questao-print-item" style="margin-bottom: 20px; page-break-inside: avoid;">
             <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px; display: flex; justify-content: space-between;">
                 <span>Questão ${q.numero}</span>
                 <span style="font-size: 12px;">(Valor: ${q.valor} pts)</span>
@@ -510,26 +510,12 @@ function montarQuestoes(dadosProva, modo) {
             </div>
             `;
         } else {
-            // Versão do aluno: decide entre caixa ou linhas baseado no tamanho da questão
-            const ehDissertativaLonga = q.enunciado.length > 200 || q.enunciado.toLowerCase().includes('dissertativ') || q.enunciado.toLowerCase().includes('justifique') || q.enunciado.toLowerCase().includes('explique');
-            
-            if (ehDissertativaLonga) {
-                html += `
-                <div style="border: 1px solid #000; min-height: 140px; padding: 10px; background: #fff;">
-                    <em style="color: #999; font-size: 11px;">Resposta:</em>
-                </div>
-                `;
-            } else {
-                html += `
-                <div style="margin-top: 8px;">
-                    <div style="border-bottom: 1px solid #000; height: 28px;"></div>
-                    <div style="border-bottom: 1px solid #000; height: 28px;"></div>
-                    <div style="border-bottom: 1px solid #000; height: 28px;"></div>
-                    <div style="border-bottom: 1px solid #000; height: 28px;"></div>
-                    <div style="border-bottom: 1px solid #000; height: 28px;"></div>
-                </div>
-                `;
-            }
+            // Modo ALUNO: SEMPRE usa retângulo para padronização
+            html += `
+            <div style="border: 1px solid #000; min-height: 140px; padding: 10px; background: #fff; margin-top: 8px;">
+                <em style="color: #999; font-size: 11px;">Resposta:</em>
+            </div>
+            `;
         }
         
         html += `</div>`;
@@ -982,6 +968,84 @@ function imprimirProva(modo) {
         setTimeout(() => {
             const container = document.getElementById('container-impressao');
             const styleEl = document.getElementById('style-impressao');
+            if (container) container.remove();
+            if (styleEl) styleEl.remove();
+        }, 1000);
+    }, 500);
+}
+
+// ========================================================================
+// 🖨️ IMPRESSÃO DA PROVA OBJETIVA (FUNCIONA 100%)
+// ========================================================================
+
+function imprimirProvaObjetiva(modo) {
+    const dadosProva = pegarDadosProvaObjetivaAtual();
+    
+    if (dadosProva.questoes.length === 0) {
+        toast('❌ Adicione pelo menos uma questão!', 'error');
+        return;
+    }
+    
+    let htmlCompleto = '';
+    if (modo === 'aluno') {
+        htmlCompleto = montarCabecalhoObjetivoAluno(dadosProva) + montarQuestoesObjetivas(dadosProva, 'aluno');
+    } else {
+        // Cabeçalho do Professor para Objetiva
+        const emailProfessor = localStorage.getItem('sb_email') || '____________________';
+        const dataHoje = new Date().toLocaleDateString('pt-BR');
+        const nomeEscola = typeof NOME_ESCOLA_PDF !== 'undefined' ? NOME_ESCOLA_PDF : 'ESCOLA ESTADUAL';
+        const secretaria = typeof SECRETARIA_PDF !== 'undefined' ? SECRETARIA_PDF : 'SECRETARIA DE EDUCAÇÃO';
+        
+        htmlCompleto = `
+        <div style="font-family: 'Times New Roman', serif; padding: 20px; color: #000;">
+            <div style="text-align: center; border-bottom: 3px double #000; padding-bottom: 12px; margin-bottom: 15px;">
+                <h2 style="margin: 0; font-size: 16px;">${secretaria}</h2>
+                <h3 style="margin: 5px 0; font-size: 15px;">${nomeEscola}</h3>
+                <p style="margin: 8px 0 0 0; font-size: 15px;"><strong>📋 GABARITO OFICIAL - ${dadosProva.nome.toUpperCase()}</strong></p>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px; background: #f0f0f0;">
+                <tr><td style="padding: 6px; border: 1px solid #000;"><strong>Professor(a):</strong> ${emailProfessor}</td><td style="padding: 6px; border: 1px solid #000;"><strong>Disciplina:</strong> ${dadosProva.disciplina}</td></tr>
+            </table>
+        ` + montarQuestoesObjetivas(dadosProva, 'professor');
+    }
+    
+    // Cria o container de impressão
+    const containerImpressao = document.createElement('div');
+    containerImpressao.id = 'container-impressao-obj';
+    containerImpressao.innerHTML = htmlCompleto + '</div>'; // Fecha a div principal
+    
+    // CSS de impressão PROFISSIONAL
+    const style = document.createElement('style');
+    style.id = 'style-impressao-obj';
+    style.textContent = `
+        @media screen {
+            #container-impressao-obj {
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white;
+                z-index: 99999; overflow-y: auto; padding: 20px; box-sizing: border-box; font-family: 'Times New Roman', serif;
+            }
+            #container-impressao-obj::before {
+                content: '⏳ Preparando impressão... Use Ctrl+P e escolha "Salvar como PDF". Feche esta aba depois.';
+                display: block; text-align: center; padding: 15px; background: #008080; color: white; font-weight: bold; margin-bottom: 20px; border-radius: 8px; font-family: sans-serif;
+            }
+        }
+        @media print {
+            body > *:not(#container-impressao-obj) { display: none !important; }
+            #container-impressao-obj { position: static !important; width: 100% !important; height: auto !important; overflow: visible !important; padding: 0 !important; background: white !important; }
+            #container-impressao-obj::before { display: none !important; }
+            @page { size: A4; margin: 15mm; }
+            .questao-print-item, .questao-card, table, tr { page-break-inside: avoid !important; break-inside: avoid !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+    `;
+    
+    document.head.appendChild(style);
+    document.body.appendChild(containerImpressao);
+    
+    setTimeout(() => {
+        window.print();
+        setTimeout(() => {
+            const container = document.getElementById('container-impressao-obj');
+            const styleEl = document.getElementById('style-impressao-obj');
             if (container) container.remove();
             if (styleEl) styleEl.remove();
         }, 1000);
