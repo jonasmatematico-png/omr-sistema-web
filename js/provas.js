@@ -885,6 +885,10 @@ function gerarPDFProvaObjetivaProfessor() {
     gerarPDFObjetivo('professor');
 }
 
+// ========================================================================
+// 🖨️ IMPRESSÃO NATIVA DO NAVEGADOR (100% FUNCIONAL COM PAGINAÇÃO)
+// ========================================================================
+
 function imprimirProvaNativa() {
     const dadosProva = pegarDadosProvaAtual();
     if (dadosProva.questoes.length === 0) {
@@ -894,37 +898,84 @@ function imprimirProvaNativa() {
     
     const htmlCompleto = montarCabecalhoAluno(dadosProva) + montarQuestoes(dadosProva, 'aluno') + '</div>';
     
-    // Cria um iframe invisível para imprimir
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    document.body.appendChild(iframe);
+    // Cria uma nova janela para impressão
+    const novaJanela = window.open('', '_blank', 'width=800,height=600');
     
-    const doc = iframe.contentWindow.document;
-    doc.open();
-    doc.write(`
+    if (!novaJanela) {
+        toast('❌ Pop-up bloqueado! Permita pop-ups para este site.', 'error');
+        return;
+    }
+    
+    // CSS de impressão profissional com paginação correta
+    const cssImpressao = `
+        <style>
+            @page {
+                size: A4;
+                margin: 15mm;
+            }
+            
+            * {
+                box-sizing: border-box;
+            }
+            
+            body {
+                font-family: 'Times New Roman', serif;
+                padding: 0;
+                margin: 0;
+                color: #000;
+                line-height: 1.6;
+            }
+            
+            /* Evita cortar elementos entre páginas */
+            div {
+                page-break-inside: avoid;
+            }
+            
+            /* Força quebra de página antes de cada questão (opcional) */
+            .questao-item {
+                page-break-before: auto;
+                page-break-inside: avoid;
+            }
+            
+            /* Garante que tabelas não sejam cortadas */
+            table {
+                page-break-inside: avoid;
+            }
+            
+            /* Remove sombras e efeitos na impressão */
+            @media print {
+                body {
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+                
+                div {
+                    page-break-inside: avoid;
+                }
+            }
+        </style>
+    `;
+    
+    novaJanela.document.write(`
         <html>
         <head>
-            <title>Imprimir Prova</title>
-            <style>
-                body { font-family: 'Times New Roman', serif; padding: 20px; color: #000; }
-                /* Adicione aqui os mesmos estilos inline que você usa no montarCabecalhoAluno se precisar */
-            </style>
+            <title>${dadosProva.nome} - Prova</title>
+            ${cssImpressao}
         </head>
-        <body>${htmlCompleto}</body>
+        <body>
+            ${htmlCompleto}
+        </body>
         </html>
     `);
-    doc.close();
+    
+    novaJanela.document.close();
     
     // Aguarda carregar e imprime
-    iframe.onload = function() {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-        // Remove o iframe depois de imprimir
-        setTimeout(() => document.body.removeChild(iframe), 1000);
+    novaJanela.onload = function() {
+        novaJanela.focus();
+        setTimeout(() => {
+            novaJanela.print();
+            // Não fecha a janela automaticamente para o usuário poder salvar como PDF
+        }, 500);
     };
 }
