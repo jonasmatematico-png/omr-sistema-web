@@ -486,18 +486,18 @@ function montarCabecalhoObjetivoAluno(dadosProva) {
     `;
 }
 
-// 6. Monta as questões objetivas (VERSÃO LIMPA: SEM RETÂNGULOS, MÁXIMA ECONOMIA DE PAPEL)
+// 6. Monta as questões objetivas (VERSÃO FINAL: RETÂNGULO NA QUESTÃO INTEIRA, ALTERNATIVAS LIMPA)
 function montarQuestoesObjetivas(dadosProva, modo) {
     const letras = ['A', 'B', 'C', 'D', 'E'];
     let html = '';
     
     dadosProva.questoes.forEach(q => {
-        // Caixa da questão sem bordas pesadas, apenas espaçamento
+        // Caixa da questão com borda suave para agrupar visualmente
         html += `
-        <div class="questao-print-item" style="margin-bottom: 16px; page-break-inside: avoid;">
+        <div class="questao-print-item" style="margin-bottom: 16px; border: 1px solid #ccc; border-radius: 6px; padding: 12px; page-break-inside: avoid; background: #fff;">
             
-            <!-- Cabeçalho minimalista: Número e Enunciado juntos, sem a linha de valor separada -->
-            <div style="font-weight: bold; margin-bottom: 8px; font-size: 13px; line-height: 1.5;">
+            <!-- Cabeçalho minimalista: Número e Enunciado juntos -->
+            <div style="font-weight: bold; margin-bottom: 10px; font-size: 13px; line-height: 1.5;">
                 ${q.numero}) ${q.enunciado.replace(/\n/g, '<br>')}
             </div>
             
