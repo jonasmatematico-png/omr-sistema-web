@@ -28,7 +28,34 @@ function novoForm() {
 function adicionarQuestao() { questoes.push(novaQuestao()); renderizarQuestoes(); }
 function removerQuestao(i) { if (questoes.length > 1) { questoes.splice(i, 1); renderizarQuestoes(); } }
 function atualizarQuestao(i, campo, valor) { questoes[i][campo] = valor; }
-function anexarImagem(i, input) { if (input.files && input.files[0]) { questoes[i].file = input.files[0]; renderizarQuestoes(); } }
+function anexarImagem(i, input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        
+        // Valida se é uma imagem
+        if (!file.type.startsWith('image/')) {
+            toast('❌ Selecione apenas arquivos de imagem!', 'error');
+            return;
+        }
+        
+        // Valida tamanho (máximo 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast('❌ Imagem muito grande! Máximo 5MB.', 'error');
+            return;
+        }
+        
+        // Guarda o arquivo na memória
+        questoes[i].file = file;
+        
+        // Cria preview da imagem usando FileReader
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            questoes[i].imagemUrl = e.target.result; // Preview temporário (base64)
+            renderizarQuestoes(); // Atualiza a tela para mostrar o preview
+        };
+        reader.readAsDataURL(file);
+    }
+}
 function removerImagem(i) { questoes[i].file = null; questoes[i].imagemUrl = null; renderizarQuestoes(); }
 function cancelarEdicao() { novoForm(); }
 
@@ -91,21 +118,32 @@ async function salvarProva() {
     var bimestre = parseInt(document.getElementById('bimestre').value);
     var peso = parseFloat(document.getElementById('peso').value) || 1;
     var disciplina = document.getElementById('disciplina').value;
+    
     if (!nome) { toast('Dê um nome para a prova!', 'error'); return; }
     if (questoes.length === 0) { toast('Adicione ao menos uma questão!', 'error'); return; }
+    
     for (var i = 0; i < questoes.length; i++) {
         if (!questoes[i].enunciado || questoes[i].enunciado.trim() === '') {
             toast('Questão ' + (i + 1) + ' sem enunciado!', 'error'); return;
         }
     }
+    
     try {
+        // 🆕 FAZ UPLOAD DAS IMAGENS ANTES DE SALVAR
         for (var k = 0; k < questoes.length; k++) {
             if (questoes[k].file) {
-                toast('Enviando imagem da questão ' + (k + 1) + '...', 'info');
-                questoes[k].imagemUrl = await uploadImagem(questoes[k].file);
-                questoes[k].file = null;
+                toast('📤 Enviando imagem da questão ' + (k + 1) + '...', 'info');
+                const urlImagem = await uploadImagem(questoes[k].file);
+                
+                if (urlImagem) {
+                    questoes[k].imagemUrl = urlImagem; // URL permanente do Supabase
+                    questoes[k].file = null; // Limpa o arquivo da memória
+                } else {
+                    toast('⚠️ Questão ' + (k + 1) + ' salva sem imagem.', 'warn');
+                }
             }
         }
+        
         var idAval;
         if (editandoId) {
             var ru = await sbFetch('PATCH', '/rest/v1/avaliacoes?id=eq.' + editandoId, {
@@ -122,13 +160,18 @@ async function salvarProva() {
             if (!r1.ok) { toast('Erro ao criar prova: ' + msgErro(await r1.json()), 'error'); return; }
             idAval = (await r1.json())[0].id;
         }
+        
         var linhas = questoes.map(function (q, idx) { return prepararQuestaoParaSalvar('aberta', idAval, q, idx + 1); });
         var r2 = await sbFetch('POST', '/rest/v1/' + COLUNAS.ABERTAS.tabela, linhas);
         if (!r2.ok) { toast('Erro ao salvar questões: ' + msgErro(await r2.json()), 'error'); return; }
+        
         toast('✅ Prova salva com ' + questoes.length + ' questão(ões)!', 'success');
         novoForm();
         carregarProvas();
-    } catch (e) { toast('Falha: ' + e.message, 'error'); }
+        
+    } catch (e) { 
+        toast('Falha: ' + e.message, 'error'); 
+    }
 }
 
 async function carregarProvas() {
@@ -724,4 +767,51 @@ function imprimirProvaObjetivaProfessor() {
     ` + montarQuestoesObjetivas(dados, 'professor') + '</div>';
     
     executarImpressaoUnificada(html, 'container-impressao-obj', 'style-impressao-obj');
+}
+
+// ========================================================================
+// 🖼️ SISTEMA DE UPLOAD DE IMAGENS PARA O SUPABASE STORAGE
+// ========================================================================
+
+async function uploadImagem(file) {
+    if (!file) return null;
+    
+    try {
+        toast('📤 Enviando imagem...', 'info');
+        
+        // Gera um nome único para o arquivo
+        const timestamp = Date.now();
+        const extensao = file.name.split('.').pop();
+        const nomeArquivo = `questao_${timestamp}.${extensao}`;
+        
+        // Faz upload para o Supabase Storage (bucket: 'imagens-provas')
+        const { data, error } = await supabase.storage
+            .from('imagens-provas')
+            .upload(nomeArquivo, file, {
+                cacheControl: '3600',
+                upsert: false
+            });
+        
+        if (error) {
+            console.error('Erro no upload:', error);
+            toast('❌ Erro ao enviar imagem: ' + error.message, 'error');
+            return null;
+        }
+        
+        // Pega a URL pública da imagem
+        const { data: urlData } = supabase.storage
+            .from('imagens-provas')
+            .getPublicUrl(nomeArquivo);
+        
+        const imageUrl = urlData.publicUrl;
+        console.log('✅ Imagem enviada com sucesso:', imageUrl);
+        toast('✅ Imagem enviada!', 'success');
+        
+        return imageUrl;
+        
+    } catch (e) {
+        console.error('Erro crítico no upload:', e);
+        toast('❌ Falha ao enviar imagem: ' + e.message, 'error');
+        return null;
+    }
 }
