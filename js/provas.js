@@ -323,6 +323,206 @@ function imprimirGabaritoObj(id) {
 }
 
 // ========================================================================
+// 📄 FUNÇÕES AUXILIARES DE MONTAGEM DO PDF (QUE ESTAVAM FALTANDO)
+// ========================================================================
+
+// 1. Pega os dados da prova dissertativa atual
+function pegarDadosProvaAtual() {
+    const nomeProva = document.getElementById('nomeProva').value || 'Prova Sem Nome';
+    const bimestre = document.getElementById('bimestre').value;
+    const disciplina = document.getElementById('disciplina').value || 'Matemática';
+    const peso = document.getElementById('peso').value || '1';
+    
+    const questoesContainer = document.getElementById('questoesContainer');
+    const questoesDivs = questoesContainer.querySelectorAll('.questao-card');
+    
+    if (questoesDivs.length === 0) {
+        return { nome: nomeProva, bimestre: bimestre, disciplina: disciplina, peso: peso, questoes: [] };
+    }
+    
+    const questoes = [];
+    questoesDivs.forEach((div, index) => {
+        const textareas = div.querySelectorAll('textarea');
+        let enunciado = textareas.length >= 1 ? (textareas[0].value || '') : '';
+        let resposta = textareas.length >= 2 ? (textareas[1].value || '') : '';
+        
+        if (!resposta) {
+            const inputResposta = div.querySelector('input[type="text"]');
+            if (inputResposta) resposta = inputResposta.value || '';
+        }
+        
+        let valor = '1';
+        const inputValor = div.querySelector('input[type="number"]');
+        if (inputValor) valor = inputValor.value || '1';
+        
+        questoes.push({ numero: index + 1, enunciado: enunciado, resposta: resposta, valor: valor });
+    });
+    
+    return { nome: nomeProva, bimestre: bimestre, disciplina: disciplina, peso: peso, questoes: questoes };
+}
+
+// 2. Monta o cabeçalho da versão do aluno (Dissertativa)
+function montarCabecalhoAluno(dadosProva) {
+    const emailProfessor = localStorage.getItem('sb_email') || '____________________';
+    return `
+    <div style="font-family: 'Times New Roman', serif; padding: 20px; color: #000;">
+        <div style="text-align: center; border-bottom: 3px double #000; padding-bottom: 12px; margin-bottom: 15px;">
+            <h2 style="margin: 0; font-size: 16px; letter-spacing: 1px;">${SECRETARIA_PDF}</h2>
+            <h3 style="margin: 5px 0; font-size: 15px; font-weight: bold;">${NOME_ESCOLA_PDF}</h3>
+            <p style="margin: 8px 0 0 0; font-size: 14px;"><strong>AVALIAÇÃO ${dadosProva.bimestre}º BIMESTRE - ${dadosProva.nome.toUpperCase()}</strong></p>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px;">
+            <tr>
+                <td style="padding: 6px; border: 1px solid #000; width: 60%;"><strong>Professor(a):</strong> ${emailProfessor}</td>
+                <td style="padding: 6px; border: 1px solid #000; width: 40%;"><strong>Disciplina:</strong> ${dadosProva.disciplina}</td>
+            </tr>
+            <tr>
+                <td style="padding: 6px; border: 1px solid #000;"><strong>Nome Completo do Aluno(a):</strong> _________________________________________________</td>
+                <td style="padding: 6px; border: 1px solid #000;"><strong>Ano/Turma:</strong> _________</td>
+            </tr>
+            <tr>
+                <td style="padding: 6px; border: 1px solid #000;"><strong>Nº de Chamada:</strong> _________</td>
+                <td style="padding: 6px; border: 1px solid #000;"><strong>Data:</strong> ___/___/______</td>
+            </tr>
+        </table>
+        <div style="background: #f9f9f9; border: 1px solid #ccc; padding: 8px; margin-bottom: 15px; font-size: 12px;">
+            <strong>📌 INSTRUÇÕES:</strong>
+            <ul style="margin: 5px 0 0 0; padding-left: 20px;">
+                <li>Leia atentamente cada questão antes de responder.</li>
+                <li>Responda com letra legível e caneta azul ou preta.</li>
+                <li>Valor total da prova: <strong>${dadosProva.questoes.reduce((acc, q) => acc + parseFloat(q.valor || 0), 0).toFixed(1)} pontos</strong></li>
+            </ul>
+        </div>
+    `;
+}
+
+// 3. Monta o cabeçalho do gabarito do professor (Dissertativa)
+function montarCabecalhoProfessor(dadosProva) {
+    const emailProfessor = localStorage.getItem('sb_email') || '____________________';
+    const dataHoje = new Date().toLocaleDateString('pt-BR');
+    return `
+    <div style="font-family: 'Times New Roman', serif; padding: 20px; color: #000;">
+        <div style="text-align: center; border-bottom: 3px double #000; padding-bottom: 12px; margin-bottom: 15px;">
+            <h2 style="margin: 0; font-size: 16px;">${SECRETARIA_PDF}</h2>
+            <h3 style="margin: 5px 0; font-size: 15px;">${NOME_ESCOLA_PDF}</h3>
+            <p style="margin: 8px 0 0 0; font-size: 15px;"><strong>📋 GABARITO OFICIAL - ${dadosProva.nome.toUpperCase()}</strong></p>
+            <p style="margin: 3px 0 0 0; font-size: 12px; color: #555;">Documento de uso exclusivo do professor | Emitido em: ${dataHoje}</p>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px; background: #f0f0f0;">
+            <tr>
+                <td style="padding: 6px; border: 1px solid #000;"><strong>Professor(a):</strong> ${emailProfessor}</td>
+                <td style="padding: 6px; border: 1px solid #000;"><strong>Disciplina:</strong> ${dadosProva.disciplina}</td>
+            </tr>
+            <tr>
+                <td style="padding: 6px; border: 1px solid #000;"><strong>Bimestre:</strong> ${dadosProva.bimestre}º</td>
+                <td style="padding: 6px; border: 1px solid #000;"><strong>Valor Total:</strong> ${dadosProva.questoes.reduce((acc, q) => acc + parseFloat(q.valor || 0), 0).toFixed(1)} pontos</td>
+            </tr>
+        </table>
+    `;
+}
+
+// 4. Monta as questões dissertativas
+function montarQuestoes(dadosProva, modo) {
+    let html = '';
+    dadosProva.questoes.forEach(q => {
+        html += `
+        <div class="questao-print-item" style="margin-bottom: 20px; page-break-inside: avoid;">
+            <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px; display: flex; justify-content: space-between;">
+                <span>Questão ${q.numero}</span>
+                <span style="font-size: 12px;">(Valor: ${q.valor} pts)</span>
+            </div>
+            <div style="margin-bottom: 10px; padding: 10px; background: #fafafa; border-left: 3px solid #008080; font-size: 13px; line-height: 1.5;">
+                ${q.enunciado.replace(/\n/g, '<br>')}
+            </div>
+        `;
+        if (modo === 'professor') {
+            html += `<div style="padding: 10px; background: #e8f5e9; border: 1px dashed #28a745; border-radius: 4px;">
+                <strong style="color: #28a745;">✅ RESPOSTA ESPERADA:</strong><br>
+                <span style="color: #1b5e20; font-size: 13px;">${q.resposta || '<em>(Sem resposta cadastrada)</em>'}</span>
+            </div>`;
+        } else {
+            html += `<div style="border: 1px solid #000; min-height: 140px; padding: 10px; background: #fff; margin-top: 8px;">
+                <em style="color: #999; font-size: 11px;">Resposta:</em>
+            </div>`;
+        }
+        html += `</div>`;
+    });
+    return html;
+}
+
+// 5. Monta o cabeçalho da prova objetiva (Aluno)
+function montarCabecalhoObjetivoAluno(dadosProva) {
+    const emailProfessor = localStorage.getItem('sb_email') || '____________________';
+    return `
+    <div style="font-family: 'Times New Roman', serif; padding: 20px; color: #000;">
+        <div style="text-align: center; border-bottom: 3px double #000; padding-bottom: 12px; margin-bottom: 15px;">
+            <h2 style="margin: 0; font-size: 16px; letter-spacing: 1px;">${SECRETARIA_PDF}</h2>
+            <h3 style="margin: 5px 0; font-size: 15px; font-weight: bold;">${NOME_ESCOLA_PDF}</h3>
+            <p style="margin: 8px 0 0 0; font-size: 14px;"><strong>AVALIAÇÃO OBJETIVA ${dadosProva.bimestre}º BIMESTRE - ${dadosProva.nome.toUpperCase()}</strong></p>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px;">
+            <tr>
+                <td style="padding: 6px; border: 1px solid #000; width: 60%;"><strong>Professor(a):</strong> ${emailProfessor}</td>
+                <td style="padding: 6px; border: 1px solid #000; width: 40%;"><strong>Disciplina:</strong> ${dadosProva.disciplina}</td>
+            </tr>
+            <tr>
+                <td style="padding: 6px; border: 1px solid #000;"><strong>Nome Completo do Aluno(a):</strong> _________________________________________________</td>
+                <td style="padding: 6px; border: 1px solid #000;"><strong>Ano/Turma:</strong> _________</td>
+            </tr>
+            <tr>
+                <td style="padding: 6px; border: 1px solid #000;"><strong>Nº de Chamada:</strong> _________</td>
+                <td style="padding: 6px; border: 1px solid #000;"><strong>Data:</strong> ___/___/______</td>
+            </tr>
+        </table>
+        <div style="background: #f9f9f9; border: 1px solid #ccc; padding: 8px; margin-bottom: 15px; font-size: 12px;">
+            <strong>📌 INSTRUÇÕES:</strong>
+            <ul style="margin: 5px 0 0 0; padding-left: 20px;">
+                <li>Cada questão tem apenas <strong>UMA</strong> resposta correta.</li>
+                <li>Marque a alternativa correta no CARTÃO DE RESPOSTAS ou circule a letra.</li>
+                <li>Use caneta azul ou preta.</li>
+                <li>Valor total: <strong>${dadosProva.questoes.reduce((acc, q) => acc + parseFloat(q.valor || 0), 0).toFixed(1)} pontos</strong></li>
+            </ul>
+        </div>
+    `;
+}
+
+// 6. Monta as questões objetivas
+function montarQuestoesObjetivas(dadosProva, modo) {
+    const letras = ['A', 'B', 'C', 'D', 'E'];
+    let html = '';
+    
+    dadosProva.questoes.forEach(q => {
+        html += `
+        <div class="questao-print-item" style="margin-bottom: 20px; page-break-inside: avoid;">
+            <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px; display: flex; justify-content: space-between;">
+                <span>Questão ${q.numero}</span>
+                <span style="font-size: 12px;">(Valor: ${q.valor} pts)</span>
+            </div>
+            <div style="margin-bottom: 10px; padding: 10px; background: #fafafa; border-left: 3px solid #008080; font-size: 13px; line-height: 1.5;">
+                ${q.enunciado.replace(/\n/g, '<br>')}
+            </div>
+            <div style="padding-left: 10px;">
+        `;
+        
+        q.alternativas.forEach((alt, i) => {
+            const letra = letras[i];
+            const ehCorreta = modo === 'professor' && q.respostaCorreta === letra;
+            const estilo = ehCorreta ? 'background: #e8f5e9; border: 2px solid #28a745; font-weight: bold;' : 'background: #fff; border: 1px solid #ddd;';
+            
+            html += `
+                <div style="padding: 6px 10px; margin-bottom: 5px; border-radius: 4px; ${estilo} font-size: 13px;">
+                    <strong>${letra})</strong> ${alt || '(alternativa não cadastrada)'}
+                    ${ehCorreta ? ' <span style="color: #28a745; float: right;">✅ CORRETA</span>' : ''}
+                </div>
+            `;
+        });
+        html += `</div></div>`;
+    });
+    return html;
+}
+
+
+// ========================================================================
 // 📄 SISTEMA DE IMPRESSÃO UNIFICADO E BLINDADO (FINAL)
 // ========================================================================
 
