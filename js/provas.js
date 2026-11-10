@@ -421,32 +421,46 @@ function montarCabecalhoProfessor(dadosProva) {
     `;
 }
 
-// 4. Monta as questões dissertativas
+// 4. Monta as questões dissertativas (VERSÃO ULTRA-ECONÔMICA: RISCO SEPARADOR + RETÂNGULO COMPACTO)
 function montarQuestoes(dadosProva, modo) {
     let html = '';
-    dadosProva.questoes.forEach(q => {
+    
+    dadosProva.questoes.forEach((q, index) => {
+        // Linha separadora entre questões (exceto na primeira)
+        if (index > 0) {
+            html += `<div style="border-bottom: 1px solid #999; margin: 10px 0;"></div>`;
+        }
+        
+        // Questão sem retângulo, apenas texto limpo
         html += `
-        <div class="questao-print-item" style="margin-bottom: 20px; page-break-inside: avoid;">
-            <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px; display: flex; justify-content: space-between;">
-                <span>Questão ${q.numero}</span>
-                <span style="font-size: 12px;">(Valor: ${q.valor} pts)</span>
-            </div>
-            <div style="margin-bottom: 10px; padding: 10px; background: #fafafa; border-left: 3px solid #008080; font-size: 13px; line-height: 1.5;">
-                ${q.enunciado.replace(/\n/g, '<br>')}
+        <div class="questao-print-item" style="margin-bottom: 8px; page-break-inside: avoid;">
+            
+            <!-- Número e Enunciado juntos, minimalista -->
+            <div style="font-weight: bold; margin-bottom: 6px; font-size: 13px; line-height: 1.4;">
+                ${q.numero}) ${q.enunciado.replace(/\n/g, '<br>')}
             </div>
         `;
+        
         if (modo === 'professor') {
-            html += `<div style="padding: 10px; background: #e8f5e9; border: 1px dashed #28a745; border-radius: 4px;">
-                <strong style="color: #28a745;">✅ RESPOSTA ESPERADA:</strong><br>
-                <span style="color: #1b5e20; font-size: 13px;">${q.resposta || '<em>(Sem resposta cadastrada)</em>'}</span>
-            </div>`;
+            // Modo professor: resposta esperada compacta
+            html += `
+            <div style="margin-left: 12px; padding: 6px 10px; background: #e8f5e9; border-left: 3px solid #28a745; font-size: 12px; line-height: 1.3;">
+                <strong style="color: #28a745;">✅ RESPOSTA:</strong> 
+                <span style="color: #1b5e20;">${q.resposta || '<em>(Sem resposta cadastrada)</em>'}</span>
+            </div>
+            `;
         } else {
-            html += `<div style="border: 1px solid #000; min-height: 140px; padding: 10px; background: #fff; margin-top: 8px;">
-                <em style="color: #999; font-size: 11px;">Resposta:</em>
-            </div>`;
+            // Modo aluno: retângulo de resposta compacto
+            html += `
+            <div style="margin-left: 12px; border: 1px solid #000; min-height: 80px; padding: 6px; background: #fff; font-size: 11px;">
+                <em style="color: #999;">Resposta:</em>
+            </div>
+            `;
         }
+        
         html += `</div>`;
     });
+    
     return html;
 }
 
