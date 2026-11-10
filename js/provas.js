@@ -421,7 +421,7 @@ function montarCabecalhoProfessor(dadosProva) {
     `;
 }
 
-// 4. Monta as questões dissertativas (VERSÃO ULTRA-ECONÔMICA: RISCO SEPARADOR + RETÂNGULO COMPACTO)
+// 4. Monta as questões dissertativas (VERSÃO FINAL: SEM NÚMERO DUPLICADO + RETÂNGULO MAIOR)
 function montarQuestoes(dadosProva, modo) {
     let html = '';
     
@@ -431,28 +431,35 @@ function montarQuestoes(dadosProva, modo) {
             html += `<div style="border-bottom: 1px solid #999; margin: 10px 0;"></div>`;
         }
         
+        // Verifica se o enunciado já começa com número (ex: "1)", "1.", "1 -")
+        const enunciadoLimpo = q.enunciado.replace(/\n/g, '<br>');
+        const jaTemNumero = /^\d+[\).\-\s]/.test(q.enunciado.trim());
+        
+        // Se já tem número, usa o enunciado como está. Se não, adiciona o número.
+        const textoQuestao = jaTemNumero ? enunciadoLimpo : `${q.numero}) ${enunciadoLimpo}`;
+        
         // Questão sem retângulo, apenas texto limpo
         html += `
-        <div class="questao-print-item" style="margin-bottom: 8px; page-break-inside: avoid;">
+        <div class="questao-print-item" style="margin-bottom: 10px; page-break-inside: avoid;">
             
-            <!-- Número e Enunciado juntos, minimalista -->
-            <div style="font-weight: bold; margin-bottom: 6px; font-size: 13px; line-height: 1.4;">
-                ${q.numero}) ${q.enunciado.replace(/\n/g, '<br>')}
+            <!-- Número e Enunciado juntos, sem duplicação -->
+            <div style="font-weight: bold; margin-bottom: 8px; font-size: 13px; line-height: 1.4;">
+                ${textoQuestao}
             </div>
         `;
         
         if (modo === 'professor') {
             // Modo professor: resposta esperada compacta
             html += `
-            <div style="margin-left: 12px; padding: 6px 10px; background: #e8f5e9; border-left: 3px solid #28a745; font-size: 12px; line-height: 1.3;">
+            <div style="margin-left: 12px; padding: 8px 10px; background: #e8f5e9; border-left: 3px solid #28a745; font-size: 12px; line-height: 1.3;">
                 <strong style="color: #28a745;">✅ RESPOSTA:</strong> 
                 <span style="color: #1b5e20;">${q.resposta || '<em>(Sem resposta cadastrada)</em>'}</span>
             </div>
             `;
         } else {
-            // Modo aluno: retângulo de resposta compacto
+            // Modo aluno: retângulo de resposta MAIOR (120px em vez de 80px)
             html += `
-            <div style="margin-left: 12px; border: 1px solid #000; min-height: 80px; padding: 6px; background: #fff; font-size: 11px;">
+            <div style="margin-left: 12px; border: 1px solid #000; min-height: 120px; padding: 8px; background: #fff; font-size: 11px;">
                 <em style="color: #999;">Resposta:</em>
             </div>
             `;
