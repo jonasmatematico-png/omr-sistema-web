@@ -486,41 +486,55 @@ function montarCabecalhoObjetivoAluno(dadosProva) {
     `;
 }
 
-// 6. Monta as questões objetivas
+// 6. Monta as questões objetivas (VERSÃO VISUAL APRIMORADA PARA ECONOMIA DE PAPEL)
 function montarQuestoesObjetivas(dadosProva, modo) {
     const letras = ['A', 'B', 'C', 'D', 'E'];
     let html = '';
     
     dadosProva.questoes.forEach(q => {
+        // Caixa única agrupando enunciado e alternativas
         html += `
-        <div class="questao-print-item" style="margin-bottom: 20px; page-break-inside: avoid;">
-            <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px; display: flex; justify-content: space-between;">
-                <span>Questão ${q.numero}</span>
-                <span style="font-size: 12px;">(Valor: ${q.valor} pts)</span>
+        <div class="questao-print-item" style="margin-bottom: 12px; border: 1px solid #ccc; border-radius: 6px; padding: 12px; page-break-inside: avoid; background: #fff;">
+            
+            <!-- Cabeçalho da questão: apenas o número para ganhar espaço -->
+            <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px; display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 6px;">
+                <span>${q.numero})</span>
+                <span style="font-size: 11px; color: #666;">(Valor: ${q.valor} pts)</span>
             </div>
-            <div style="margin-bottom: 10px; padding: 10px; background: #fafafa; border-left: 3px solid #008080; font-size: 13px; line-height: 1.5;">
+            
+            <!-- Enunciado -->
+            <div style="margin-bottom: 10px; font-size: 13px; line-height: 1.5;">
                 ${q.enunciado.replace(/\n/g, '<br>')}
             </div>
-            <div style="padding-left: 10px;">
+            
+            <!-- Alternativas em retângulos individuais -->
+            <div style="display: flex; flex-direction: column; gap: 6px;">
         `;
         
         q.alternativas.forEach((alt, i) => {
             const letra = letras[i];
             const ehCorreta = modo === 'professor' && q.respostaCorreta === letra;
-            const estilo = ehCorreta ? 'background: #e8f5e9; border: 2px solid #28a745; font-weight: bold;' : 'background: #fff; border: 1px solid #ddd;';
+            
+            // Estilos dinâmicos para os retângulos das alternativas
+            const bgCor = ehCorreta ? '#e8f5e9' : '#f9f9f9';
+            const bordaCor = ehCorreta ? '#28a745' : '#ccc';
+            const textoCor = ehCorreta ? '#1b5e20' : '#333';
+            const pesoFonte = ehCorreta ? 'bold' : 'normal';
             
             html += `
-                <div style="padding: 6px 10px; margin-bottom: 5px; border-radius: 4px; ${estilo} font-size: 13px;">
-                    <strong>${letra})</strong> ${alt || '(alternativa não cadastrada)'}
-                    ${ehCorreta ? ' <span style="color: #28a745; float: right;">✅ CORRETA</span>' : ''}
+                <div style="display: flex; align-items: flex-start; padding: 6px 10px; border: 1px solid ${bordaCor}; border-radius: 4px; background: ${bgCor}; font-size: 13px; color: ${textoCor}; font-weight: ${pesoFonte};">
+                    <span style="min-width: 22px; font-weight: bold;">${letra})</span>
+                    <span style="flex: 1;">${alt || '(alternativa não cadastrada)'}</span>
+                    ${ehCorreta ? '<span style="color: #28a745; font-weight: bold; margin-left: 8px;">✅</span>' : ''}
                 </div>
             `;
         });
-        html += `</div></div>`;
+        
+        html += `</div></div>`; // Fecha as alternativas e a caixa da questão
     });
+    
     return html;
 }
-
 
 // ========================================================================
 // 📄 SISTEMA DE IMPRESSÃO UNIFICADO E BLINDADO (FINAL)
