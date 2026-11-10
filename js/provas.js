@@ -2,7 +2,15 @@
 // 📝 PROVAS ABERTAS
 // ========================================================================
 function novaQuestao() {
-    return { enunciado: '', resposta: '', valor: '2', imagemUrl: null, file: null, descritor: '', habilidade: '' };
+    return { 
+        enunciado: '', 
+        resposta: '', 
+        valor: '2', 
+        imagemUrl: null, // 🆕 Campo para imagem
+        file: null, 
+        descritor: '', 
+        habilidade: '' 
+    };
 }
 
 function novoForm() {
@@ -28,20 +36,25 @@ function renderizarQuestoes() {
     document.getElementById('totalQuestoes').textContent = questoes.length;
     document.getElementById('questoesContainer').innerHTML = questoes.map(function (q, i) {
         var statusImg = '';
-        if (q.file) statusImg = '📎 Novo anexo: ' + q.file.name;
-        else if (q.imagemUrl) statusImg = '🖼️ Imagem anexada ✅ <a href="' + q.imagemUrl + '" target="_blank">ver</a> • <a href="#" onclick="removerImagem(' + i + ');return false;">remover</a>';
-        else statusImg = 'Sem imagem (opcional)';
+        if (q.file) {
+            statusImg = '📎 Nova imagem: ' + q.file.name + ' <button class="btn btn-sm btn-danger" onclick="removerImagem(' + i + ')">❌ Cancelar</button>';
+        } else if (q.imagemUrl) {
+            statusImg = '<div style="margin-top:8px;"><img src="' + q.imagemUrl + '" style="max-width:200px; max-height:150px; border:1px solid #ddd; border-radius:4px;"><br><button class="btn btn-sm btn-danger" onclick="removerImagem(' + i + ')" style="margin-top:4px;">🗑️ Remover imagem</button></div>';
+        } else {
+            statusImg = '<small style="color:#999;">Sem imagem (opcional)</small>';
+        }
+        
         return '<div class="questao-card">' +
             '<div class="questao-header"><div style="display:flex;align-items:center;gap:8px;"><div class="questao-num">' + (i + 1) + '</div><strong>Questão ' + (i + 1) + '</strong></div>' +
             '<button class="remove-btn" onclick="removerQuestao(' + i + ')">🗑️</button></div>' +
             '<div class="form-group"><label>Enunciado</label><textarea rows="3" onchange="atualizarQuestao(' + i + ', \'enunciado\', this.value)">' + escaparHTML(q.enunciado) + '</textarea></div>' +
+            '<div class="form-group"><label>🖼️ Imagem da questão (opcional)</label><input type="file" accept="image/*" onchange="anexarImagem(' + i + ', this)"><div class="img-status">' + statusImg + '</div></div>' +
             '<div class="form-group"><label>Resposta esperada / critério</label><textarea rows="3" onchange="atualizarQuestao(' + i + ', \'resposta\', this.value)">' + q.resposta + '</textarea></div>' +
             '<div class="form-row" style="grid-template-columns: 1fr 1fr 1fr;">' +
             '<div class="form-group" style="margin:0;"><label>Valor</label><input type="number" step="0.1" value="' + q.valor + '" onchange="atualizarQuestao(' + i + ', \'valor\', this.value)"></div>' +
             '<div class="form-group" style="margin:0;"><label>Descritor (SAEB)</label><input type="text" value="' + (q.descritor || '') + '" onchange="atualizarQuestao(' + i + ', \'descritor\', this.value)" placeholder="Ex: D25"></div>' +
             '<div class="form-group" style="margin:0;"><label>Habilidade (BNCC)</label><input type="text" value="' + (q.habilidade || '') + '" onchange="atualizarQuestao(' + i + ', \'habilidade\', this.value)" placeholder="Ex: EF05MA01"></div>' +
             '</div>' +
-            '<div class="form-group"><label>🖼️ Imagem do enunciado</label><input type="file" accept="image/*" onchange="anexarImagem(' + i + ', this)"><div class="img-status">' + statusImg + '</div></div>' +
             '</div>';
     }).join('');
 }
@@ -431,25 +444,28 @@ function montarQuestoes(dadosProva, modo) {
             html += `<div style="border-bottom: 1px solid #999; margin: 10px 0;"></div>`;
         }
         
-        // Verifica se o enunciado já começa com número (ex: "1)", "1.", "1 -")
+        // Verifica se o enunciado já começa com número
         const enunciadoLimpo = q.enunciado.replace(/\n/g, '<br>');
         const jaTemNumero = /^\d+[\).\-\s]/.test(q.enunciado.trim());
-        
-        // Se já tem número, usa o enunciado como está. Se não, adiciona o número.
         const textoQuestao = jaTemNumero ? enunciadoLimpo : `${q.numero}) ${enunciadoLimpo}`;
         
-        // Questão sem retângulo, apenas texto limpo
         html += `
         <div class="questao-print-item" style="margin-bottom: 10px; page-break-inside: avoid;">
-            
-            <!-- Número e Enunciado juntos, sem duplicação -->
             <div style="font-weight: bold; margin-bottom: 8px; font-size: 13px; line-height: 1.4;">
                 ${textoQuestao}
             </div>
         `;
         
+        // 🆕 Adiciona a imagem se existir
+        if (q.imagemUrl) {
+            html += `
+            <div style="text-align: center; margin: 10px 0;">
+                <img src="${q.imagemUrl}" style="max-width: 100%; max-height: 300px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+            `;
+        }
+        
         if (modo === 'professor') {
-            // Modo professor: resposta esperada compacta
             html += `
             <div style="margin-left: 12px; padding: 8px 10px; background: #e8f5e9; border-left: 3px solid #28a745; font-size: 12px; line-height: 1.3;">
                 <strong style="color: #28a745;">✅ RESPOSTA:</strong> 
@@ -457,7 +473,6 @@ function montarQuestoes(dadosProva, modo) {
             </div>
             `;
         } else {
-            // Modo aluno: retângulo de resposta MAIOR (120px em vez de 80px)
             html += `
             <div style="margin-left: 12px; border: 1px solid #000; min-height: 120px; padding: 8px; background: #fff; font-size: 11px;">
                 <em style="color: #999;">Resposta:</em>
