@@ -486,51 +486,41 @@ function montarCabecalhoObjetivoAluno(dadosProva) {
     `;
 }
 
-// 6. Monta as questões objetivas (VERSÃO VISUAL APRIMORADA PARA ECONOMIA DE PAPEL)
+// 6. Monta as questões objetivas (VERSÃO LIMPA: SEM RETÂNGULOS, MÁXIMA ECONOMIA DE PAPEL)
 function montarQuestoesObjetivas(dadosProva, modo) {
     const letras = ['A', 'B', 'C', 'D', 'E'];
     let html = '';
     
     dadosProva.questoes.forEach(q => {
-        // Caixa única agrupando enunciado e alternativas
+        // Caixa da questão sem bordas pesadas, apenas espaçamento
         html += `
-        <div class="questao-print-item" style="margin-bottom: 12px; border: 1px solid #ccc; border-radius: 6px; padding: 12px; page-break-inside: avoid; background: #fff;">
+        <div class="questao-print-item" style="margin-bottom: 16px; page-break-inside: avoid;">
             
-            <!-- Cabeçalho da questão: apenas o número para ganhar espaço -->
-            <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px; display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 6px;">
-                <span>${q.numero})</span>
-                <span style="font-size: 11px; color: #666;">(Valor: ${q.valor} pts)</span>
+            <!-- Cabeçalho minimalista: Número e Enunciado juntos, sem a linha de valor separada -->
+            <div style="font-weight: bold; margin-bottom: 8px; font-size: 13px; line-height: 1.5;">
+                ${q.numero}) ${q.enunciado.replace(/\n/g, '<br>')}
             </div>
             
-            <!-- Enunciado -->
-            <div style="margin-bottom: 10px; font-size: 13px; line-height: 1.5;">
-                ${q.enunciado.replace(/\n/g, '<br>')}
-            </div>
-            
-            <!-- Alternativas em retângulos individuais -->
-            <div style="display: flex; flex-direction: column; gap: 6px;">
+            <!-- Alternativas em texto simples, sem retângulos, para o aluno ter espaço para cálculos -->
+            <div style="display: flex; flex-direction: column; gap: 4px; margin-left: 10px; font-size: 13px; line-height: 1.4;">
         `;
         
         q.alternativas.forEach((alt, i) => {
             const letra = letras[i];
             const ehCorreta = modo === 'professor' && q.respostaCorreta === letra;
             
-            // Estilos dinâmicos para os retângulos das alternativas
-            const bgCor = ehCorreta ? '#e8f5e9' : '#f9f9f9';
-            const bordaCor = ehCorreta ? '#28a745' : '#ccc';
-            const textoCor = ehCorreta ? '#1b5e20' : '#333';
-            const pesoFonte = ehCorreta ? 'bold' : 'normal';
+            // Estilo simples: apenas negrito e cor para o professor, normal para o aluno
+            const estiloTexto = ehCorreta ? 'font-weight: bold; color: #008080;' : 'color: #333;';
+            const icone = ehCorreta ? ' ✅' : '';
             
             html += `
-                <div style="display: flex; align-items: flex-start; padding: 6px 10px; border: 1px solid ${bordaCor}; border-radius: 4px; background: ${bgCor}; font-size: 13px; color: ${textoCor}; font-weight: ${pesoFonte};">
-                    <span style="min-width: 22px; font-weight: bold;">${letra})</span>
-                    <span style="flex: 1;">${alt || '(alternativa não cadastrada)'}</span>
-                    ${ehCorreta ? '<span style="color: #28a745; font-weight: bold; margin-left: 8px;">✅</span>' : ''}
+                <div style="${estiloTexto}">
+                    <strong>${letra})</strong> ${alt || '(alternativa não cadastrada)'}${icone}
                 </div>
             `;
         });
         
-        html += `</div></div>`; // Fecha as alternativas e a caixa da questão
+        html += `</div></div>`; // Fecha alternativas e questão
     });
     
     return html;
