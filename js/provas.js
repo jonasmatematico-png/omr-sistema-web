@@ -486,30 +486,34 @@ function montarCabecalhoObjetivoAluno(dadosProva) {
     `;
 }
 
-// 6. Monta as questões objetivas (VERSÃO FINAL: RETÂNGULO NA QUESTÃO INTEIRA, ALTERNATIVAS LIMPA)
+// 6. Monta as questões objetivas (VERSÃO ULTRA-ECONÔMICA: APENAS RISCO SEPARADOR)
 function montarQuestoesObjetivas(dadosProva, modo) {
     const letras = ['A', 'B', 'C', 'D', 'E'];
     let html = '';
     
-    dadosProva.questoes.forEach(q => {
-        // Caixa da questão com borda suave para agrupar visualmente
+    dadosProva.questoes.forEach((q, index) => {
+        // Linha separadora entre questões (exceto na primeira)
+        if (index > 0) {
+            html += `<div style="border-bottom: 1px solid #999; margin: 10px 0;"></div>`;
+        }
+        
+        // Questão sem retângulo, apenas texto limpo
         html += `
-        <div class="questao-print-item" style="margin-bottom: 16px; border: 1px solid #ccc; border-radius: 6px; padding: 12px; page-break-inside: avoid; background: #fff;">
+        <div class="questao-print-item" style="margin-bottom: 8px; page-break-inside: avoid;">
             
-            <!-- Cabeçalho minimalista: Número e Enunciado juntos -->
-            <div style="font-weight: bold; margin-bottom: 10px; font-size: 13px; line-height: 1.5;">
+            <!-- Número e Enunciado juntos, minimalista -->
+            <div style="font-weight: bold; margin-bottom: 6px; font-size: 13px; line-height: 1.4;">
                 ${q.numero}) ${q.enunciado.replace(/\n/g, '<br>')}
             </div>
             
-            <!-- Alternativas em texto simples, sem retângulos, para o aluno ter espaço para cálculos -->
-            <div style="display: flex; flex-direction: column; gap: 4px; margin-left: 10px; font-size: 13px; line-height: 1.4;">
+            <!-- Alternativas em texto simples, sem retângulos -->
+            <div style="display: flex; flex-direction: column; gap: 2px; margin-left: 12px; font-size: 13px; line-height: 1.3;">
         `;
         
         q.alternativas.forEach((alt, i) => {
             const letra = letras[i];
             const ehCorreta = modo === 'professor' && q.respostaCorreta === letra;
             
-            // Estilo simples: apenas negrito e cor para o professor, normal para o aluno
             const estiloTexto = ehCorreta ? 'font-weight: bold; color: #008080;' : 'color: #333;';
             const icone = ehCorreta ? ' ✅' : '';
             
@@ -520,7 +524,7 @@ function montarQuestoesObjetivas(dadosProva, modo) {
             `;
         });
         
-        html += `</div></div>`; // Fecha alternativas e questão
+        html += `</div></div>`;
     });
     
     return html;
