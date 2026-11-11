@@ -209,11 +209,16 @@ async function editarProva(id) {
         document.getElementById('peso').value = String(a.peso_media || '1');
         document.getElementById('disciplina').value = a.disciplina || 'Matemática';
         questoes = qs.map(function (q) {
-            return {
-                enunciado: q.enunciado || '', resposta: q.resposta_esperada || '', valor: String(q.valor || '2'),
-                imagemUrl: q.imagem_url || null, file: null, descritor: q[COLUNAS.ABERTAS.descritor] || '', habilidade: q[COLUNAS.ABERTAS.habilidade] || ''
-            };
-        });
+    return {
+        enunciado: q.enunciado || '', 
+        resposta: q.resposta_esperada || '', 
+        valor: String(q.valor || '2'),
+        imagemUrl: q.imagem_url || null,
+        file: null, 
+        descritor: q.descritor || '', 
+        habilidade: q.habilidade || ''
+    };
+});
         if (questoes.length === 0) questoes = [novaQuestao()];
         editandoId = id;
         document.getElementById('bannerEdicao').classList.remove('hidden');

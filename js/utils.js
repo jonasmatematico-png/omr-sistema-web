@@ -66,7 +66,7 @@ function prepararQuestaoParaSalvar(tipo, idAval, q, numero) {
         numero_questao: numero,
         enunciado: q.enunciado,
         valor: parseFloat(q.valor) || 1,
-        imagem_url: q.imagemUrl || null, // 🆕 Inclui a URL ou base64
+        imagem_url: q.imagemUrl || null,
         descritor: q.descritor || null,
         habilidade: q.habilidade || null
     };
