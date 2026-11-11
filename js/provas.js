@@ -777,40 +777,45 @@ async function uploadImagem(file) {
     if (!file) return null;
     
     try {
-        toast('📤 Enviando imagem...', 'info');
+        toast('📤 Enviando imagem para o Supabase...', 'info');
+        console.log('📤 Iniciando upload da imagem:', file.name, 'Tamanho:', file.size);
         
         // Gera um nome único para o arquivo
         const timestamp = Date.now();
         const extensao = file.name.split('.').pop();
         const nomeArquivo = `questao_${timestamp}.${extensao}`;
         
-        // Faz upload para o Supabase Storage (bucket: 'imagens-provas')
+        console.log('📤 Nome do arquivo no Storage:', nomeArquivo);
+        
+        // 🆕 USA O BUCKET EXISTENTE "enunciados"
         const { data, error } = await supabase.storage
-            .from('imagens-provas')
+            .from('enunciados')  // ← Mudou de 'imagens-provas' para 'enunciados'
             .upload(nomeArquivo, file, {
                 cacheControl: '3600',
                 upsert: false
             });
         
         if (error) {
-            console.error('Erro no upload:', error);
+            console.error('❌ Erro no upload do Supabase:', error);
             toast('❌ Erro ao enviar imagem: ' + error.message, 'error');
             return null;
         }
         
+        console.log('✅ Upload concluído, obtendo URL pública...');
+        
         // Pega a URL pública da imagem
         const { data: urlData } = supabase.storage
-            .from('imagens-provas')
+            .from('enunciados')  // ← Mudou de 'imagens-provas' para 'enunciados'
             .getPublicUrl(nomeArquivo);
         
         const imageUrl = urlData.publicUrl;
-        console.log('✅ Imagem enviada com sucesso:', imageUrl);
-        toast('✅ Imagem enviada!', 'success');
+        console.log('✅ Imagem enviada com sucesso! URL:', imageUrl);
+        toast('✅ Imagem enviada ao Supabase!', 'success');
         
         return imageUrl;
         
     } catch (e) {
-        console.error('Erro crítico no upload:', e);
+        console.error('❌ Erro crítico no upload:', e);
         toast('❌ Falha ao enviar imagem: ' + e.message, 'error');
         return null;
     }
