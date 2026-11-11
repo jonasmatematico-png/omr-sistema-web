@@ -60,28 +60,29 @@ async function buscarQuestoes(tipo, idAvaliacao) {
     return await r.json();
 }
 
-function prepararQuestaoParaSalvar(tipo, idAvaliacao, questao, numero) {
-    var config = (tipo === 'aberta') ? COLUNAS.ABERTAS : COLUNAS.OBJETIVAS;
-    var dados = {
-        id_avaliacao: idAvaliacao,
-        numero: numero,
-        enunciado: questao.enunciado ? questao.enunciado.trim() : '',
-        valor: parseFloat(String(questao.valor).replace(',', '.')) || (tipo === 'aberta' ? 2 : 1),
-        [config.descritor]: questao.descritor || '',
-        [config.habilidade]: questao.habilidade || questao.descritor || ''
+function prepararQuestaoParaSalvar(tipo, idAval, q, numero) {
+    const base = {
+        id_avaliacao: idAval,
+        numero_questao: numero,
+        enunciado: q.enunciado,
+        valor: parseFloat(q.valor) || 1,
+        imagem_url: q.imagemUrl || null, // 🆕 Inclui a URL ou base64
+        descritor: q.descritor || null,
+        habilidade: q.habilidade || null
     };
+    
     if (tipo === 'aberta') {
-        dados.resposta_esperada = questao.resposta ? questao.resposta.trim() : '';
-        dados.imagem_url = questao.imagemUrl || null;
-    } else {
-        dados.alternativa_a = questao.alt_a || '';
-        dados.alternativa_b = questao.alt_b || '';
-        dados.alternativa_c = questao.alt_c || '';
-        dados.alternativa_d = questao.alt_d || '';
-        dados.alternativa_e = questao.alt_e || '';
-        dados.gabarito = questao.gabarito || 'A';
+        base.resposta_esperada = q.resposta || '';
+    } else if (tipo === 'objetiva') {
+        base.alternativa_a = q.alt_a || '';
+        base.alternativa_b = q.alt_b || '';
+        base.alternativa_c = q.alt_c || '';
+        base.alternativa_d = q.alt_d || '';
+        base.alternativa_e = q.alt_e || '';
+        base.gabarito = q.gabarito || 'A';
     }
-    return dados;
+    
+    return base;
 }
 
 async function uploadImagem(file) {

@@ -28,6 +28,7 @@ function novoForm() {
 function adicionarQuestao() { questoes.push(novaQuestao()); renderizarQuestoes(); }
 function removerQuestao(i) { if (questoes.length > 1) { questoes.splice(i, 1); renderizarQuestoes(); } }
 function atualizarQuestao(i, campo, valor) { questoes[i][campo] = valor; }
+
 function anexarImagem(i, input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
@@ -47,15 +48,18 @@ function anexarImagem(i, input) {
         // Guarda o arquivo na memória
         questoes[i].file = file;
         
-        // Cria preview da imagem usando FileReader
+        // 🆕 CONVERTE PARA BASE64 IMEDIATAMENTE
         const reader = new FileReader();
         reader.onload = function(e) {
-            questoes[i].imagemUrl = e.target.result; // Preview temporário (base64)
-            renderizarQuestoes(); // Atualiza a tela para mostrar o preview
+            questoes[i].imagemBase64 = e.target.result; // Base64 completo (data:image/...)
+            questoes[i].imagemUrl = e.target.result; // Preview usa o mesmo base64
+            renderizarQuestoes();
+            toast('✅ Imagem carregada!', 'success');
         };
         reader.readAsDataURL(file);
     }
 }
+
 function removerImagem(i) { questoes[i].file = null; questoes[i].imagemUrl = null; renderizarQuestoes(); }
 function cancelarEdicao() { novoForm(); }
 
@@ -129,18 +133,22 @@ async function salvarProva() {
     }
     
     try {
-        // 🆕 FAZ UPLOAD DAS IMAGENS ANTES DE SALVAR
+        // 🆕 FAZ UPLOAD DAS IMAGENS E GUARDA O BASE64
         for (var k = 0; k < questoes.length; k++) {
             if (questoes[k].file) {
-                toast('📤 Enviando imagem da questão ' + (k + 1) + '...', 'info');
+                toast('📤 Processando imagem da questão ' + (k + 1) + '...', 'info');
+                
+                // Tenta fazer upload para o Supabase Storage
                 const urlImagem = await uploadImagem(questoes[k].file);
                 
                 if (urlImagem) {
-                    questoes[k].imagemUrl = urlImagem; // URL permanente do Supabase
-                    questoes[k].file = null; // Limpa o arquivo da memória
+                    questoes[k].imagemUrl = urlImagem; // URL do Supabase
                 } else {
-                    toast('⚠️ Questão ' + (k + 1) + ' salva sem imagem.', 'warn');
+                    // Se falhar, usa o base64 que já temos
+                    questoes[k].imagemUrl = questoes[k].imagemBase64 || null;
                 }
+                
+                questoes[k].file = null; // Limpa o arquivo da memória
             }
         }
         
@@ -643,7 +651,7 @@ async function executarImpressaoUnificada(htmlContent, containerId, styleId) {
                 box-sizing: border-box; font-family: 'Times New Roman', serif;
             }
             #${containerId}::before {
-                content: '⏳ Convertendo imagens para impressão... Aguarde.';
+                content: '⏳ Preparando impressão...';
                 display: block; text-align: center; padding: 15px; background: #008080;
                 color: white; font-weight: bold; margin-bottom: 20px; border-radius: 8px; font-family: sans-serif;
             }
@@ -666,57 +674,11 @@ async function executarImpressaoUnificada(htmlContent, containerId, styleId) {
     document.head.appendChild(style);
     document.body.appendChild(container);
     
-    // 🛡️ CONVERTE TODAS AS IMAGENS EXTERNAS PARA BASE64 (elimina problema de CORS)
-    const imagens = container.querySelectorAll('img');
-    const promises = Array.from(imagens).map(img => {
-        return new Promise((resolve) => {
-            // Se já é base64, não precisa converter
-            if (img.src.startsWith('data:')) {
-                resolve();
-                return;
-            }
-            
-            // Cria um canvas para converter a imagem
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Cria uma nova imagem para carregar
-            const tempImg = new Image();
-            tempImg.crossOrigin = 'anonymous';
-            
-            tempImg.onload = () => {
-                canvas.width = tempImg.naturalWidth;
-                canvas.height = tempImg.naturalHeight;
-                ctx.drawImage(tempImg, 0, 0);
-                
-                try {
-                    // Converte para base64
-                    const base64 = canvas.toDataURL('image/png');
-                    img.src = base64;
-                    console.log('✅ Imagem convertida para base64');
-                } catch (e) {
-                    console.warn('⚠️ Não foi possível converter imagem (CORS bloqueado):', e);
-                }
-                resolve();
-            };
-            
-            tempImg.onerror = () => {
-                console.warn('⚠️ Erro ao carregar imagem para conversão');
-                resolve();
-            };
-            
-            tempImg.src = img.src;
-        });
-    });
-    
-    // Aguarda todas as conversões
-    await Promise.all(promises);
-    
-    // Pequeno delay para o navegador renderizar
+    // Aguarda um pouco para o navegador renderizar
     setTimeout(() => {
         window.print();
         setTimeout(() => limparAmbienteDeImpressao(), 1000);
-    }, 500);
+    }, 800);
 }
 
 // ========================================================================
