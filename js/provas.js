@@ -625,8 +625,8 @@ function limparAmbienteDeImpressao() {
     });
 }
 
-// 2. Função Mestra que executa a impressão (OTIMIZADA PARA IMAGENS)
-function executarImpressaoUnificada(htmlContent, containerId, styleId) {
+// 2. Função Mestra que executa a impressão (CONVERTE IMAGENS PARA BASE64)
+async function executarImpressaoUnificada(htmlContent, containerId, styleId) {
     limparAmbienteDeImpressao();
     
     const container = document.createElement('div');
@@ -643,7 +643,7 @@ function executarImpressaoUnificada(htmlContent, containerId, styleId) {
                 box-sizing: border-box; font-family: 'Times New Roman', serif;
             }
             #${containerId}::before {
-                content: '⏳ Processando imagens e preparando impressão... Aguarde.';
+                content: '⏳ Convertendo imagens para impressão... Aguarde.';
                 display: block; text-align: center; padding: 15px; background: #008080;
                 color: white; font-weight: bold; margin-bottom: 20px; border-radius: 8px; font-family: sans-serif;
             }
@@ -666,11 +666,57 @@ function executarImpressaoUnificada(htmlContent, containerId, styleId) {
     document.head.appendChild(style);
     document.body.appendChild(container);
     
-    // 🆕 AUMENTADO PARA 1500ms (1.5 segundos) para garantir que o navegador baixe e renderize a imagem do Supabase
+    // 🛡️ CONVERTE TODAS AS IMAGENS EXTERNAS PARA BASE64 (elimina problema de CORS)
+    const imagens = container.querySelectorAll('img');
+    const promises = Array.from(imagens).map(img => {
+        return new Promise((resolve) => {
+            // Se já é base64, não precisa converter
+            if (img.src.startsWith('data:')) {
+                resolve();
+                return;
+            }
+            
+            // Cria um canvas para converter a imagem
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Cria uma nova imagem para carregar
+            const tempImg = new Image();
+            tempImg.crossOrigin = 'anonymous';
+            
+            tempImg.onload = () => {
+                canvas.width = tempImg.naturalWidth;
+                canvas.height = tempImg.naturalHeight;
+                ctx.drawImage(tempImg, 0, 0);
+                
+                try {
+                    // Converte para base64
+                    const base64 = canvas.toDataURL('image/png');
+                    img.src = base64;
+                    console.log('✅ Imagem convertida para base64');
+                } catch (e) {
+                    console.warn('⚠️ Não foi possível converter imagem (CORS bloqueado):', e);
+                }
+                resolve();
+            };
+            
+            tempImg.onerror = () => {
+                console.warn('⚠️ Erro ao carregar imagem para conversão');
+                resolve();
+            };
+            
+            tempImg.src = img.src;
+        });
+    });
+    
+    // Aguarda todas as conversões
+    await Promise.all(promises);
+    
+    // Pequeno delay para o navegador renderizar
     setTimeout(() => {
         window.print();
         setTimeout(() => limparAmbienteDeImpressao(), 1000);
-    }, 1500); 
+    }, 500);
 }
 
 // ========================================================================
