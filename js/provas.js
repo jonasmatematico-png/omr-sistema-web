@@ -499,11 +499,11 @@ function montarQuestoes(dadosProva, modo) {
             </div>
         `;
         
-        // 🆕 Adiciona a imagem se existir
+        // 🆕 Adiciona a imagem se existir (com permissão de CORS para o PDF)
         if (q.imagemUrl) {
             html += `
             <div style="text-align: center; margin: 10px 0;">
-                <img src="${q.imagemUrl}" style="max-width: 100%; max-height: 300px; border: 1px solid #ddd; border-radius: 4px;">
+                <img src="${q.imagemUrl}" crossorigin="anonymous" style="max-width: 100%; max-height: 300px; border: 1px solid #ddd; border-radius: 4px; display: block; margin: 0 auto;">
             </div>
             `;
         }
@@ -625,7 +625,7 @@ function limparAmbienteDeImpressao() {
     });
 }
 
-// 2. Função Mestra que executa a impressão
+// 2. Função Mestra que executa a impressão (OTIMIZADA PARA IMAGENS)
 function executarImpressaoUnificada(htmlContent, containerId, styleId) {
     limparAmbienteDeImpressao();
     
@@ -643,7 +643,7 @@ function executarImpressaoUnificada(htmlContent, containerId, styleId) {
                 box-sizing: border-box; font-family: 'Times New Roman', serif;
             }
             #${containerId}::before {
-                content: '⏳ Preparando impressão... Use Ctrl+P e escolha "Salvar como PDF". Feche esta visualização depois.';
+                content: '⏳ Processando imagens e preparando impressão... Aguarde.';
                 display: block; text-align: center; padding: 15px; background: #008080;
                 color: white; font-weight: bold; margin-bottom: 20px; border-radius: 8px; font-family: sans-serif;
             }
@@ -656,7 +656,7 @@ function executarImpressaoUnificada(htmlContent, containerId, styleId) {
             }
             #${containerId}::before { display: none !important; }
             @page { size: A4; margin: 15mm; }
-            .questao-print-item, .questao-card, table, tr {
+            .questao-print-item, .questao-card, table, tr, img {
                 page-break-inside: avoid !important; break-inside: avoid !important;
             }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -666,10 +666,11 @@ function executarImpressaoUnificada(htmlContent, containerId, styleId) {
     document.head.appendChild(style);
     document.body.appendChild(container);
     
+    // 🆕 AUMENTADO PARA 1500ms (1.5 segundos) para garantir que o navegador baixe e renderize a imagem do Supabase
     setTimeout(() => {
         window.print();
         setTimeout(() => limparAmbienteDeImpressao(), 1000);
-    }, 500);
+    }, 1500); 
 }
 
 // ========================================================================
