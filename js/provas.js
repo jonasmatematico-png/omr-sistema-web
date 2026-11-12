@@ -132,23 +132,17 @@ async function salvarProva() {
         }
     }
     
-    try {
-        // 🆕 FAZ UPLOAD DAS IMAGENS E GUARDA O BASE64
+   try {
+        // FAZ UPLOAD DAS IMAGENS ANTES DE SALVAR
         for (var k = 0; k < questoes.length; k++) {
             if (questoes[k].file) {
-                toast('📤 Processando imagem da questão ' + (k + 1) + '...', 'info');
-                
-                // Tenta fazer upload para o Supabase Storage
+                toast('📤 Enviando imagem da questão ' + (k + 1) + '...', 'info');
                 const urlImagem = await uploadImagem(questoes[k].file);
                 
                 if (urlImagem) {
-                    questoes[k].imagemUrl = urlImagem; // URL do Supabase
-                } else {
-                    // Se falhar, usa o base64 que já temos
-                    questoes[k].imagemUrl = questoes[k].imagemBase64 || null;
+                    questoes[k].imagemUrl = urlImagem; // Salva a URL do Supabase no objeto da questão
+                    questoes[k].file = null; // Limpa o arquivo da memória
                 }
-                
-                questoes[k].file = null; // Limpa o arquivo da memória
             }
         }
         
