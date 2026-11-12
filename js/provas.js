@@ -742,22 +742,82 @@ function pegarDadosProvaAtual() {
     };
 }
 
-async function gerarPDFProvaProfessor() {
-    const dados = pegarDadosProvaAtual();
-    if (dados.questoes.length === 0) return toast('❌ Adicione pelo menos uma questão!', 'error');
+// ========================================================================
+// 🖼️ FUNÇÃO AUXILIAR: CONVERTE IMAGEM PARA BASE64 (RESOLVE CORS)
+// ========================================================================
+async function converterImagemParaBase64(url) {
+    if (!url) return null;
+    if (url.startsWith('data:')) return url; // Já é base64
     
-    // 🆕 Converte todas as imagens para Base64 ANTES de montar o HTML
-    toast('🖼️ Processando imagens...', 'info');
-    for (const q of dados.questoes) {
-        if (q.imagemUrl) {
-            q.imagemUrl = await converterImagemParaBase64(q.imagemUrl);
-        }
+    try {
+        const response = await fetch(url, { mode: 'cors' });
+        const blob = await response.blob();
+        return await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+        });
+    } catch (e) {
+        console.warn('⚠️ Não foi possível converter imagem, usando URL original:', e);
+        return url; 
     }
-    
-    const html = montarCabecalhoProfessor(dados) + montarQuestoes(dados, 'professor') + '</div>';
-    executarImpressaoUnificada(html, 'container-impressao', 'style-impressao');
 }
 
+// ========================================================================
+// 📄 FUNÇÕES DE IMPRESSÃO UNIFICADAS (ALUNO E PROFESSOR)
+// ========================================================================
+
+async function gerarPDFProvaAluno() {
+    try {
+        const dados = pegarDadosProvaAtual();
+        if (dados.questoes.length === 0) {
+            toast('❌ Adicione pelo menos uma questão!', 'error');
+            return;
+        }
+        
+        toast('🖼️ Processando imagens para o PDF...', 'info');
+        
+        // Converte todas as imagens para Base64 antes de montar o HTML
+        for (const q of dados.questoes) {
+            if (q.imagemUrl) {
+                q.imagemUrl = await converterImagemParaBase64(q.imagemUrl);
+            }
+        }
+        
+        const html = montarCabecalhoAluno(dados) + montarQuestoes(dados, 'aluno') + '</div>';
+        executarImpressaoUnificada(html, 'container-impressao', 'style-impressao');
+        
+    } catch (erro) {
+        console.error('❌ Erro ao gerar PDF do Aluno:', erro);
+        toast('❌ Erro ao gerar PDF. Verifique o console (F12).', 'error');
+    }
+}
+
+async function gerarPDFProvaProfessor() {
+    try {
+        const dados = pegarDadosProvaAtual();
+        if (dados.questoes.length === 0) {
+            toast('❌ Adicione pelo menos uma questão!', 'error');
+            return;
+        }
+        
+        toast('🖼️ Processando imagens para o PDF...', 'info');
+        
+        // Converte todas as imagens para Base64 antes de montar o HTML
+        for (const q of dados.questoes) {
+            if (q.imagemUrl) {
+                q.imagemUrl = await converterImagemParaBase64(q.imagemUrl);
+            }
+        }
+        
+        const html = montarCabecalhoProfessor(dados) + montarQuestoes(dados, 'professor') + '</div>';
+        executarImpressaoUnificada(html, 'container-impressao', 'style-impressao');
+        
+    } catch (erro) {
+        console.error('❌ Erro ao gerar PDF do Professor:', erro);
+        toast('❌ Erro ao gerar PDF. Verifique o console (F12).', 'error');
+    }
+}
 // ========================================================================
 // ✅ FUNÇÕES DA PROVA OBJETIVA (LEITURA CIRÚRGICA DO HTML)
 // ========================================================================
