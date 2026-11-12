@@ -709,20 +709,37 @@ async function converterImagemParaBase64(url) {
     }
 }
 
-async function gerarPDFProvaAluno() {
-    const dados = pegarDadosProvaAtual();
-    if (dados.questoes.length === 0) return toast('❌ Adicione pelo menos uma questão!', 'error');
+// Função auxiliar: Pega os dados da prova atual (VERSÃO QUE NUNCA ESQUECE A IMAGEM)
+function pegarDadosProvaAtual() {
+    const nomeProva = document.getElementById('nomeProva').value || 'Prova Sem Nome';
+    const bimestre = document.getElementById('bimestre').value;
+    const disciplina = document.getElementById('disciplina').value || 'Matemática';
+    const peso = document.getElementById('peso').value || '1';
     
-    // 🆕 Converte todas as imagens para Base64 ANTES de montar o HTML
-    toast('🖼️ Processando imagens...', 'info');
-    for (const q of dados.questoes) {
-        if (q.imagemUrl) {
-            q.imagemUrl = await converterImagemParaBase64(q.imagemUrl);
-        }
-    }
+    // 🚨 CORREÇÃO: Usa os dados que JÁ ESTÃO NA MEMÓRIA (array questoes), 
+    // garantindo que a imagemUrl seja preservada!
+    const questoesParaPDF = questoes.map((q, index) => {
+        return {
+            numero: index + 1,
+            enunciado: q.enunciado || '',
+            resposta: q.resposta || '',
+            valor: q.valor || '1',
+            imagemUrl: q.imagemUrl || null // 🆕 GARANTE QUE A IMAGEM VÁ PARA O PDF
+        };
+    });
     
-    const html = montarCabecalhoAluno(dados) + montarQuestoes(dados, 'aluno') + '</div>';
-    executarImpressaoUnificada(html, 'container-impressao', 'style-impressao');
+    console.log("🔍 DEBUG - Questões recebidas para o PDF:", questoesParaPDF);
+    questoesParaPDF.forEach((q, i) => {
+        console.log(`📸 Questão ${q.numero}: imagemUrl =`, q.imagemUrl ? q.imagemUrl.substring(0, 50) + '...' : 'SEM IMAGEM');
+    });
+    
+    return {
+        nome: nomeProva,
+        bimestre: bimestre,
+        disciplina: disciplina,
+        peso: peso,
+        questoes: questoesParaPDF
+    };
 }
 
 async function gerarPDFProvaProfessor() {
