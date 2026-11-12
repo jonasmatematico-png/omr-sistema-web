@@ -640,7 +640,7 @@ function limparAmbienteDeImpressao() {
 }
 
 // 2. Função Mestra que executa a impressão (BLINDADA CONTRA BLOQUEIO DE IMAGENS)
-async function executarImpressaoUnificada(htmlContent, containerId, styleId) {
+function executarImpressaoUnificada(htmlContent, containerId, styleId) {
     limparAmbienteDeImpressao();
     
     const container = document.createElement('div');
@@ -657,7 +657,7 @@ async function executarImpressaoUnificada(htmlContent, containerId, styleId) {
                 box-sizing: border-box; font-family: 'Times New Roman', serif;
             }
             #${containerId}::before {
-                content: '⏳ Processando imagens para impressão... Aguarde.';
+                content: '⏳ Preparando impressão...';
                 display: block; text-align: center; padding: 15px; background: #008080;
                 color: white; font-weight: bold; margin-bottom: 20px; border-radius: 8px; font-family: sans-serif;
             }
@@ -680,43 +680,7 @@ async function executarImpressaoUnificada(htmlContent, containerId, styleId) {
     document.head.appendChild(style);
     document.body.appendChild(container);
     
-    // 🛡️ BLINDAGEM TOTAL: Converte imagens externas (URL) para Base64 antes de imprimir
-    const imagens = container.querySelectorAll('img');
-    console.log(`🖼️ Encontradas ${imagens.length} imagens para processar.`);
-    
-    const promises = Array.from(imagens).map(async (img) => {
-        // Se já for base64, não faz nada
-        if (img.src.startsWith('data:')) return;
-        
-        try {
-            // Tenta buscar a imagem como Blob para contornar o bloqueio de impressão
-            const response = await fetch(img.src, { mode: 'cors' });
-            const blob = await response.blob();
-            
-            // Converte o Blob para Base64
-            const base64 = await new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.readAsDataURL(blob);
-            });
-            
-            img.src = base64; // Substitui a URL pelo código Base64
-            console.log('✅ Imagem convertida para Base64 com sucesso!');
-        } catch (e) {
-            console.warn('⚠️ Bloqueio de CORS detectado. Tentando carregamento normal...', e);
-            // Fallback: apenas espera a imagem carregar normalmente
-            await new Promise(resolve => {
-                img.onload = resolve;
-                img.onerror = resolve;
-            });
-        }
-    });
-    
-    // Aguarda TODAS as imagens serem processadas
-    await Promise.all(promises);
-    console.log('✅ Todas as imagens processadas. Abrindo janela de impressão...');
-    
-    // Pequeno delay para o navegador renderizar o Base64 na tela
+    // Aguarda um pouco para o navegador renderizar (incluindo as imagens em Base64)
     setTimeout(() => {
         window.print();
         setTimeout(() => limparAmbienteDeImpressao(), 1000);
@@ -726,17 +690,53 @@ async function executarImpressaoUnificada(htmlContent, containerId, styleId) {
 // ========================================================================
 // 📝 FUNÇÕES DA PROVA DISSERTATIVA (ABERTA)
 // ========================================================================
+// 🖼️ Converte uma URL de imagem para Base64 (resolve bloqueio de CORS na impressão)
+async function converterImagemParaBase64(url) {
+    if (!url) return null;
+    if (url.startsWith('data:')) return url; // Já é base64
+    
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+        });
+    } catch (e) {
+        console.warn('⚠️ Não foi possível converter imagem:', url);
+        return url; // Retorna a URL original se falhar
+    }
+}
 
-function gerarPDFProvaAluno() {
+async function gerarPDFProvaAluno() {
     const dados = pegarDadosProvaAtual();
     if (dados.questoes.length === 0) return toast('❌ Adicione pelo menos uma questão!', 'error');
+    
+    // 🆕 Converte todas as imagens para Base64 ANTES de montar o HTML
+    toast('🖼️ Processando imagens...', 'info');
+    for (const q of dados.questoes) {
+        if (q.imagemUrl) {
+            q.imagemUrl = await converterImagemParaBase64(q.imagemUrl);
+        }
+    }
+    
     const html = montarCabecalhoAluno(dados) + montarQuestoes(dados, 'aluno') + '</div>';
     executarImpressaoUnificada(html, 'container-impressao', 'style-impressao');
 }
 
-function gerarPDFProvaProfessor() {
+async function gerarPDFProvaProfessor() {
     const dados = pegarDadosProvaAtual();
     if (dados.questoes.length === 0) return toast('❌ Adicione pelo menos uma questão!', 'error');
+    
+    // 🆕 Converte todas as imagens para Base64 ANTES de montar o HTML
+    toast('🖼️ Processando imagens...', 'info');
+    for (const q of dados.questoes) {
+        if (q.imagemUrl) {
+            q.imagemUrl = await converterImagemParaBase64(q.imagemUrl);
+        }
+    }
+    
     const html = montarCabecalhoProfessor(dados) + montarQuestoes(dados, 'professor') + '</div>';
     executarImpressaoUnificada(html, 'container-impressao', 'style-impressao');
 }
@@ -793,23 +793,42 @@ function pegarDadosProvaObjetivaAtual() {
     return { nome: nomeProva, bimestre: bimestre, disciplina: disciplina, questoes: questoes };
 }
 
-function imprimirProvaObjetivaAluno() {
+async function imprimirProvaObjetivaAluno() {
     const dados = pegarDadosProvaObjetivaAtual();
     if (dados.questoes.length === 0) return toast('❌ Adicione pelo menos uma questão objetiva!', 'error');
+    
+    // 🆕 Converte todas as imagens para Base64
+    toast('🖼️ Processando imagens...', 'info');
+    for (const q of dados.questoes) {
+        if (q.imagemUrl) {
+            q.imagemUrl = await converterImagemParaBase64(q.imagemUrl);
+        }
+    }
+    
     const html = montarCabecalhoObjetivoAluno(dados) + montarQuestoesObjetivas(dados, 'aluno') + '</div>';
     executarImpressaoUnificada(html, 'container-impressao-obj', 'style-impressao-obj');
 }
 
-function imprimirProvaObjetivaProfessor() {
+async function imprimirProvaObjetivaProfessor() {
     const dados = pegarDadosProvaObjetivaAtual();
     if (dados.questoes.length === 0) return toast('❌ Adicione pelo menos uma questão objetiva!', 'error');
     
+    // 🆕 Converte todas as imagens para Base64
+    toast('🖼️ Processando imagens...', 'info');
+    for (const q of dados.questoes) {
+        if (q.imagemUrl) {
+            q.imagemUrl = await converterImagemParaBase64(q.imagemUrl);
+        }
+    }
+    
     const email = localStorage.getItem('sb_email') || '____________________';
+    const nomeEscola = typeof NOME_ESCOLA_PDF !== 'undefined' ? NOME_ESCOLA_PDF : 'ESCOLA ESTADUAL';
+    
     let html = `
     <div style="font-family: 'Times New Roman', serif; padding: 20px; color: #000;">
         <div style="text-align: center; border-bottom: 3px double #000; padding-bottom: 12px; margin-bottom: 15px;">
-            <h2 style="margin: 0; font-size: 16px;">${SECRETARIA_PDF}</h2>
-            <h3 style="margin: 5px 0; font-size: 15px;">${NOME_ESCOLA_PDF}</h3>
+            <h2 style="margin: 0; font-size: 16px;">SECRETARIA DE EDUCAÇÃO</h2>
+            <h3 style="margin: 5px 0; font-size: 15px;">${nomeEscola}</h3>
             <p style="margin: 8px 0 0 0; font-size: 15px;"><strong>📋 GABARITO OFICIAL - ${dados.nome.toUpperCase()}</strong></p>
         </div>
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px; background: #f0f0f0;">
