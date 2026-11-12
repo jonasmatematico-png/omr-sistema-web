@@ -494,6 +494,13 @@ function montarCabecalhoProfessor(dadosProva) {
 function montarQuestoes(dadosProva, modo) {
     let html = '';
     
+    // 🕵️ DETETIVE: Mostra no console se as imagens estão sendo passadas
+    console.log("🔍 DEBUG - Questões recebidas para o PDF:", dadosProva.questoes);
+    dadosProva.questoes.forEach((q, i) => {
+        console.log(`📸 Questão ${q.numero}: imagemUrl =`, q.imagemUrl ? q.imagemUrl.substring(0, 50) + '...' : 'SEM IMAGEM');
+    });
+    
+    
     dadosProva.questoes.forEach((q, index) => {
         // Linha separadora entre questões (exceto na primeira)
         if (index > 0) {
