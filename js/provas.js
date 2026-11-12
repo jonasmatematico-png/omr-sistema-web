@@ -639,7 +639,7 @@ function limparAmbienteDeImpressao() {
     });
 }
 
-// 2. Função Mestra que executa a impressão (CONVERTE IMAGENS PARA BASE64)
+// 2. Função Mestra que executa a impressão (BLINDADA CONTRA BLOQUEIO DE IMAGENS)
 async function executarImpressaoUnificada(htmlContent, containerId, styleId) {
     limparAmbienteDeImpressao();
     
@@ -657,7 +657,7 @@ async function executarImpressaoUnificada(htmlContent, containerId, styleId) {
                 box-sizing: border-box; font-family: 'Times New Roman', serif;
             }
             #${containerId}::before {
-                content: '⏳ Preparando impressão...';
+                content: '⏳ Processando imagens para impressão... Aguarde.';
                 display: block; text-align: center; padding: 15px; background: #008080;
                 color: white; font-weight: bold; margin-bottom: 20px; border-radius: 8px; font-family: sans-serif;
             }
@@ -680,7 +680,43 @@ async function executarImpressaoUnificada(htmlContent, containerId, styleId) {
     document.head.appendChild(style);
     document.body.appendChild(container);
     
-    // Aguarda um pouco para o navegador renderizar
+    // 🛡️ BLINDAGEM TOTAL: Converte imagens externas (URL) para Base64 antes de imprimir
+    const imagens = container.querySelectorAll('img');
+    console.log(`🖼️ Encontradas ${imagens.length} imagens para processar.`);
+    
+    const promises = Array.from(imagens).map(async (img) => {
+        // Se já for base64, não faz nada
+        if (img.src.startsWith('data:')) return;
+        
+        try {
+            // Tenta buscar a imagem como Blob para contornar o bloqueio de impressão
+            const response = await fetch(img.src, { mode: 'cors' });
+            const blob = await response.blob();
+            
+            // Converte o Blob para Base64
+            const base64 = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+            });
+            
+            img.src = base64; // Substitui a URL pelo código Base64
+            console.log('✅ Imagem convertida para Base64 com sucesso!');
+        } catch (e) {
+            console.warn('⚠️ Bloqueio de CORS detectado. Tentando carregamento normal...', e);
+            // Fallback: apenas espera a imagem carregar normalmente
+            await new Promise(resolve => {
+                img.onload = resolve;
+                img.onerror = resolve;
+            });
+        }
+    });
+    
+    // Aguarda TODAS as imagens serem processadas
+    await Promise.all(promises);
+    console.log('✅ Todas as imagens processadas. Abrindo janela de impressão...');
+    
+    // Pequeno delay para o navegador renderizar o Base64 na tela
     setTimeout(() => {
         window.print();
         setTimeout(() => limparAmbienteDeImpressao(), 1000);
