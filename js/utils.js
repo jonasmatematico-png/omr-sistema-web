@@ -63,10 +63,10 @@ async function buscarQuestoes(tipo, idAvaliacao) {
 function prepararQuestaoParaSalvar(tipo, idAval, q, numero) {
     const base = {
         id_avaliacao: idAval,
-        numero_questao: numero,
+        numero: numero, // 🚨 CORREÇÃO AQUI: era 'numero_questao', agora é 'numero'
         enunciado: q.enunciado,
         valor: parseFloat(q.valor) || 1,
-        imagem_url: q.imagemUrl || null,
+        imagem_url: q.imagemUrl || null, // Vai salvar a URL do Supabase que funcionou no upload
         descritor: q.descritor || null,
         habilidade: q.habilidade || null
     };
