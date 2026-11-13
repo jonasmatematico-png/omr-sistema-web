@@ -1,770 +1,763 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OMR Sistema 2.0</title>
-<!--<link rel="manifest" href="/manifest.json">-->
-<link rel="stylesheet" href="css/style.css">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!-- ======================================================================== -->
-<!-- 📐 KATEX: RENDERIZAÇÃO PROFISSIONAL DE MATEMÁTICA (Khan Academy)         -->
-<!-- ======================================================================== -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMR Sistema 2.0</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- 📐 KATEX: RENDERIZAÇÃO PROFISSIONAL DE MATEMÁTICA -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 </head>
 <body>
+
 <!-- TELA DE LOGIN -->
 <div id="authScreen" class="auth-screen">
-<div class="auth-box">
-<h1 style="text-align: center; color: #008080; margin-bottom: 24px;">OMR Sistema 2.0</h1>
-<div class="auth-tabs">
-<div class="auth-tab active" onclick="trocarTab('login')">Entrar</div>
-<div class="auth-tab" onclick="trocarTab('signup')">Criar Conta</div>
-</div>
-<div id="loginForm" class="auth-form">
-<input type="email" id="loginEmail" placeholder="E-mail">
-<input type="password" id="loginPassword" placeholder="Senha">
-<button onclick="fazerLogin()">Entrar</button>
-</div>
-<div id="signupForm" class="auth-form hidden">
-<input type="email" id="signupEmail" placeholder="E-mail">
-<input type="password" id="signupPassword" placeholder="Senha (mínimo 6 caracteres)">
-<button onclick="criarConta()">Criar Conta</button>
-</div>
-</div>
+    <div class="auth-box">
+        <h1 style="text-align: center; color: #008080; margin-bottom: 24px;">OMR Sistema 2.0</h1>
+        <div class="auth-tabs">
+            <div class="auth-tab active" onclick="trocarTab('login')">Entrar</div>
+            <div class="auth-tab" onclick="trocarTab('signup')">Criar Conta</div>
+        </div>
+        <div id="loginForm" class="auth-form">
+            <input type="email" id="loginEmail" placeholder="E-mail">
+            <input type="password" id="loginPassword" placeholder="Senha">
+            <button onclick="fazerLogin()">Entrar</button>
+        </div>
+        <div id="signupForm" class="auth-form hidden">
+            <input type="email" id="signupEmail" placeholder="E-mail">
+            <input type="password" id="signupPassword" placeholder="Senha (mínimo 6 caracteres)">
+            <button onclick="criarConta()">Criar Conta</button>
+        </div>
+    </div>
 </div>
 
 <!-- TELA PRINCIPAL -->
 <div id="mainScreen" class="main-screen hidden">
 
     <div class="sidebar">
-    <div class="sidebar-header">
-        <h1>📊 OMR Sistema</h1>
-        <p>Gestão de Avaliações</p>
-    </div>
-    
-    <!-- MENU LATERAL LIMPO E ORGANIZADO -->
-    <div class="menu-item active" data-modulo="dissertativa" onclick="navegarPara('view-provas', this)">📝 Criar Prova Aberta</div>
-    <div class="menu-item" data-modulo="objetiva" onclick="navegarPara('view-objetivas', this)">✅ Criar Prova Objetiva</div>
-    <div class="menu-item" data-modulo="diagnostico" onclick="navegarPara('view-diagnostico', this)">📊 Diagnóstico</div>
-    <div class="menu-item" data-modulo="planilha" onclick="navegarPara('view-planilha', this)">📋 Planilha</div>
-    <div class="menu-item" data-modulo="corretor" onclick="navegarPara('view-corretor', this)">✏️ Corretor Manual</div>
-    <div class="menu-item" data-modulo="qr" onclick="navegarPara('view-qr', this)">🔲 QR Codes</div>
-    <!-- MENU DE INCLUSÃO -->
-    <div class="menu-item" data-modulo="inclusao_perfis" onclick="navegarPara('view-inclusao-perfis', this)">🧩 Perfis de Alunos</div>
-    <div class="menu-item" data-modulo="inclusao_gerar" onclick="navegarPara('view-inclusao-gerar', this)">🎯 Gerar Atividade Adaptada</div>
-    <div class="menu-item" data-modulo="inclusao_colaboracao" onclick="navegarPara('view-inclusao-colaboracao', this)">🤝 Colaboração AEE</div>
-    <div class="menu-item" data-modulo="inclusao_relatorios" onclick="navegarPara('view-inclusao-relatorios', this)">📊 Relatórios de Inclusão</div>
-    
-    <!-- Links externos com destaque visual -->
-    <div class="menu-item" data-modulo="omr" onclick="window.open('correcao-objetiva.html', '_blank')" style="background: #e8f5e9; border-left-color: #28a745; color: #28a745; font-weight: 600;">🔍 Correção Objetiva (OMR)</div>
-    <div class="menu-item" data-modulo="correcao_dissertativa" onclick="window.open('correcao-dissertativa.html', '_blank')" style="background: #e0f7fa; border-left-color: #008080; color: #008080; font-weight: 600;">✍️ Correção Dissertativa</div>
-    
-    <div class="menu-item" data-modulo="gestao" onclick="navegarPara('view-gestao', this)">👥 Gestão</div>
-    
-    <div class="sidebar-footer">
-        <div class="user-info">
-            <div class="user-avatar" id="userAvatar">U</div>
-            <div class="user-email" id="userEmail">usuario@email.com</div>
-        </div>
-        <button class="btn-logout" onclick="sair()">Sair</button>
-    </div>
-</div>
-
-<div class="content">
-<!-- VIEW: PROVAS ABERTAS -->
-<div id="view-provas" class="view active">
-<h2>📝 Provas Abertas (Dissertativas)</h2>
-<div class="card">
-<div id="bannerEdicao" class="banner-edit hidden">
-<p id="bannerTexto">✏️ Editando prova</p>
-<button class="btn btn-secondary btn-sm" onclick="cancelarEdicao()">Cancelar</button>
-</div>
-<div class="form-group">
-<label>Nome da Prova</label>
-<input type="text" id="nomeProva" placeholder="Ex: Prova 1 - Frações">
-</div>
-<div class="form-row">
-<div class="form-group">
-<label>Bimestre</label>
-<select id="bimestre">
-<option value="1">1º Bimestre</option>
-<option value="2">2º Bimestre</option>
-<option value="3" selected>3º Bimestre</option>
-<option value="4">4º Bimestre</option>
-</select>
-</div>
-<div class="form-group">
-<label>Disciplina</label>
-<input type="text" id="disciplina" value="Matemática">
-</div>
-</div>
-<div class="form-group">
-<label>Peso na Média</label>
-<input type="number" id="peso" value="1" step="0.1">
-</div>
-<h3 style="margin: 20px 0 12px; display: flex; justify-content: space-between; align-items: center;">
-Questões (<span id="totalQuestoes">1</span>)
-<div style="display: flex; gap: 8px;">
-<button class="btn btn-secondary btn-sm" onclick="abrirModalColar()">📋 Colar do Word</button>
-<button class="btn btn-primary btn-sm" onclick="adicionarQuestao()">+ Adicionar</button>
-</div>
-</h3>
-<div id="questoesContainer"></div>
-<button id="btnSalvar" class="btn btn-success" style="width: 100%; margin-top: 16px;" onclick="salvarProva()">💾 SALVAR PROVA ABERTA</button>
-</div>
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-    <button class="btn btn-primary" style="padding: 14px;" onclick="gerarPDFProvaAluno()">📄 GERAR PDF (ALUNO)</button>
-    <button class="btn btn-success" style="padding: 14px;" onclick="gerarPDFProvaProfessor()">📋 GERAR GABARITO (PROFESSOR)</button>
-</div>
-<div class="card">
-<h3>Provas Cadastradas</h3>
-<div id="provasLista" class="loading">Carregando...</div>
-</div>
-</div>
-
-<!-- VIEW: PROVAS OBJETIVAS -->
-<div id="view-objetivas" class="view">
-<h2>✅ Provas Objetivas (Múltipla Escolha)</h2>
-<div class="card">
-<div id="bannerEdicaoObj" class="banner-edit hidden">
-<p id="bannerTextoObj">✏️ Editando prova</p>
-<button class="btn btn-secondary btn-sm" onclick="cancelarEdicaoObj()">Cancelar</button>
-</div>
-<div class="form-group">
-<label>Nome da Prova</label>
-<input type="text" id="nomeProvaObj" placeholder="Ex: Simulado SAEB">
-</div>
-<div class="form-row">
-<div class="form-group">
-<label>Bimestre</label>
-<select id="bimestreObj">
-<option value="1">1º Bimestre</option>
-<option value="2">2º Bimestre</option>
-<option value="3" selected>3º Bimestre</option>
-<option value="4">4º Bimestre</option>
-</select>
-</div>
-<div class="form-group">
-<label>Disciplina</label>
-<input type="text" id="disciplinaObj" value="Matemática">
-</div>
-</div>
-<div class="form-row">
-<div class="form-group">
-<label>Peso na Média</label>
-<input type="number" id="pesoObj" value="1" step="0.1">
-</div>
-<div class="form-group">
-<label>Alternativas por Questão</label>
-<select id="qtdAlternativasObj">
-<option value="3">3 (A, B, C)</option>
-<option value="4" selected>4 (A, B, C, D)</option>
-<option value="5">5 (A, B, C, D, E)</option>
-</select>
-</div>
-</div>
-<h3 style="margin: 20px 0 12px; display: flex; justify-content: space-between; align-items: center;">
-Questões (<span id="totalQuestoesObj">1</span>)
-<button class="btn btn-primary btn-sm" onclick="adicionarQuestaoObj()">+ Adicionar</button>
-</h3>
-<div id="questoesObjContainer"></div>
-<button id="btnSalvarObj" class="btn btn-success" style="width: 100%; margin-top: 16px;" onclick="salvarProvaObjetiva()">💾 SALVAR PROVA OBJETIVA</button>
-</div>
-<!-- Botões da Prova Objetiva -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-    <button class="btn btn-primary" style="padding: 14px;" onclick="imprimirProvaObjetivaAluno()">📄 IMPRIMIR PROVA (ALUNO)</button>
-    <button class="btn btn-success" style="padding: 14px;" onclick="imprimirProvaObjetivaProfessor()">📋 IMPRIMIR GABARITO (PROFESSOR)</button>
-</div>
-<div class="card">
-<h3>Provas Objetivas Cadastradas</h3>
-<div id="provasObjLista" class="loading">Carregando...</div>
-</div>
-</div>
-
-<!-- VIEW: DIAGNÓSTICO -->
-<div id="view-diagnostico" class="view">
-<h2>📊 Diagnóstico de Desempenho</h2>
-<div class="card">
-<button class="btn btn-primary" onclick="processarTriagem()" style="width: 100%; padding: 12px; font-size: 16px; font-weight: bold; margin-bottom: 20px;">
-RECALCULAR E CLASSIFICAR TURMA
-</button>
-<div id="areaTriagem" style="display: none;">
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-<div style="background: #fff5f5; padding: 16px; border-radius: 8px; border-left: 5px solid #dc3545;">
-<h4 style="color: #dc3545; margin-top: 0;">🚨 Piores Desempenhos (Abaixo do Básico / Básico)</h4>
-<div id="listaPiores" style="max-height: 400px; overflow-y: auto;"></div>
-</div>
-<div style="background: #f0fff4; padding: 16px; border-radius: 8px; border-left: 5px solid #28a745;">
-<h4 style="color: #28a745; margin-top: 0;">🏆 Melhores Desempenhos (Adequado / Avançado)</h4>
-<div id="listaMelhores" style="max-height: 400px; overflow-y: auto;"></div>
-</div>
-</div>
-</div>
-</div>
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-<div>
-<label for="selectAvaliacao" style="font-weight: bold; color: #4A148C; display: block; margin-bottom: 8px;">📋 Selecione a Prova:</label>
-<select id="selectAvaliacao" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; background: white;">
-<option value="">Carregando provas...</option>
-</select>
-</div>
-<div>
-<label for="selectTurma" style="font-weight: bold; color: #4A148C; display: block; margin-bottom: 8px;">🏫 Selecione a Turma (Opcional):</label>
-<select id="selectTurma" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; background: white;">
-<option value="">Todas as turmas</option>
-</select>
-</div>
-</div>
-<button class="btn btn-primary" onclick="processarTriagem()" style="width: 100%; padding: 12px; font-size: 16px; font-weight: bold; margin-bottom: 20px;">
-🧮 RECALCULAR E CLASSIFICAR
-</button>
-<div class="ia-tabs">
-<button class="ia-tab active" id="tabDiagTurma" onclick="mudarAbaDiagnostico('turma')">Por Turma</button>
-<button class="ia-tab" id="tabDiagAluno" onclick="mudarAbaDiagnostico('aluno')">Por Aluno</button>
-</div>
-<div id="abaDiagTurma">
-<div class="form-row">
-<div class="form-group">
-<label>Turma</label>
-<select id="selTurmaDiagnostico" onchange="carregarProvasPorTurma()"></select>
-</div>
-<div class="form-group">
-<label>Prova</label>
-<select id="selProvaDiagnostico"></select>
-</div>
-</div>
-<div class="form-group">
-<label>Analisar por:</label>
-<select id="tipoAnaliseTurma">
-<option value="descritor_codigo">Descritor (SAEB)</option>
-<option value="habilidade">Habilidade (BNCC)</option>
-</select>
-</div>
-<button class="btn btn-primary" style="width: 100%;" onclick="carregarDiagnosticoTurma()">📊 GERAR DIAGNÓSTICO DA TURMA</button>
-</div>
-<div id="abaDiagAluno" class="hidden">
-<div class="form-row">
-<div class="form-group">
-<label>Turma</label>
-<select id="selTurmaDiagAluno" onchange="carregarAlunosDiagAluno()"></select>
-</div>
-<div class="form-group">
-<label>Aluno</label>
-<select id="selAlunoDiagAluno" onchange="carregarProvasAluno()"></select>
-</div>
-</div>
-<div class="form-row">
-<div class="form-group">
-<label>Prova</label>
-<select id="selProvaDiagAluno"></select>
-</div>
-<div class="form-group">
-<label>Analisar por:</label>
-<select id="tipoAnaliseAluno">
-<option value="descritor_codigo">Descritor (SAEB)</option>
-<option value="habilidade">Habilidade (BNCC)</option>
-</select>
-</div>
-</div>
-<button class="btn btn-primary" style="width: 100%;" onclick="carregarDiagnosticoAluno()">📊 GERAR DIAGNÓSTICO DO ALUNO</button>
-</div>
-<!-- ÁREAS DE RESULTADO FORA DA CARD -->
-<div id="areaDiagnosticoTurma"></div>
-<div id="areaGraficoDiagnosticoAluno"></div>
-</div>
-
-<!-- VIEW: PLANILHA -->
-<div id="view-planilha" class="view">
-<h2>📋 Exportar para Planilha</h2>
-<div class="card">
-<div class="form-row">
-<div class="form-group">
-<label>Turma</label>
-<select id="selTurmaPlanilha"></select>
-</div>
-<div class="form-group">
-<label>Prova</label>
-<select id="selProvaPlanilha"></select>
-</div>
-</div>
-<button class="btn btn-primary" style="width: 100%; margin-bottom: 10px;" onclick="gerarMatrizRespostas()">
-    📊 GERAR MATRIZ DE RESPOSTAS
-</button>
-<button class="btn btn-primary" style="width: 100%;" onclick="gerarMatrizRespostas()"> GERAR MATRIZ DE RESPOSTAS</button>
-<button onclick="gerarTabelaPlanilha()">📊 Exportar Planilha</button>
-</div>
-<!-- 🚨 CORREÇÃO: ÁREA DE RESULTADO FORA DA CARD -->
- <!-- Área onde a matriz será exibida -->
-  <!-- Botão que o professor clica -->
-<button class="btn btn-primary" style="width: 100%; margin-bottom: 10px;" onclick="gerarMatrizRespostas()">
-    📊 GERAR MATRIZ DE RESPOSTAS
-</button>
-
-<!-- Área onde a tabela vai aparecer -->
-<div id="areaTabelaPlanilha" style="margin-top:20px;"></div>
-<div id="areaTabelaPlanilha" style="margin-top:20px;"></div>
-
-</div>
-
-<!-- VIEW: CORRETOR MANUAL -->
-<div id="view-corretor" class="view">
-<h2>✏️ Corretor Manual de Prova</h2>
-<div class="card">
-<div class="form-row">
-<div class="form-group">
-<label>Turma</label>
-<select id="selTurmaCorretor" onchange="carregarAlunosCorretor()"></select>
-</div>
-<div class="form-group">
-<label>Prova</label>
-<select id="selProvaCorretor" onchange="carregarAlunosCorretor()"></select>
-</div>
-</div>
-<div class="form-group">
-<label>Aluno</label>
-<select id="selAlunoCorretor" onchange="carregarRespostasAluno()"></select>
-</div>
-</div>
-<!-- 🚨 CORREÇÃO: ÁREA DE RESULTADO FORA DA CARD -->
-<div id="areaCorretorManual"></div>
-</div>
-
-<!-- VIEW: QR CODES -->
-<div id="view-qr" class="view">
-    <h2>🔲 Gerador de QR Codes</h2>
-    
-    <!-- 🚨 BOTÃO RECUPERADO: GABARITO PERSONALIZADO -->
-    <div style="margin-bottom: 24px; text-align: center; background: #f0f4ff; padding: 20px; border-radius: 12px; border: 2px dashed #667eea;">
-        <h3 style="color: #4f46e5; margin: 0 0 8px 0; font-size: 18px;">📥 Gabaritos Personalizados</h3>
-        <p style="color: #6b7280; font-size: 14px; margin: 0 0 16px 0;">
-            Baixe folhas de resposta prontas para impressão, já com os QR Codes únicos dos seus alunos.
-        </p>
-        <a href="https://omr-sistema-api.onrender.com/baixar_gabaritos" target="_blank" class="btn btn-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); font-size: 16px; padding: 14px 28px;">
-            🖨️ GERAR E BAIXAR GABARITOS (PDF)
-        </a>
-    </div>
-
-    <div class="card">
-        <div class="ia-tabs">
-            <button class="ia-tab active" onclick="mudarAbaQR('prova')">QR da Prova</button>
-            <button class="ia-tab" onclick="mudarAbaQR('aluno')">QR do Aluno</button>
-            <button class="ia-tab" onclick="mudarAbaQR('cartoes')">Cartões</button>
+        <div class="sidebar-header">
+            <h1>📊 OMR Sistema</h1>
+            <p>Gestão de Avaliações</p>
         </div>
         
-        <div id="abaQRProva">
-            <div class="form-group">
-                <label>Prova</label>
-                <select id="selProvaQR" onchange="atualizarQRProva()"></select>
-            </div>
-            <button class="btn btn-primary" style="width: 100%;" onclick="gerarQRProva()">🔲 GERAR QR CODE</button>
-        </div>
+        <!-- MENU LATERAL -->
+        <div class="menu-item active" data-modulo="dissertativa" onclick="navegarPara('view-provas', this)">📝 Criar Prova Aberta</div>
+        <div class="menu-item" data-modulo="objetiva" onclick="navegarPara('view-objetivas', this)">✅ Criar Prova Objetiva</div>
+        <div class="menu-item" data-modulo="diagnostico" onclick="navegarPara('view-diagnostico', this)">📊 Diagnóstico</div>
+        <div class="menu-item" data-modulo="planilha" onclick="navegarPara('view-planilha', this)">📋 Planilha</div>
+        <div class="menu-item" data-modulo="corretor" onclick="navegarPara('view-corretor', this)">✏️ Corretor Manual</div>
+        <div class="menu-item" data-modulo="qr" onclick="navegarPara('view-qr', this)">🔲 QR Codes</div>
         
-        <div id="abaQRAluno" class="hidden">
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Turma</label>
-                    <select id="selTurmaQR" onchange="carregarAlunosQR()"></select>
-                </div>
-                <div class="form-group">
-                    <label>Aluno</label>
-                    <select id="selAlunoQR"></select>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>Prova (opcional)</label>
-                <select id="selProvaQRAluno">
-                    <option value="">Nenhuma (QR genérico)</option>
-                </select>
-            </div>
-            <button class="btn btn-primary" style="width: 100%;" onclick="gerarQRAluno()">🔲 GERAR QR CODE</button>
-        </div>
+        <!-- MENU DE INCLUSÃO -->
+        <div class="menu-item" data-modulo="inclusao_perfis" onclick="navegarPara('view-inclusao-perfis', this)">🧩 Perfis de Alunos</div>
+        <div class="menu-item" data-modulo="inclusao_gerar" onclick="navegarPara('view-inclusao-gerar', this)">🎯 Gerar Atividade Adaptada</div>
+        <div class="menu-item" data-modulo="inclusao_colaboracao" onclick="navegarPara('view-inclusao-colaboracao', this)">🤝 Colaboração AEE</div>
+        <div class="menu-item" data-modulo="inclusao_relatorios" onclick="navegarPara('view-inclusao-relatorios', this)">📊 Relatórios de Inclusão</div>
         
-        <div id="abaQRCartoes" class="hidden">
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Turma</label>
-                    <select id="selTurmaCartoes"></select>
+        <!-- Links externos -->
+        <div class="menu-item" data-modulo="omr" onclick="window.open('correcao-objetiva.html', '_blank')" style="background: #e8f5e9; border-left-color: #28a745; color: #28a745; font-weight: 600;">🔍 Correção Objetiva (OMR)</div>
+        <div class="menu-item" data-modulo="correcao_dissertativa" onclick="window.open('correcao-dissertativa.html', '_blank')" style="background: #e0f7fa; border-left-color: #008080; color: #008080; font-weight: 600;">✍️ Correção Dissertativa</div>
+        <div class="menu-item" data-modulo="gestao" onclick="navegarPara('view-gestao', this)">👥 Gestão</div>
+        
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-email" id="userEmail">usuario@email.com</div>
+            </div>
+            <button class="btn-logout" onclick="sair()">Sair</button>
+        </div>
+    </div>
+
+    <!-- ======================================================================== -->
+    <!-- ÁREA DE CONTEÚDO (TODAS AS TELAS DEVEM FICAR DENTRO DESTE BLOCO) -->
+    <!-- ======================================================================== -->
+    <div class="content">
+        
+        <!-- VIEW: PROVAS ABERTAS -->
+        <div id="view-provas" class="view active">
+            <h2>📝 Provas Abertas (Dissertativas)</h2>
+            <div class="card">
+                <div id="bannerEdicao" class="banner-edit hidden">
+                    <p id="bannerTexto">✏️ Editando prova</p>
+                    <button class="btn btn-secondary btn-sm" onclick="cancelarEdicao()">Cancelar</button>
                 </div>
                 <div class="form-group">
-                    <label>Prova (opcional)</label>
-                    <select id="selProvaCartoes">
-                        <option value="">Nenhuma (QR genérico)</option>
+                    <label>Nome da Prova</label>
+                    <input type="text" id="nomeProva" placeholder="Ex: Prova 1 - Frações">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Bimestre</label>
+                        <select id="bimestre">
+                            <option value="1">1º Bimestre</option>
+                            <option value="2">2º Bimestre</option>
+                            <option value="3" selected>3º Bimestre</option>
+                            <option value="4">4º Bimestre</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Disciplina</label>
+                        <input type="text" id="disciplina" value="Matemática">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Peso na Média</label>
+                    <input type="number" id="peso" value="1" step="0.1">
+                </div>
+                <h3 style="margin: 20px 0 12px; display: flex; justify-content: space-between; align-items: center;">
+                    Questões (<span id="totalQuestoes">1</span>)
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-secondary btn-sm" onclick="abrirModalColar()">📋 Colar do Word</button>
+                        <button class="btn btn-primary btn-sm" onclick="adicionarQuestao()">+ Adicionar</button>
+                    </div>
+                </h3>
+                <div id="questoesContainer"></div>
+                <button id="btnSalvar" class="btn btn-success" style="width: 100%; margin-top: 16px;" onclick="salvarProva()">💾 SALVAR PROVA ABERTA</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                <button class="btn btn-primary" style="padding: 14px;" onclick="gerarPDFProvaAluno()">📄 GERAR PDF (ALUNO)</button>
+                <button class="btn btn-success" style="padding: 14px;" onclick="gerarPDFProvaProfessor()">📋 GERAR GABARITO (PROFESSOR)</button>
+            </div>
+            <div class="card">
+                <h3>Provas Cadastradas</h3>
+                <div id="provasLista" class="loading">Carregando...</div>
+            </div>
+        </div>
+
+        <!-- VIEW: PROVAS OBJETIVAS -->
+        <div id="view-objetivas" class="view">
+            <h2>✅ Provas Objetivas (Múltipla Escolha)</h2>
+            <div class="card">
+                <div id="bannerEdicaoObj" class="banner-edit hidden">
+                    <p id="bannerTextoObj">✏️ Editando prova</p>
+                    <button class="btn btn-secondary btn-sm" onclick="cancelarEdicaoObj()">Cancelar</button>
+                </div>
+                <div class="form-group">
+                    <label>Nome da Prova</label>
+                    <input type="text" id="nomeProvaObj" placeholder="Ex: Simulado SAEB">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Bimestre</label>
+                        <select id="bimestreObj">
+                            <option value="1">1º Bimestre</option>
+                            <option value="2">2º Bimestre</option>
+                            <option value="3" selected>3º Bimestre</option>
+                            <option value="4">4º Bimestre</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Disciplina</label>
+                        <input type="text" id="disciplinaObj" value="Matemática">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Peso na Média</label>
+                        <input type="number" id="pesoObj" value="1" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Alternativas por Questão</label>
+                        <select id="qtdAlternativasObj">
+                            <option value="3">3 (A, B, C)</option>
+                            <option value="4" selected>4 (A, B, C, D)</option>
+                            <option value="5">5 (A, B, C, D, E)</option>
+                        </select>
+                    </div>
+                </div>
+                <h3 style="margin: 20px 0 12px; display: flex; justify-content: space-between; align-items: center;">
+                    Questões (<span id="totalQuestoesObj">1</span>)
+                    <button class="btn btn-primary btn-sm" onclick="adicionarQuestaoObj()">+ Adicionar</button>
+                </h3>
+                <div id="questoesObjContainer"></div>
+                <button id="btnSalvarObj" class="btn btn-success" style="width: 100%; margin-top: 16px;" onclick="salvarProvaObjetiva()">💾 SALVAR PROVA OBJETIVA</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                <button class="btn btn-primary" style="padding: 14px;" onclick="imprimirProvaObjetivaAluno()">📄 IMPRIMIR PROVA (ALUNO)</button>
+                <button class="btn btn-success" style="padding: 14px;" onclick="imprimirProvaObjetivaProfessor()">📋 IMPRIMIR GABARITO (PROFESSOR)</button>
+            </div>
+            <div class="card">
+                <h3>Provas Objetivas Cadastradas</h3>
+                <div id="provasObjLista" class="loading">Carregando...</div>
+            </div>
+        </div>
+
+        <!-- VIEW: DIAGNÓSTICO -->
+        <div id="view-diagnostico" class="view">
+            <h2>📊 Diagnóstico de Desempenho</h2>
+            <div class="card">
+                <button class="btn btn-primary" onclick="processarTriagem()" style="width: 100%; padding: 12px; font-size: 16px; font-weight: bold; margin-bottom: 20px;">RECALCULAR E CLASSIFICAR TURMA</button>
+                <div id="areaTriagem" style="display: none;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div style="background: #fff5f5; padding: 16px; border-radius: 8px; border-left: 5px solid #dc3545;">
+                            <h4 style="color: #dc3545; margin-top: 0;">🚨 Piores Desempenhos</h4>
+                            <div id="listaPiores" style="max-height: 400px; overflow-y: auto;"></div>
+                        </div>
+                        <div style="background: #f0fff4; padding: 16px; border-radius: 8px; border-left: 5px solid #28a745;">
+                            <h4 style="color: #28a745; margin-top: 0;">🏆 Melhores Desempenhos</h4>
+                            <div id="listaMelhores" style="max-height: 400px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div>
+                    <label for="selectAvaliacao" style="font-weight: bold; color: #4A148C; display: block; margin-bottom: 8px;">📋 Selecione a Prova:</label>
+                    <select id="selectAvaliacao" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; background: white;">
+                        <option value="">Carregando provas...</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="selectTurma" style="font-weight: bold; color: #4A148C; display: block; margin-bottom: 8px;">🏫 Selecione a Turma:</label>
+                    <select id="selectTurma" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; background: white;">
+                        <option value="">Todas as turmas</option>
                     </select>
                 </div>
             </div>
-            <button class="btn btn-primary" style="width: 100%;" onclick="gerarCartoes()">🖨️ GERAR CARTÕES</button>
+            <button class="btn btn-primary" onclick="processarTriagem()" style="width: 100%; padding: 12px; font-size: 16px; font-weight: bold; margin-bottom: 20px;">🧮 RECALCULAR E CLASSIFICAR</button>
+            
+            <div class="ia-tabs">
+                <button class="ia-tab active" id="tabDiagTurma" onclick="mudarAbaDiagnostico('turma')">Por Turma</button>
+                <button class="ia-tab" id="tabDiagAluno" onclick="mudarAbaDiagnostico('aluno')">Por Aluno</button>
+            </div>
+            <div id="abaDiagTurma">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Turma</label>
+                        <select id="selTurmaDiagnostico" onchange="carregarProvasPorTurma()"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Prova</label>
+                        <select id="selProvaDiagnostico"></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Analisar por:</label>
+                    <select id="tipoAnaliseTurma">
+                        <option value="descritor_codigo">Descritor (SAEB)</option>
+                        <option value="habilidade">Habilidade (BNCC)</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="carregarDiagnosticoTurma()">📊 GERAR DIAGNÓSTICO DA TURMA</button>
+            </div>
+            <div id="abaDiagAluno" class="hidden">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Turma</label>
+                        <select id="selTurmaDiagAluno" onchange="carregarAlunosDiagAluno()"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Aluno</label>
+                        <select id="selAlunoDiagAluno" onchange="carregarProvasAluno()"></select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Prova</label>
+                        <select id="selProvaDiagAluno"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Analisar por:</label>
+                        <select id="tipoAnaliseAluno">
+                            <option value="descritor_codigo">Descritor (SAEB)</option>
+                            <option value="habilidade">Habilidade (BNCC)</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="carregarDiagnosticoAluno()">📊 GERAR DIAGNÓSTICO DO ALUNO</button>
+            </div>
+            <div id="areaDiagnosticoTurma"></div>
+            <div id="areaGraficoDiagnosticoAluno"></div>
         </div>
-    </div>
-    
-    <!-- ÁREAS DE RESULTADO (FORA DA CARD, COMO JÁ AJUSTAMOS) -->
-    <div id="areaQR"></div>
-    <div id="areaCartoes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;"></div>
-</div>
 
-<!-- VIEW: GESTÃO -->
-<div id="view-gestao" class="view">
-<h2>👥 Gestão de Usuários</h2>
-<div class="card">
-<h3>➕ Cadastrar Novo Professor</h3>
-<div class="form-row">
-<div class="form-group">
-<label>Nome Completo</label>
-<input type="text" id="gestaoNome" placeholder="Ex: Maria Silva">
-</div>
-<div class="form-group">
-<label>E-mail</label>
-<input type="email" id="gestaoEmail" placeholder="maria@escola.com">
-</div>
-</div>
-<div class="form-row">
-<div class="form-group">
-<label>Senha Temporária</label>
-<input type="password" id="gestaoSenha" placeholder="Mínimo 6 caracteres">
-</div>
-<div class="form-group">
-<label>Tipo de Acesso</label>
-<select id="gestaoTipo">
-<option value="professor">Professor</option>
-<option value="admin">Administrador</option>
-</select>
-</div>
-</div>
-<button class="btn btn-success" style="width: 100%;" onclick="cadastrarProfessorViaAPI()">🚀 CADASTRAR PROFESSOR</button>
-</div>
-<div class="card">
-<h3>Usuários Cadastrados</h3>
-<div id="listaUsuariosGestao"></div>
-</div>
-</div>
-</div> <!-- Fecha div.content -->
-</div> <!-- Fecha div.main-screen -->
+        <!-- VIEW: PLANILHA -->
+        <div id="view-planilha" class="view">
+            <h2>📋 Exportar para Planilha</h2>
+            <div class="card">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Turma</label>
+                        <select id="selTurmaPlanilha"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Prova</label>
+                        <select id="selProvaPlanilha"></select>
+                    </div>
+                </div>
+                <button class="btn btn-primary" style="width: 100%; margin-bottom: 10px;" onclick="gerarMatrizRespostas()">📊 GERAR MATRIZ DE RESPOSTAS</button>
+            </div>
+            <div id="areaTabelaPlanilha" style="margin-top:20px;"></div>
+        </div>
+
+        <!-- VIEW: CORRETOR MANUAL -->
+        <div id="view-corretor" class="view">
+            <h2>✏️ Corretor Manual de Prova</h2>
+            <div class="card">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Turma</label>
+                        <select id="selTurmaCorretor" onchange="carregarAlunosCorretor()"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Prova</label>
+                        <select id="selProvaCorretor" onchange="carregarAlunosCorretor()"></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Aluno</label>
+                    <select id="selAlunoCorretor" onchange="carregarRespostasAluno()"></select>
+                </div>
+            </div>
+            <div id="areaCorretorManual"></div>
+        </div>
+
+        <!-- VIEW: QR CODES -->
+        <div id="view-qr" class="view">
+            <h2>🔲 Gerador de QR Codes</h2>
+            <div style="margin-bottom: 24px; text-align: center; background: #f0f4ff; padding: 20px; border-radius: 12px; border: 2px dashed #667eea;">
+                <h3 style="color: #4f46e5; margin: 0 0 8px 0; font-size: 18px;">📥 Gabaritos Personalizados</h3>
+                <p style="color: #6b7280; font-size: 14px; margin: 0 0 16px 0;">Baixe folhas de resposta prontas para impressão, já com os QR Codes únicos dos seus alunos.</p>
+                <a href="https://omr-sistema-api.onrender.com/baixar_gabaritos" target="_blank" class="btn btn-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); font-size: 16px; padding: 14px 28px;">🖨️ GERAR E BAIXAR GABARITOS (PDF)</a>
+            </div>
+            <div class="card">
+                <div class="ia-tabs">
+                    <button class="ia-tab active" onclick="mudarAbaQR('prova')">QR da Prova</button>
+                    <button class="ia-tab" onclick="mudarAbaQR('aluno')">QR do Aluno</button>
+                    <button class="ia-tab" onclick="mudarAbaQR('cartoes')">Cartões</button>
+                </div>
+                <div id="abaQRProva">
+                    <div class="form-group">
+                        <label>Prova</label>
+                        <select id="selProvaQR" onchange="atualizarQRProva()"></select>
+                    </div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="gerarQRProva()">🔲 GERAR QR CODE</button>
+                </div>
+                <div id="abaQRAluno" class="hidden">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Turma</label>
+                            <select id="selTurmaQR" onchange="carregarAlunosQR()"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Aluno</label>
+                            <select id="selAlunoQR"></select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Prova (opcional)</label>
+                        <select id="selProvaQRAluno">
+                            <option value="">Nenhuma (QR genérico)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="gerarQRAluno()">🔲 GERAR QR CODE</button>
+                </div>
+                <div id="abaQRCartoes" class="hidden">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Turma</label>
+                            <select id="selTurmaCartoes"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Prova (opcional)</label>
+                            <select id="selProvaCartoes">
+                                <option value="">Nenhuma (QR genérico)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="gerarCartoes()">🖨️ GERAR CARTÕES</button>
+                </div>
+            </div>
+            <div id="areaQR"></div>
+            <div id="areaCartoes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;"></div>
+        </div>
+
+        <!-- VIEW: GESTÃO -->
+        <div id="view-gestao" class="view">
+            <h2>👥 Gestão de Usuários</h2>
+            <div class="card">
+                <h3>➕ Cadastrar Novo Professor</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome Completo</label>
+                        <input type="text" id="gestaoNome" placeholder="Ex: Maria Silva">
+                    </div>
+                    <div class="form-group">
+                        <label>E-mail</label>
+                        <input type="email" id="gestaoEmail" placeholder="maria@escola.com">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Senha Temporária</label>
+                        <input type="password" id="gestaoSenha" placeholder="Mínimo 6 caracteres">
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de Acesso</label>
+                        <select id="gestaoTipo">
+                            <option value="professor">Professor</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-success" style="width: 100%;" onclick="cadastrarProfessorViaAPI()">🚀 CADASTRAR PROFESSOR</button>
+            </div>
+            <div class="card">
+                <h3>Usuários Cadastrados</h3>
+                <div id="listaUsuariosGestao"></div>
+            </div>
+        </div>
+
+        <!-- ======================================================================== -->
+        <!-- 🧩 VIEW: PERFIS DE ALUNOS COM NEE (NOVO MÓDULO - LUGAR CORRETO!) -->
+        <!-- ======================================================================== -->
+        <div id="view-inclusao-perfis" class="view">
+            <h2>🧩 Perfis de Alunos com NEE</h2>
+            
+            <div class="card">
+                <h3>Cadastrar Novo Perfil</h3>
+                <div class="form-group">
+                    <label>Nome do Aluno</label>
+                    <input type="text" id="nomeAlunoNEE" placeholder="Ex: João Silva">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo de NEE</label>
+                        <select id="tipoNEE">
+                            <option value="TEA">TEA (Transtorno do Espectro Autista)</option>
+                            <option value="TDAH">TDAH (Déficit de Atenção e Hiperatividade)</option>
+                            <option value="TEA_TDAH">TEA + TDAH</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Nível de Suporte (1-5)</label>
+                        <select id="nivelSuporte">
+                            <option value="1">1 - Suporte leve</option>
+                            <option value="2">2 - Suporte moderado</option>
+                            <option value="3" selected>3 - Suporte substancial</option>
+                            <option value="4">4 - Suporte muito substancial</option>
+                            <option value="5">5 - Suporte muito intenso</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Tempo Adicional (minutos)</label>
+                        <input type="number" id="tempoAdicional" value="10" min="0" max="60">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Estratégias Preferenciais</label>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                        <label><input type="checkbox" class="estrategia-pref" value="visual"> 🖼️ Apoio visual</label>
+                        <label><input type="checkbox" class="estrategia-pref" value="passo_a_passo"> 📝 Passo a passo</label>
+                        <label><input type="checkbox" class="estrategia-pref" value="tempo_extra"> ⏰ Tempo extra</label>
+                        <label><input type="checkbox" class="estrategia-pref" value="texto_curto"> 📄 Textos curtos</label>
+                        <label><input type="checkbox" class="estrategia-pref" value="cores_destaque"> 🎨 Cores de destaque</label>
+                        <label><input type="checkbox" class="estrategia-pref" value="exemplos_resolvidos"> 💡 Exemplos resolvidos</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Estratégias a Evitar</label>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                        <label><input type="checkbox" class="estrategia-evitar" value="texto_longo"> 📜 Textos longos</label>
+                        <label><input type="checkbox" class="estrategia-evitar" value="muitas_cores"> 🌈 Muitas cores</label>
+                        <label><input type="checkbox" class="estrategia-evitar" value="metáforas"> 🎭 Metáforas/ironias</label>
+                        <label><input type="checkbox" class="estrategia-evitar" value="muitas_questoes"> 🔢 Muitas questões</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Observações Gerais</label>
+                    <textarea id="observacoesNEE" rows="3" placeholder="Ex: Aluno responde bem a atividades com imagens."></textarea>
+                </div>
+                
+                <button class="btn btn-success" style="width: 100%;" onclick="salvarPerfilNEE()">💾 SALVAR PERFIL</button>
+            </div>
+            
+            <div class="card">
+                <h3>Perfis Cadastrados</h3>
+                <div id="listaPerfisNEE" class="loading">Carregando...</div>
+            </div>
+        </div>
+
+    </div> <!-- ✅ AQUI FECHA A div.content CORRETAMENTE -->
+</div> <!-- ✅ AQUI FECHA A div.main-screen CORRETAMENTE -->
+
+
+<!-- ======================================================================== -->
+<!-- TODOS OS MODAIS DEVEM FICAR FORA DA div.content (NO FINAL DO BODY) -->
+<!-- ======================================================================== -->
 
 <!-- FAB IA -->
 <div id="meuRobo" class="fab-ia" onclick="abrirModalIA()" style="display:flex !important; bottom: 20px; right: 20px;">🤖</div>
 
 <!-- MODAL: COLAR DO WORD -->
 <div id="modalColar" class="modal">
-<div class="modal-content">
-<div class="modal-header">
-<h3>📋 Colar Questões do Word</h3>
-<button class="btn btn-secondary btn-sm" onclick="fecharModal('modalColar')">✕</button>
-</div>
-<div class="modal-body">
-<p style="margin-bottom: 12px; color: #666; font-size: 14px;">Cole suas questões no formato:<br><code style="background: #f5f5f5; padding: 4px 8px; border-radius: 4px;">1) Enunciado | Resposta esperada | Valor</code></p>
-<textarea id="textareaColar" rows="10" placeholder="1) Qual é 2+2? | 4 | 2\n2) Capital do Brasil? | Brasília | 1.5"></textarea>
-<button class="btn btn-primary" style="width: 100%; margin-top: 12px;" onclick="colarDoWord()">✅ IMPORTAR QUESTÕES</button>
-</div>
-</div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📋 Colar Questões do Word</h3>
+            <button class="btn btn-secondary btn-sm" onclick="fecharModal('modalColar')">✕</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom: 12px; color: #666; font-size: 14px;">Cole suas questões no formato:<br><code style="background: #f5f5f5; padding: 4px 8px; border-radius: 4px;">1) Enunciado | Resposta esperada | Valor</code></p>
+            <textarea id="textareaColar" rows="10" placeholder="1) Qual é 2+2? | 4 | 2\n2) Capital do Brasil? | Brasília | 1.5"></textarea>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 12px;" onclick="colarDoWord()">✅ IMPORTAR QUESTÕES</button>
+        </div>
+    </div>
 </div>
 
 <!-- MODAL: IA -->
 <div id="modalIA" class="modal">
-<div class="modal-content" style="max-width: 800px;">
-<div class="modal-header">
-<h3>🤖 Assistente IA</h3>
-<button class="btn btn-secondary btn-sm" onclick="fecharModal('modalIA')">✕</button>
-</div>
-<div class="modal-body">
-<div class="ia-tabs">
-<button class="ia-tab active" id="tabGerar" onclick="mudarAbaIA('gerar')">Gerar Questões</button>
-<button class="ia-tab" id="tabIdentificar" onclick="mudarAbaIA('identificar')">Identificar Habilidade</button>
-<button class="ia-tab" id="tabPlanejar" onclick="mudarAbaIA('planejar')">Planejar Aula</button>
-<button class="ia-tab" id="tabExperts" onclick="mudarAbaIA('experts')">🎓 Experts de IA</button>
-</div>
-<div id="abaGerar">
-<div class="form-row">
-<div class="form-group">
-<label>Fonte</label>
-<select id="iaFonte" onchange="carregarMatrizIA()">
-<option value="Currículo Paulista">Currículo Paulista</option>
-<option value="SAEB">Descritores SAEB</option>
-</select>
-</div>
-<div class="form-group">
-<label>Ano</label>
-<select id="iaAno" onchange="carregarMatrizIA()">
-<option value="1">1º Ano</option><option value="2">2º Ano</option><option value="3">3º Ano</option>
-<option value="4">4º Ano</option><option value="5">5º Ano</option><option value="6" selected>6º Ano</option>
-<option value="7">7º Ano</option><option value="8">8º Ano</option><option value="9">9º Ano</option>
-</select>
-</div>
-</div>
-<div class="form-group">
-<label>Habilidades (selecione pelo menos 1)</label>
-<div id="iaListaHabilidades" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 12px; border-radius: 6px;">
-<p style="text-align: center; color: #666;">Carregando...</p>
-</div>
-</div>
-<div class="form-row">
-<div class="form-group">
-<label>Tipo de Questão</label>
-<select id="iaTipoQuestao" onchange="toggleAlternativas()">
-<option value="aberta">Dissertativa</option>
-<option value="objetiva">Múltipla Escolha</option>
-</select>
-</div>
-<div class="form-group" id="grupoNumAlternativas" style="display: none;">
-<label>Nº de Alternativas</label>
-<select id="iaNumAlternativas">
-<option value="3">3 (A, B, C)</option>
-<option value="4" selected>4 (A, B, C, D)</option>
-<option value="5">5 (A, B, C, D, E)</option>
-</select>
-</div>
-</div>
-<div class="form-row">
-<div class="form-group">
-<label>Quantidade</label>
-<input type="number" id="iaQtd" value="3" min="1" max="10">
-</div>
-<div class="form-group">
-<label>Dificuldade</label>
-<select id="iaDificuldade">
-<option value="fácil">Fácil</option>
-<option value="média" selected>Média</option>
-<option value="difícil">Difícil</option>
-</select>
-</div>
-</div>
-<div class="form-group">
-<label>Contexto (opcional)</label>
-<input type="text" id="iaContexto" placeholder="Ex: use exemplos de futebol">
-</div>
-<button id="btnGerarIA" class="btn btn-primary" style="width: 100%;" onclick="gerarQuestoesIA()">✨ GERAR QUESTÕES COM IA</button>
-<div id="iaResultadoGerar" style="margin-top: 16px;"></div>
-</div>
-<div id="abaIdentificar" class="hidden">
-<div class="form-group">
-<label>Cole o texto da questão</label>
-<textarea id="iaTextoIdentificar" rows="6" placeholder="Cole aqui o enunciado completo da questão..."></textarea>
-</div>
-<button id="btnIdentificarIA" class="btn btn-primary" style="width: 100%;" onclick="identificarHabilidadeIA()">🔍 IDENTIFICAR HABILIDADE</button>
-<div id="iaResultadoIdentificar" style="margin-top: 16px;"></div>
-</div>
-
-<div id="abaPlanejar" class="hidden">
-    <h3 style="color: #4f46e5; margin: 0 0 16px 0; font-size: 18px;">📋 Identificação da Aula</h3>
-    
-    <!-- CABEÇALHO OPCIONAL DA ESCOLA -->
-    <div class="form-group">
-        <label>🏫 Nome da Escola (opcional - aparece no cabeçalho)</label>
-        <input type="text" id="iaEscola" placeholder="Ex: E.E. Professor João Silva">
-    </div>
-    
-    <!-- DADOS BÁSICOS -->
-    <div class="form-row">
-        <div class="form-group">
-            <label>📚 Disciplina</label>
-            <select id="iaDisciplina">
-                <option value="Matemática" selected>Matemática</option>
-                <option value="Português">Português</option>
-                <option value="Ciências">Ciências</option>
-                <option value="História">História</option>
-                <option value="Geografia">Geografia</option>
-                <option value="Artes">Artes</option>
-                <option value="Educação Física">Educação Física</option>
-                <option value="Ensino Religioso">Ensino Religioso</option>
-                <option value="Inglês">Inglês</option>
-            </select>
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h3>🤖 Assistente IA</h3>
+            <button class="btn btn-secondary btn-sm" onclick="fecharModal('modalIA')">✕</button>
         </div>
-        <div class="form-group">
-            <label>🎓 Ano / Série</label>
-            <select id="iaAnoSerie">
-                <option value="1º Ano EF">1º Ano EF</option>
-                <option value="2º Ano EF">2º Ano EF</option>
-                <option value="3º Ano EF">3º Ano EF</option>
-                <option value="4º Ano EF">4º Ano EF</option>
-                <option value="5º Ano EF" selected>5º Ano EF</option>
-                <option value="6º Ano EF">6º Ano EF</option>
-                <option value="7º Ano EF">7º Ano EF</option>
-                <option value="8º Ano EF">8º Ano EF</option>
-                <option value="9º Ano EF">9º Ano EF</option>
-                <option value="1º Ano EM">1º Ano EM</option>
-                <option value="2º Ano EM">2º Ano EM</option>
-                <option value="3º Ano EM">3º Ano EM</option>
-            </select>
+        <div class="modal-body">
+            <div class="ia-tabs">
+                <button class="ia-tab active" id="tabGerar" onclick="mudarAbaIA('gerar')">Gerar Questões</button>
+                <button class="ia-tab" id="tabIdentificar" onclick="mudarAbaIA('identificar')">Identificar Habilidade</button>
+                <button class="ia-tab" id="tabPlanejar" onclick="mudarAbaIA('planejar')">Planejar Aula</button>
+                <button class="ia-tab" id="tabExperts" onclick="mudarAbaIA('experts')">🎓 Experts de IA</button>
+            </div>
+            <div id="abaGerar">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Fonte</label>
+                        <select id="iaFonte" onchange="carregarMatrizIA()">
+                            <option value="Currículo Paulista">Currículo Paulista</option>
+                            <option value="SAEB">Descritores SAEB</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Ano</label>
+                        <select id="iaAno" onchange="carregarMatrizIA()">
+                            <option value="1">1º Ano</option><option value="2">2º Ano</option><option value="3">3º Ano</option>
+                            <option value="4">4º Ano</option><option value="5">5º Ano</option><option value="6" selected>6º Ano</option>
+                            <option value="7">7º Ano</option><option value="8">8º Ano</option><option value="9">9º Ano</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Habilidades</label>
+                    <div id="iaListaHabilidades" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 12px; border-radius: 6px;">
+                        <p style="text-align: center; color: #666;">Carregando...</p>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo de Questão</label>
+                        <select id="iaTipoQuestao" onchange="toggleAlternativas()">
+                            <option value="aberta">Dissertativa</option>
+                            <option value="objetiva">Múltipla Escolha</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="grupoNumAlternativas" style="display: none;">
+                        <label>Nº de Alternativas</label>
+                        <select id="iaNumAlternativas">
+                            <option value="3">3 (A, B, C)</option>
+                            <option value="4" selected>4 (A, B, C, D)</option>
+                            <option value="5">5 (A, B, C, D, E)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Quantidade</label>
+                        <input type="number" id="iaQtd" value="3" min="1" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label>Dificuldade</label>
+                        <select id="iaDificuldade">
+                            <option value="fácil">Fácil</option>
+                            <option value="média" selected>Média</option>
+                            <option value="difícil">Difícil</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Contexto (opcional)</label>
+                    <input type="text" id="iaContexto" placeholder="Ex: use exemplos de futebol">
+                </div>
+                <button id="btnGerarIA" class="btn btn-primary" style="width: 100%;" onclick="gerarQuestoesIA()">✨ GERAR QUESTÕES COM IA</button>
+                <div id="iaResultadoGerar" style="margin-top: 16px;"></div>
+            </div>
+            <div id="abaIdentificar" class="hidden">
+                <div class="form-group">
+                    <label>Cole o texto da questão</label>
+                    <textarea id="iaTextoIdentificar" rows="6" placeholder="Cole aqui o enunciado completo da questão..."></textarea>
+                </div>
+                <button id="btnIdentificarIA" class="btn btn-primary" style="width: 100%;" onclick="identificarHabilidadeIA()">🔍 IDENTIFICAR HABILIDADE</button>
+                <div id="iaResultadoIdentificar" style="margin-top: 16px;"></div>
+            </div>
+            <div id="abaPlanejar" class="hidden">
+                <h3 style="color: #4f46e5; margin: 0 0 16px 0; font-size: 18px;">📋 Identificação da Aula</h3>
+                <div class="form-group">
+                    <label>🏫 Nome da Escola (opcional)</label>
+                    <input type="text" id="iaEscola" placeholder="Ex: E.E. Professor João Silva">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>📚 Disciplina</label>
+                        <select id="iaDisciplina">
+                            <option value="Matemática" selected>Matemática</option>
+                            <option value="Português">Português</option>
+                            <option value="Ciências">Ciências</option>
+                            <option value="História">História</option>
+                            <option value="Geografia">Geografia</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>🎓 Ano / Série</label>
+                        <select id="iaAnoSerie">
+                            <option value="1º Ano EF">1º Ano EF</option><option value="5º Ano EF" selected>5º Ano EF</option><option value="9º Ano EF">9º Ano EF</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>🏫 Turma</label>
+                        <select id="iaTurmaPlanejamento"><option value="">Carregando turmas...</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>📅 Bimestre</label>
+                        <select id="iaBimestre">
+                            <option value="1º Bimestre">1º Bimestre</option><option value="3º Bimestre" selected>3º Bimestre</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>⏱️ Duração</label>
+                        <select id="iaDuracao">
+                            <option value="50 minutos" selected>50 minutos (1 aula)</option>
+                            <option value="100 minutos">100 minutos (2 aulas)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>🎯 Tema da Aula</label>
+                        <input type="text" id="iaTemaAula" placeholder="Ex: Frações equivalentes">
+                    </div>
+                </div>
+                <h3 style="color: #4f46e5; margin: 20px 0 12px 0; font-size: 18px;">🎯 Habilidades da Matriz Curricular</h3>
+                <div class="form-group">
+                    <label>🔍 Buscar habilidade:</label>
+                    <input type="text" id="buscaHabilidade" placeholder="Digite código (ex: EF05MA01)..." oninput="filtrarHabilidadesPlanejamento()" style="margin-bottom: 8px;">
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="selecionarTodasHabilidades()">✅ Selecionar todas</button>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="limparHabilidadesSelecionadas()">❌ Limpar</button>
+                        <span id="contadorHabilidades" style="align-self: center; font-weight: bold; color: #4f46e5;">0 selecionadas</span>
+                    </div>
+                    <div id="listaHabilidadesPlanejamento" style="max-height: 220px; overflow-y: auto; border: 1px solid #ddd; padding: 12px; border-radius: 6px; background: #fafafa;">
+                        <p style="text-align: center; color: #666;">Carregando habilidades...</p>
+                    </div>
+                </div>
+                <h3 style="color: #4f46e5; margin: 20px 0 12px 0; font-size: 18px;">🛠️ Contexto e Recursos</h3>
+                <div class="form-group">
+                    <label>👥 Perfil da Turma</label>
+                    <textarea id="iaPerfilTurma" rows="2" placeholder="Ex: 30 alunos, agitados, gostam de jogos"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>🧰 Material Disponível</label>
+                    <input type="text" id="iaMaterial" placeholder="Ex: quadro, caderno, projetor">
+                </div>
+                <div class="form-group">
+                    <label>💡 Observações Adicionais</label>
+                    <textarea id="iaObservacoes" rows="2" placeholder="Ex: Incluir aluno com dislexia..."></textarea>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+                    <button id="btnPlanejarIA" class="btn btn-primary" style="padding: 14px;" onclick="gerarPlanoAula()">🤖 GERAR PLANO DE AULA</button>
+                    <button class="btn btn-success" style="padding: 14px;" onclick="gerarAtividadesDaAula()">📝 GERAR ATIVIDADES</button>
+                </div>
+                <div id="iaResultadoPlanejar" style="margin-top: 20px;"></div>
+            </div>
+            <div id="abaExperts" class="hidden">
+                <div class="form-group">
+                    <label>Escolha o Especialista:</label>
+                    <select id="expertSelector" onchange="atualizarFormularioExpert()">
+                        <option value="tutor_recuperacao">🎯 Tutor de Recuperação</option>
+                        <option value="criador_provas">📝 Criador de Provas</option>
+                        <option value="analista_desempenho">📊 Analista de Desempenho</option>
+                        <option value="corretor_dissertativo">✍️ Corretor Dissertativo</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>ID do Aluno (Opcional):</label><input type="number" id="expertIdAluno" placeholder="Ex: 119"></div>
+                <div class="form-group">
+                    <label id="expertContextoLabel">Descreva a situação:</label>
+                    <textarea id="expertContexto" rows="6" placeholder="Ex: Errou D25. Gosta de futebol."></textarea>
+                </div>
+                <button id="btnChamarExpert" class="btn btn-primary" style="width: 100%;" onclick="executarExpertIA()">🚀 ACIONAR EXPERT</button>
+                <div id="expertResultado" style="margin-top: 16px;"></div>
+            </div>
         </div>
     </div>
-    
-    <div class="form-row">
-        <div class="form-group">
-            <label>🏫 Turma</label>
-            <select id="iaTurmaPlanejamento">
-                <option value="">Carregando turmas...</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>📅 Bimestre</label>
-            <select id="iaBimestre">
-                <option value="1º Bimestre">1º Bimestre</option>
-                <option value="2º Bimestre">2º Bimestre</option>
-                <option value="3º Bimestre" selected>3º Bimestre</option>
-                <option value="4º Bimestre">4º Bimestre</option>
-            </select>
-        </div>
-    </div>
-    <div class="form-row">
-        <div class="form-group">
-            <label>⏱️ Duração</label>
-            <select id="iaDuracao">
-                <option value="50 minutos" selected>50 minutos (1 aula)</option>
-                <option value="100 minutos">100 minutos (2 aulas)</option>
-                <option value="150 minutos">150 minutos (3 aulas)</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>🎯 Tema da Aula</label>
-            <input type="text" id="iaTemaAula" placeholder="Ex: Frações equivalentes">
-        </div>
-    </div>
-    
-    <!-- SELEÇÃO DE HABILIDADES E DESCRITORES -->
-<h3 style="color: #4f46e5; margin: 20px 0 12px 0; font-size: 18px;">🎯 Habilidades da Matriz Curricular</h3>
-
-<div class="form-group">
-    <label>🔍 Buscar habilidade:</label>
-    <input type="text" id="buscaHabilidade" placeholder="Digite código (ex: EF05MA01) ou palavra-chave..." oninput="filtrarHabilidadesPlanejamento()" style="margin-bottom: 8px;">
-    
-    <!-- FILTROS DE COMPONENTE E ANO -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-        <select id="filtroComponente" onchange="filtrarHabilidadesPlanejamento()" style="padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;">
-            <option value="">Todos os componentes</option>
-        </select>
-        <select id="filtroAno" onchange="filtrarHabilidadesPlanejamento()" style="padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;">
-            <option value="">Todos os anos</option>
-        </select>
-    </div>
-    
-    <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
-        <button type="button" class="btn btn-sm btn-secondary" onclick="selecionarTodasHabilidades()">✅ Selecionar todas visíveis</button>
-        <button type="button" class="btn btn-sm btn-secondary" onclick="limparHabilidadesSelecionadas()">❌ Limpar seleção</button>
-        <span id="contadorHabilidades" style="align-self: center; font-weight: bold; color: #4f46e5;">0 selecionadas</span>
-    </div>
-    
-    <div id="listaHabilidadesPlanejamento" style="max-height: 220px; overflow-y: auto; border: 1px solid #ddd; padding: 12px; border-radius: 6px; background: #fafafa;">
-        <p style="text-align: center; color: #666;">Carregando habilidades...</p>
-    </div>
-</div>
-    
-    <!-- CONTEXTO DA TURMA E RECURSOS -->
-    <h3 style="color: #4f46e5; margin: 20px 0 12px 0; font-size: 18px;">🛠️ Contexto e Recursos</h3>
-    
-    <div class="form-group">
-        <label>👥 Perfil da Turma</label>
-        <textarea id="iaPerfilTurma" rows="2" placeholder="Ex: 30 alunos, agitados, gostam de jogos e competições"></textarea>
-    </div>
-    
-    <div class="form-group">
-        <label>🧰 Material Disponível</label>
-        <input type="text" id="iaMaterial" placeholder="Ex: quadro, caderno, projetor, lápis de cor">
-    </div>
-    
-    <div class="form-group">
-        <label>💡 Observações Adicionais (opcional)</label>
-        <textarea id="iaObservacoes" rows="2" placeholder="Ex: Incluir aluno com dislexia, usar exemplos do cotidiano..."></textarea>
-    </div>
-    
-    <!-- BOTÕES DE AÇÃO -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
-        <button id="btnPlanejarIA" class="btn btn-primary" style="padding: 14px;" onclick="gerarPlanoAula()">🤖 GERAR PLANO DE AULA</button>
-        <button class="btn btn-success" style="padding: 14px;" onclick="gerarAtividadesDaAula()">📝 GERAR ATIVIDADES</button>
-    </div>
-    
-    <!-- ÁREA DO RESULTADO -->
-    <div id="iaResultadoPlanejar" style="margin-top: 20px;"></div>
-</div>
-<div id="abaExperts" class="hidden">
-<div class="form-group">
-<label>Escolha o Especialista:</label>
-<select id="expertSelector" onchange="atualizarFormularioExpert()">
-<option value="tutor_recuperacao">🎯 Tutor de Recuperação</option>
-<option value="criador_provas">📝 Criador de Provas</option>
-<option value="analista_desempenho">📊 Analista de Desempenho</option>
-<option value="corretor_dissertativo">✍️ Corretor Dissertativo</option>
-</select>
-</div>
-<div class="form-group"><label>ID do Aluno (Opcional):</label><input type="number" id="expertIdAluno" placeholder="Ex: 119"></div>
-<div class="form-group">
-<label id="expertContextoLabel">Descreva a situação:</label>
-<textarea id="expertContexto" rows="6" placeholder="Ex: Errou D25. Gosta de futebol."></textarea>
-</div>
-<button id="btnChamarExpert" class="btn btn-primary" style="width: 100%;" onclick="executarExpertIA()">🚀 ACIONAR EXPERT</button>
-<div id="expertResultado" style="margin-top: 16px;"></div>
-</div>
-</div>
-</div>
 </div>
 
 <!-- MODAL: QR CODE -->
 <div id="modalQR" class="modal">
-<div class="modal-content" style="max-width: 400px;">
-<div class="modal-header">
-<h3 id="qrNome">QR Code</h3>
-<button class="btn btn-secondary btn-sm" onclick="fecharModal('modalQR')">✕</button>
-</div>
-<div class="modal-body" style="text-align: center;">
-<img id="qrImg" src="" alt="QR Code" style="width: 100%; max-width: 300px;">
-<a id="qrLink" href="#" target="_blank" class="btn btn-primary" style="margin-top: 16px;">📥 Baixar QR Code</a>
-</div>
-</div>
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3 id="qrNome">QR Code</h3>
+            <button class="btn btn-secondary btn-sm" onclick="fecharModal('modalQR')">✕</button>
+        </div>
+        <div class="modal-body" style="text-align: center;">
+            <img id="qrImg" src="" alt="QR Code" style="width: 100%; max-width: 300px;">
+            <a id="qrLink" href="#" target="_blank" class="btn btn-primary" style="margin-top: 16px;">📥 Baixar QR Code</a>
+        </div>
+    </div>
 </div>
 
 <!-- MODAL: CARTÕES -->
 <div id="modalCartoes" class="modal">
-<div class="modal-content" style="max-width: 900px;">
-<div class="modal-header">
-<h3>🖨️ Cartões dos Alunos</h3>
-<button class="btn btn-secondary btn-sm" onclick="fecharModal('modalCartoes')">✕</button>
-</div>
-<div class="modal-body">
-<div id="cartoesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;"></div>
-</div>
-</div>
+    <div class="modal-content" style="max-width: 900px;">
+        <div class="modal-header">
+            <h3>🖨️ Cartões dos Alunos</h3>
+            <button class="btn btn-secondary btn-sm" onclick="fecharModal('modalCartoes')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div id="cartoesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;"></div>
+        </div>
+    </div>
 </div>
 
 <!-- MODAL: RECUPERAÇÃO -->
 <div id="modalRecuperacao" class="modal">
-<div class="modal-content" style="max-width: 800px;">
-<div class="modal-header">
-<h3>📋 Plano de Recuperação</h3>
-<button class="btn btn-secondary btn-sm" onclick="fecharModal('modalRecuperacao')">✕</button>
-</div>
-<div class="modal-body">
-<div id="areaPlanoRecuperacao"></div>
-</div>
-</div>
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h3>📋 Plano de Recuperação</h3>
+            <button class="btn btn-secondary btn-sm" onclick="fecharModal('modalRecuperacao')">✕</button>
+        </div>
+        <div class="modal-body">
+            <div id="areaPlanoRecuperacao"></div>
+        </div>
+    </div>
 </div>
 
-<!-- MODAL: EDITAR PERFIL COMPLETO (TURMAS + MÓDULOS) -->
+<!-- MODAL: EDITAR PERFIL COMPLETO -->
 <div id="modalEditPerfil" class="modal">
     <div class="modal-content" style="max-width: 600px;">
         <div class="modal-header">
             <h3>⚙️ Editar Permissões do Professor</h3>
             <button class="btn btn-sm" onclick="fecharModal('modalEditPerfil')">✕</button>
         </div>
-        
-        <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
-            Usuário: <strong id="nomeUsuarioEditando">...</strong> (<span id="emailUsuarioEditando">...</span>)
-        </p>
-
-        <!-- SEÇÃO 1: MÓDULOS DO SISTEMA -->
+        <p style="font-size: 13px; color: #666; margin-bottom: 12px;">Usuário: <strong id="nomeUsuarioEditando">...</strong> (<span id="emailUsuarioEditando">...</span>)</p>
         <h4 style="margin: 15px 0 8px 0; color: #008080;">📱 Módulos de Acesso:</h4>
         <div id="listaModulosCheckbox" style="max-height: 150px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 6px; background: #f9f9f9; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
             <p style="text-align:center; color:#999; grid-column: 1/-1;">Carregando módulos...</p>
         </div>
-
-        <!-- SEÇÃO 2: TURMAS VINCULADAS -->
         <h4 style="margin: 20px 0 8px 0; color: #008080;">🏫 Turmas Permitidas:</h4>
         <div id="listaTurmasCheckbox" style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 6px; background: #fafafa;">
             <p style="text-align:center; color:#999;">Carregando turmas...</p>
         </div>
-
-        <!-- BOTÕES DE AÇÃO -->
         <div style="display: flex; gap: 8px; margin-top: 20px;">
             <button class="btn btn-secondary" style="flex: 1;" onclick="fecharModal('modalEditPerfil')">Cancelar</button>
             <button class="btn btn-primary" style="flex: 1;" onclick="salvarPerfilCompleto()" id="btnSalvarPerfil">💾 SALVAR ALTERAÇÕES</button>
@@ -774,130 +767,56 @@ RECALCULAR E CLASSIFICAR TURMA
 
 <!-- MODAL: SELECIONAR ALUNO PARA INTERVENÇÃO -->
 <div id="modalSeletorAluno" class="modal">
-<div class="modal-content" style="max-width: 500px;">
-<div class="modal-header">
-<h3>🎯 Escolha o Aluno para Intervenção</h3>
-<button class="btn btn-sm" onclick="fecharModal('modalSeletorAluno')">✕</button>
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3>🎯 Escolha o Aluno para Intervenção</h3>
+            <button class="btn btn-sm" onclick="fecharModal('modalSeletorAluno')">✕</button>
+        </div>
+        <div style="padding: 20px;">
+            <p style="font-size: 13px; color: #666; margin-bottom: 12px;">Selecione qual aluno da turma precisa do plano de intervenção personalizado.</p>
+            <div class="form-group">
+                <label>Aluno:</label>
+                <select id="selAlunoIntervencao" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px;">
+                    <option value="">Carregando alunos...</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 16px;">
+                <button class="btn btn-secondary" style="flex: 1;" onclick="fecharModal('modalSeletorAluno')">Cancelar</button>
+                <button class="btn btn-primary" style="flex: 1;" onclick="confirmarAlunoIntervencao()">🤖 GERAR INTERVENÇÃO</button>
+            </div>
+        </div>
+    </div>
 </div>
-<div style="padding: 20px;">
-<p style="font-size: 13px; color: #666; margin-bottom: 12px;">Selecione qual aluno da turma precisa do plano de intervenção personalizado.</p>
-<div class="form-group">
-<label>Aluno:</label>
-<select id="selAlunoIntervencao" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px;">
-<option value="">Carregando alunos...</option>
-</select>
-</div>
-<div style="display: flex; gap: 8px; margin-top: 16px;">
-<button class="btn btn-secondary" style="flex: 1;" onclick="fecharModal('modalSeletorAluno')">Cancelar</button>
-<button class="btn btn-primary" style="flex: 1;" onclick="confirmarAlunoIntervencao()">🤖 GERAR INTERVENÇÃO</button>
-</div>
+
 <!-- MODAL: PLANO DE INTERVENÇÃO -->
 <div id="modalIntervencao" class="modal">
-<div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
-<div class="modal-header">
-<h3>🤖 Plano de Intervenção Individualizado</h3>
-<button class="btn btn-sm" onclick="fecharModal('modalIntervencao')">✕</button>
-</div>
-<div id="loadingIntervencao" style="display:none; text-align:center; padding: 40px;">
-<p>⏳ Analisando erros do aluno...</p>
-<p>🧠 Consultando Matriz Curricular...</p>
-<p>✨ Gerando atividades sob medida...</p>
-</div>
-<div id="contentIntervencao" style="display:none;">
-<div style="background:#e3f2fd; padding:10px; border-radius:6px; margin-bottom:15px;">
-<strong>Foco Detectado:</strong> <span id="txtFocoPrincipal"></span>
-</div>
-<label style="font-weight:bold; display:block; margin-bottom:5px;">Contexto Extra (Opcional):</label>
-<input type="text" id="inpContextoExtra" placeholder="Ex: Aluno gosta de videogames..." style="width:100%; padding:8px; margin-bottom:15px; border:1px solid #ccc; border-radius:4px;">
-<div style="display:flex; gap:10px; margin-bottom:20px;">
-<button class="btn btn-secondary" onclick="regenerarIntervencao()" style="flex:1;">🔄 Regenerar Plano</button>
-<button class="btn btn-primary" onclick="gerarExerciciosIndividual()" style="flex:1;">📝 GERAR EXERCÍCIOS PRÁTICOS</button>
-</div>
-<div id="areaExercicios" style="margin-top:20px;"></div>
-<div id="listaAtividadesGeradas"></div>
-<div style="margin-top:20px; text-align:right;">
-<button class="btn btn-success" onclick="copiarPlanoParaArea()">📋 Copiar Tudo para Impressão</button>
-</div>
-</div>
-<!-- VIEW: PERFIS DE ALUNOS COM NEE -->
-<div id="view-inclusao-perfis" class="view">
-    <h2>🧩 Perfis de Alunos com NEE</h2>
-    
-    <div class="card">
-        <h3>Cadastrar Novo Perfil</h3>
-        <div class="form-group">
-            <label>Nome do Aluno</label>
-            <input type="text" id="nomeAlunoNEE" placeholder="Ex: João Silva">
+    <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+            <h3>🤖 Plano de Intervenção Individualizado</h3>
+            <button class="btn btn-sm" onclick="fecharModal('modalIntervencao')">✕</button>
         </div>
-        
-        <div class="form-row">
-            <div class="form-group">
-                <label>Tipo de NEE</label>
-                <select id="tipoNEE">
-                    <option value="TEA">TEA (Transtorno do Espectro Autista)</option>
-                    <option value="TDAH">TDAH (Déficit de Atenção e Hiperatividade)</option>
-                    <option value="TEA_TDAH">TEA + TDAH</option>
-                </select>
+        <div id="loadingIntervencao" style="display:none; text-align:center; padding: 40px;">
+            <p>⏳ Analisando erros do aluno...</p>
+            <p>🧠 Consultando Matriz Curricular...</p>
+            <p>✨ Gerando atividades sob medida...</p>
+        </div>
+        <div id="contentIntervencao" style="display:none;">
+            <div style="background:#e3f2fd; padding:10px; border-radius:6px; margin-bottom:15px;">
+                <strong>Foco Detectado:</strong> <span id="txtFocoPrincipal"></span>
             </div>
-            
-            <div class="form-group">
-                <label>Nível de Suporte (1-5)</label>
-                <select id="nivelSuporte">
-                    <option value="1">1 - Suporte leve</option>
-                    <option value="2">2 - Suporte moderado</option>
-                    <option value="3" selected>3 - Suporte substancial</option>
-                    <option value="4">4 - Suporte muito substancial</option>
-                    <option value="5">5 - Suporte muito intenso</option>
-                </select>
+            <label style="font-weight:bold; display:block; margin-bottom:5px;">Contexto Extra (Opcional):</label>
+            <input type="text" id="inpContextoExtra" placeholder="Ex: Aluno gosta de videogames..." style="width:100%; padding:8px; margin-bottom:15px; border:1px solid #ccc; border-radius:4px;">
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+                <button class="btn btn-secondary" onclick="regenerarIntervencao()" style="flex:1;">🔄 Regenerar Plano</button>
+                <button class="btn btn-primary" onclick="gerarExerciciosIndividual()" style="flex:1;">📝 GERAR EXERCÍCIOS PRÁTICOS</button>
             </div>
-            
-            <div class="form-group">
-                <label>Tempo Adicional (minutos)</label>
-                <input type="number" id="tempoAdicional" value="10" min="0" max="60">
+            <div id="areaExercicios" style="margin-top:20px;"></div>
+            <div id="listaAtividadesGeradas"></div>
+            <div style="margin-top:20px; text-align:right;">
+                <button class="btn btn-success" onclick="copiarPlanoParaArea()">📋 Copiar Tudo para Impressão</button>
             </div>
         </div>
-        
-        <div class="form-group">
-            <label>Estratégias Preferenciais (selecione todas que se aplicam)</label>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-                <label><input type="checkbox" class="estrategia-pref" value="visual"> 🖼️ Apoio visual (imagens, diagramas)</label>
-                <label><input type="checkbox" class="estrategia-pref" value="passo_a_passo"> 📝 Instruções passo a passo</label>
-                <label><input type="checkbox" class="estrategia-pref" value="tempo_extra"> ⏰ Tempo extra</label>
-                <label><input type="checkbox" class="estrategia-pref" value="texto_curto"> 📄 Textos curtos</label>
-                <label><input type="checkbox" class="estrategia-pref" value="cores_destaque"> 🎨 Cores de destaque</label>
-                <label><input type="checkbox" class="estrategia-pref" value="exemplos_resolvidos"> 💡 Exemplos resolvidos</label>
-                <label><input type="checkbox" class="estrategia-pref" value="fontes_maiores"> 🔤 Fontes maiores</label>
-                <label><input type="checkbox" class="estrategia-pref" value="espacamento"> 📏 Maior espaçamento</label>
-            </div>
-        </div>
-        
-        <div class="form-group">
-            <label>Estratégias a Evitar (selecione todas que se aplicam)</label>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-                <label><input type="checkbox" class="estrategia-evitar" value="texto_longo"> 📜 Textos longos</label>
-                <label><input type="checkbox" class="estrategia-evitar" value="muitas_cores"> 🌈 Muitas cores</label>
-                <label><input type="checkbox" class="estrategia-evitar" value="metáforas"> 🎭 Metáforas/ironias</label>
-                <label><input type="checkbox" class="estrategia-evitar" value="muitas_questoes"> 🔢 Muitas questões juntas</label>
-                <label><input type="checkbox" class="estrategia-evitar" value="tempo_limitado"> ⏱️ Tempo limitado</label>
-                <label><input type="checkbox" class="estrategia-evitar" value="instrucoes_complexas"> ❓ Instruções complexas</label>
-            </div>
-        </div>
-        
-        <div class="form-group">
-            <label>Observações Gerais</label>
-            <textarea id="observacoesNEE" rows="3" placeholder="Ex: Aluno responde bem a atividades com imagens de animais. Evitar sons altos."></textarea>
-        </div>
-        
-        <button class="btn btn-success" style="width: 100%;" onclick="salvarPerfilNEE()">💾 SALVAR PERFIL</button>
     </div>
-    
-    <div class="card">
-        <h3>Perfis Cadastrados</h3>
-        <div id="listaPerfisNEE" class="loading">Carregando...</div>
-    </div>
-</div>
-</div>
-</div>
 </div>
 
 <!-- ======================================================================== -->
