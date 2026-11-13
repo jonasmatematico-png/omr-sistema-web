@@ -794,6 +794,35 @@ RECALCULAR E CLASSIFICAR TURMA
 </div>
 </div>
 </div>
+
+<!-- MODAL: PLANO DE INTERVENÇÃO -->
+<div id="modalIntervencao" class="modal">
+<div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+<div class="modal-header">
+<h3>🤖 Plano de Intervenção Individualizado</h3>
+<button class="btn btn-sm" onclick="fecharModal('modalIntervencao')">✕</button>
+</div>
+<div id="loadingIntervencao" style="display:none; text-align:center; padding: 40px;">
+<p>⏳ Analisando erros do aluno...</p>
+<p>🧠 Consultando Matriz Curricular...</p>
+<p>✨ Gerando atividades sob medida...</p>
+</div>
+<div id="contentIntervencao" style="display:none;">
+<div style="background:#e3f2fd; padding:10px; border-radius:6px; margin-bottom:15px;">
+<strong>Foco Detectado:</strong> <span id="txtFocoPrincipal"></span>
+</div>
+<label style="font-weight:bold; display:block; margin-bottom:5px;">Contexto Extra (Opcional):</label>
+<input type="text" id="inpContextoExtra" placeholder="Ex: Aluno gosta de videogames..." style="width:100%; padding:8px; margin-bottom:15px; border:1px solid #ccc; border-radius:4px;">
+<div style="display:flex; gap:10px; margin-bottom:20px;">
+<button class="btn btn-secondary" onclick="regenerarIntervencao()" style="flex:1;">🔄 Regenerar Plano</button>
+<button class="btn btn-primary" onclick="gerarExerciciosIndividual()" style="flex:1;">📝 GERAR EXERCÍCIOS PRÁTICOS</button>
+</div>
+<div id="areaExercicios" style="margin-top:20px;"></div>
+<div id="listaAtividadesGeradas"></div>
+<div style="margin-top:20px; text-align:right;">
+<button class="btn btn-success" onclick="copiarPlanoParaArea()">📋 Copiar Tudo para Impressão</button>
+</div>
+</div>
 <!-- VIEW: PERFIS DE ALUNOS COM NEE -->
 <div id="view-inclusao-perfis" class="view">
     <h2>🧩 Perfis de Alunos com NEE</h2>
@@ -870,111 +899,6 @@ RECALCULAR E CLASSIFICAR TURMA
         <h3>Perfis Cadastrados</h3>
         <div id="listaPerfisNEE" class="loading">Carregando...</div>
     </div>
-</div><!-- VIEW: PERFIS DE ALUNOS COM NEE -->
-<div id="view-inclusao-perfis" class="view">
-    <h2>🧩 Perfis de Alunos com NEE</h2>
-    
-    <div class="card">
-        <h3>Cadastrar Novo Perfil</h3>
-        <div class="form-group">
-            <label>Nome do Aluno</label>
-            <input type="text" id="nomeAlunoNEE" placeholder="Ex: João Silva">
-        </div>
-        
-        <div class="form-row">
-            <div class="form-group">
-                <label>Tipo de NEE</label>
-                <select id="tipoNEE">
-                    <option value="TEA">TEA (Transtorno do Espectro Autista)</option>
-                    <option value="TDAH">TDAH (Déficit de Atenção e Hiperatividade)</option>
-                    <option value="TEA_TDAH">TEA + TDAH</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label>Nível de Suporte (1-5)</label>
-                <select id="nivelSuporte">
-                    <option value="1">1 - Suporte leve</option>
-                    <option value="2">2 - Suporte moderado</option>
-                    <option value="3" selected>3 - Suporte substancial</option>
-                    <option value="4">4 - Suporte muito substancial</option>
-                    <option value="5">5 - Suporte muito intenso</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label>Tempo Adicional (minutos)</label>
-                <input type="number" id="tempoAdicional" value="10" min="0" max="60">
-            </div>
-        </div>
-        
-        <div class="form-group">
-            <label>Estratégias Preferenciais (selecione todas que se aplicam)</label>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-                <label><input type="checkbox" class="estrategia-pref" value="visual"> 🖼️ Apoio visual (imagens, diagramas)</label>
-                <label><input type="checkbox" class="estrategia-pref" value="passo_a_passo"> 📝 Instruções passo a passo</label>
-                <label><input type="checkbox" class="estrategia-pref" value="tempo_extra"> ⏰ Tempo extra</label>
-                <label><input type="checkbox" class="estrategia-pref" value="texto_curto"> 📄 Textos curtos</label>
-                <label><input type="checkbox" class="estrategia-pref" value="cores_destaque"> 🎨 Cores de destaque</label>
-                <label><input type="checkbox" class="estrategia-pref" value="exemplos_resolvidos"> 💡 Exemplos resolvidos</label>
-                <label><input type="checkbox" class="estrategia-pref" value="fontes_maiores"> 🔤 Fontes maiores</label>
-                <label><input type="checkbox" class="estrategia-pref" value="espacamento"> 📏 Maior espaçamento</label>
-            </div>
-        </div>
-        
-        <div class="form-group">
-            <label>Estratégias a Evitar (selecione todas que se aplicam)</label>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-                <label><input type="checkbox" class="estrategia-evitar" value="texto_longo"> 📜 Textos longos</label>
-                <label><input type="checkbox" class="estrategia-evitar" value="muitas_cores"> 🌈 Muitas cores</label>
-                <label><input type="checkbox" class="estrategia-evitar" value="metáforas"> 🎭 Metáforas/ironias</label>
-                <label><input type="checkbox" class="estrategia-evitar" value="muitas_questoes"> 🔢 Muitas questões juntas</label>
-                <label><input type="checkbox" class="estrategia-evitar" value="tempo_limitado"> ⏱️ Tempo limitado</label>
-                <label><input type="checkbox" class="estrategia-evitar" value="instrucoes_complexas"> ❓ Instruções complexas</label>
-            </div>
-        </div>
-        
-        <div class="form-group">
-            <label>Observações Gerais</label>
-            <textarea id="observacoesNEE" rows="3" placeholder="Ex: Aluno responde bem a atividades com imagens de animais. Evitar sons altos."></textarea>
-        </div>
-        
-        <button class="btn btn-success" style="width: 100%;" onclick="salvarPerfilNEE()">💾 SALVAR PERFIL</button>
-    </div>
-    
-    <div class="card">
-        <h3>Perfis Cadastrados</h3>
-        <div id="listaPerfisNEE" class="loading">Carregando...</div>
-    </div>
-</div>
-<!-- MODAL: PLANO DE INTERVENÇÃO -->
-<div id="modalIntervencao" class="modal">
-<div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
-<div class="modal-header">
-<h3>🤖 Plano de Intervenção Individualizado</h3>
-<button class="btn btn-sm" onclick="fecharModal('modalIntervencao')">✕</button>
-</div>
-<div id="loadingIntervencao" style="display:none; text-align:center; padding: 40px;">
-<p>⏳ Analisando erros do aluno...</p>
-<p>🧠 Consultando Matriz Curricular...</p>
-<p>✨ Gerando atividades sob medida...</p>
-</div>
-<div id="contentIntervencao" style="display:none;">
-<div style="background:#e3f2fd; padding:10px; border-radius:6px; margin-bottom:15px;">
-<strong>Foco Detectado:</strong> <span id="txtFocoPrincipal"></span>
-</div>
-<label style="font-weight:bold; display:block; margin-bottom:5px;">Contexto Extra (Opcional):</label>
-<input type="text" id="inpContextoExtra" placeholder="Ex: Aluno gosta de videogames..." style="width:100%; padding:8px; margin-bottom:15px; border:1px solid #ccc; border-radius:4px;">
-<div style="display:flex; gap:10px; margin-bottom:20px;">
-<button class="btn btn-secondary" onclick="regenerarIntervencao()" style="flex:1;">🔄 Regenerar Plano</button>
-<button class="btn btn-primary" onclick="gerarExerciciosIndividual()" style="flex:1;">📝 GERAR EXERCÍCIOS PRÁTICOS</button>
-</div>
-<div id="areaExercicios" style="margin-top:20px;"></div>
-<div id="listaAtividadesGeradas"></div>
-<div style="margin-top:20px; text-align:right;">
-<button class="btn btn-success" onclick="copiarPlanoParaArea()">📋 Copiar Tudo para Impressão</button>
-</div>
-</div>
 </div>
 </div>
 
