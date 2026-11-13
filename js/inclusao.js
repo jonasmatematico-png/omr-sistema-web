@@ -1,98 +1,46 @@
 // ========================================================================
-// 🧩 MÓDULO DE INCLUSÃO - GESTÃO DE PERFIS NEE E ADAPTAÇÕES (VERSÃO SEGURA)
+// 🧩 MÓDULO DE INCLUSÃO - ARQUIVO COMPLETO E UNIFICADO (VERSÃO FINAL)
+// Perfis NEE + Aluno cadastrado + IA (Gemini) + Modo Co-Piloto
 // ========================================================================
 
 let perfisNEE = [];
+let adaptacaoAtual = null;
 
 // ========================================================================
-// 📋 CADASTRO DE PERFIS NEE
+// 📋 LISTAGEM E EXCLUSÃO DE PERFIS
 // ========================================================================
-
-async function salvarPerfilNEE() {
-    const nomeAluno = document.getElementById('nomeAlunoNEE').value.trim();
-    const tipoNEE = document.getElementById('tipoNEE').value;
-    const nivelSuporte = parseInt(document.getElementById('nivelSuporte').value);
-    const tempoAdicional = parseInt(document.getElementById('tempoAdicional').value);
-    
-    if (!nomeAluno) {
-        toast('❌ Informe o nome do aluno!', 'error');
-        return;
-    }
-    
-    const estrategiasPref = Array.from(document.querySelectorAll('.estrategia-pref:checked')).map(cb => cb.value);
-    const estrategiasEvitar = Array.from(document.querySelectorAll('.estrategia-evitar:checked')).map(cb => cb.value);
-    const observacoes = document.getElementById('observacoesNEE').value.trim();
-    const emailProfessor = localStorage.getItem('sb_email');
-    
-    const dadosPerfil = {
-        nome_aluno: nomeAluno,
-        email_professor: emailProfessor,
-        tipo_nee: tipoNEE,
-        nivel_suporte: nivelSuporte,
-        estrategias_preferenciais: estrategiasPref,
-        estrategias_evitar: estrategiasEvitar,
-        tempo_adicional_minutos: tempoAdicional,
-        observacoes_geral: observacoes
-    };
-    
-    try {
-        toast('💾 Salvando perfil...', 'info');
-        const r = await sbFetch('POST', '/rest/v1/perfis_nee', dadosPerfil);
-        
-        if (!r.ok) {
-            const erro = await r.json();
-            toast('❌ Erro ao salvar: ' + (erro.message || 'Erro desconhecido'), 'error');
-            return;
-        }
-        
-        toast('✅ Perfil salvo com sucesso!', 'success');
-        
-        // Limpa formulário
-        document.getElementById('nomeAlunoNEE').value = '';
-        document.getElementById('observacoesNEE').value = '';
-        document.querySelectorAll('.estrategia-pref, .estrategia-evitar').forEach(cb => cb.checked = false);
-        
-        // Recarrega lista
-        await carregarPerfisNEE();
-        
-    } catch (e) {
-        toast('❌ Falha ao salvar: ' + e.message, 'error');
-    }
-}
 
 async function carregarPerfisNEE() {
     const lista = document.getElementById('listaPerfisNEE');
-    if (!lista) return; // Segurança: se a tela não existir, não faz nada
-    
+    if (!lista) return;
+
     lista.innerHTML = '<div class="loading">Carregando...</div>';
     const emailProfessor = localStorage.getItem('sb_email');
-    
+
     try {
         const r = await sbFetch('GET', `/rest/v1/perfis_nee?email_professor=eq.${emailProfessor}&order=criado_em.desc`);
-        
         if (!r.ok) {
             lista.innerHTML = '<p style="color:#dc3545;">Erro ao carregar perfis.</p>';
             return;
         }
-        
         const data = await r.json();
         perfisNEE = data;
-        
+
         if (data.length === 0) {
             lista.innerHTML = '<p style="color:#888; text-align:center; padding:20px;">Nenhum perfil cadastrado ainda.</p>';
             return;
         }
-        
+
         lista.innerHTML = data.map(perfil => {
             const tipoBadge = {
                 'TEA': '<span style="background:#e3f2fd; color:#1565c0; padding:2px 8px; border-radius:4px; font-size:12px;">TEA</span>',
                 'TDAH': '<span style="background:#fff3e0; color:#e65100; padding:2px 8px; border-radius:4px; font-size:12px;">TDAH</span>',
                 'TEA_TDAH': '<span style="background:#f3e5f5; color:#6a1b9a; padding:2px 8px; border-radius:4px; font-size:12px;">TEA+TDAH</span>'
             }[perfil.tipo_nee] || perfil.tipo_nee;
-            
+
             const estrategiasPref = (perfil.estrategias_preferenciais || []).join(', ') || 'Nenhuma';
             const estrategiasEvitar = (perfil.estrategias_evitar || []).join(', ') || 'Nenhuma';
-            
+
             return `
                 <div class="prova-item" style="border-left: 4px solid #6a1b9a; margin-bottom: 10px;">
                     <div class="prova-item-info">
@@ -110,7 +58,6 @@ async function carregarPerfisNEE() {
                 </div>
             `;
         }).join('');
-        
     } catch (e) {
         lista.innerHTML = '<p style="color:#dc3545;">Falha de conexão.</p>';
     }
@@ -118,13 +65,9 @@ async function carregarPerfisNEE() {
 
 async function excluirPerfilNEE(id) {
     if (!confirm('Tem certeza que deseja excluir este perfil?')) return;
-    
     try {
         const r = await sbFetch('DELETE', `/rest/v1/perfis_nee?id=eq.${id}`);
-        if (!r.ok) {
-            toast('❌ Erro ao excluir', 'error');
-            return;
-        }
+        if (!r.ok) { toast('❌ Erro ao excluir', 'error'); return; }
         toast('✅ Perfil excluído!', 'success');
         await carregarPerfisNEE();
     } catch (e) {
@@ -133,137 +76,218 @@ async function excluirPerfilNEE(id) {
 }
 
 // ========================================================================
-// 🎯 GERAR ATIVIDADE ADAPTADA (MODO CO-PILOTO)
+// 🏫 TURMA → ALUNO (CADASTRO DE PERFIL VINCULADO AO ALUNO REAL)
 // ========================================================================
 
-async function gerarAtividadeAdaptada(planejamentoId) {
-    const emailProfessor = localStorage.getItem('sb_email');
-    const r = await sbFetch('GET', `/rest/v1/perfis_nee?email_professor=eq.${emailProfessor}`);
-    
-    if (!r.ok || (await r.json()).length === 0) {
-        toast('❌ Cadastre um perfil de aluno primeiro em "Perfis de Alunos"!', 'error');
-        navegarPara('view-inclusao-perfis', document.querySelector('[data-modulo="inclusao_perfis"]'));
-        return;
-    }
-    
-    const perfis = await r.json();
-    
-    const modalHTML = `
-        <div id="modalSelecionarAluno" class="modal active" style="z-index: 10000;">
-            <div class="modal-content" style="max-width: 500px;">
-                <div class="modal-header">
-                    <h3>🎯 Selecionar Aluno para Adaptação</h3>
-                    <button class="btn btn-sm" onclick="fecharModal('modalSelecionarAluno')">✕</button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label>Qual aluno receberá a atividade adaptada?</label>
-                        <select id="selectAlunoAdaptacao" style="width: 100%; padding: 10px;">
-                            ${perfis.map(p => `<option value="${p.id}">${p.nome_aluno} (${p.tipo_nee} - Nível ${p.nivel_suporte})</option>`).join('')}
-                        </select>
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button class="btn btn-secondary" style="flex:1" onclick="fecharModal('modalSelecionarAluno')">Cancelar</button>
-                        <button class="btn btn-primary" style="flex:1" onclick="iniciarAdaptacao(${planejamentoId})">🚀 Gerar Adaptação</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-}
-
-async function iniciarAdaptacao(planejamentoId) {
-    const perfilId = document.getElementById('selectAlunoAdaptacao').value;
-    fecharModal('modalSelecionarAluno');
-    
-    toast('🤖 Gerando atividade adaptada com IA...', 'info');
-    
+async function carregarAlunosNEE() {
+    const turmaId = document.getElementById('selTurmaNEE').value;
+    const sel = document.getElementById('selAlunoNEE');
+    if (!turmaId) { sel.innerHTML = '<option value="">Selecione a turma primeiro...</option>'; return; }
+    sel.innerHTML = '<option value="">Carregando alunos...</option>';
     try {
-        // Simulação da chamada (ajustaremos a rota do backend no próximo passo)
-        // Por enquanto, vamos apenas abrir o modo co-piloto com dados de exemplo para testar a tela
-        const questoesOriginais = [{ numero: 1, enunciado: "Quanto é 2 + 2?" }];
-        const questoesAdaptadas = [{ numero: 1, enunciado: "Vamos contar juntos: temos 2 maçãs. Se ganharmos mais 2 maçãs, quantas temos no total?\n\n(A) 3\n(B) 4\n(C) 5", imagem_sugerida: "Desenho de 2 maçãs vermelhas e 2 maçãs verdes" }];
-        
-        abrirModoCopiloto(planejamentoId, perfilId, questoesOriginais, questoesAdaptadas, "Prompt de exemplo");
+        const r = await sbFetch('GET', '/rest/v1/alunos?id_turma=eq.' + turmaId + '&select=id,nome_completo,numero_chamada&order=numero_chamada.asc');
+        const alunos = await r.json();
+        if (!alunos.length) { sel.innerHTML = '<option value="">Nenhum aluno nesta turma</option>'; return; }
+        sel.innerHTML = '<option value="">Selecione o aluno...</option>' + alunos.map(a =>
+            '<option value="' + a.id + '" data-nome="' + escaparHTML(a.nome_completo || 'Sem nome') + '">' +
+            (a.numero_chamada || '') + '. ' + (a.nome_completo || 'Sem nome') + '</option>').join('');
     } catch (e) {
-        toast('❌ Erro ao gerar adaptação: ' + e.message, 'error');
+        sel.innerHTML = '<option value="">Erro ao carregar alunos</option>';
     }
 }
 
-function abrirModoCopiloto(planejamentoId, perfilId, questoesOriginais, questoesAdaptadas, promptUsado) {
+async function salvarPerfilNEE() {
+    const selAluno = document.getElementById('selAlunoNEE');
+    const alunoId = selAluno ? selAluno.value : '';
+    if (!alunoId) { toast('❌ Selecione a turma e o aluno cadastrado!', 'error'); return; }
+    const opt = selAluno.selectedOptions[0];
+    const nomeAluno = opt.dataset.nome || opt.textContent;
+
+    const dadosPerfil = {
+        aluno_id: parseInt(alunoId),
+        nome_aluno: nomeAluno,
+        email_professor: localStorage.getItem('sb_email'),
+        tipo_nee: document.getElementById('tipoNEE').value,
+        nivel_suporte: parseInt(document.getElementById('nivelSuporte').value),
+        estrategias_preferenciais: Array.from(document.querySelectorAll('.estrategia-pref:checked')).map(cb => cb.value),
+        estrategias_evitar: Array.from(document.querySelectorAll('.estrategia-evitar:checked')).map(cb => cb.value),
+        tempo_adicional_minutos: parseInt(document.getElementById('tempoAdicional').value) || 0,
+        observacoes_geral: document.getElementById('observacoesNEE').value.trim()
+    };
+
+    try {
+        // Evita perfil duplicado para o mesmo aluno
+        const rCheck = await sbFetch('GET', '/rest/v1/perfis_nee?aluno_id=eq.' + alunoId + '&select=id');
+        if (rCheck.ok) {
+            const existentes = await rCheck.json();
+            if (existentes.length > 0) {
+                toast('⚠️ Este aluno já tem um perfil. Exclua o antigo antes de criar outro.', 'error');
+                return;
+            }
+        }
+
+        toast('💾 Salvando perfil...', 'info');
+        const r = await sbFetch('POST', '/rest/v1/perfis_nee', dadosPerfil);
+        if (!r.ok) {
+            const erro = await r.json();
+            toast('❌ Erro ao salvar: ' + (erro.message || 'Erro desconhecido'), 'error');
+            return;
+        }
+        toast('✅ Perfil de ' + nomeAluno + ' salvo!', 'success');
+
+        document.getElementById('selTurmaNEE').value = '';
+        selAluno.innerHTML = '<option value="">Selecione a turma primeiro...</option>';
+        document.getElementById('observacoesNEE').value = '';
+        document.querySelectorAll('.estrategia-pref, .estrategia-evitar').forEach(cb => cb.checked = false);
+        await carregarPerfisNEE();
+    } catch (e) {
+        toast('❌ Falha ao salvar: ' + e.message, 'error');
+    }
+}
+
+// ========================================================================
+// 🎯 TELA "GERAR ATIVIDADE ADAPTADA"
+// ========================================================================
+
+async function carregarPerfisParaSelect() {
+    const sel = document.getElementById('selPerfilAdaptacao');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Carregando perfis...</option>';
+    try {
+        const email = localStorage.getItem('sb_email');
+        const r = await sbFetch('GET', `/rest/v1/perfis_nee?email_professor=eq.${email}&order=nome_aluno.asc`);
+        const perfis = r.ok ? await r.json() : [];
+        perfisNEE = perfis;
+        if (!perfis.length) {
+            sel.innerHTML = '<option value="">Nenhum perfil — cadastre primeiro em 🧩 Perfis de Alunos</option>';
+            return;
+        }
+        sel.innerHTML = '<option value="">Selecione o aluno...</option>' +
+            perfis.map(p => `<option value="${p.id}">${p.nome_aluno} (${p.tipo_nee} - Nível ${p.nivel_suporte})</option>`).join('');
+    } catch (e) {
+        sel.innerHTML = '<option value="">Erro ao carregar perfis</option>';
+    }
+}
+
+async function gerarAdaptacaoIA() {
+    const perfilId = document.getElementById('selPerfilAdaptacao').value;
+    const original = document.getElementById('adaptOriginal').value.trim();
+    if (!perfilId) return toast('❌ Selecione o aluno!', 'error');
+    if (!original) return toast('❌ Cole a atividade original!', 'error');
+
+    const perfil = (perfisNEE || []).find(p => p.id === perfilId);
+    if (!perfil) return toast('❌ Perfil não encontrado. Reabra a tela.', 'error');
+
+    const contexto = {
+        disciplina: document.getElementById('adaptDisciplina').value.trim(),
+        ano: document.getElementById('adaptAno').value.trim(),
+        tema: document.getElementById('adaptTema').value.trim(),
+        habilidade: document.getElementById('adaptHabilidade').value.trim()
+    };
+
+    toast('🤖 Gerando adaptação com IA... pode levar até 1 minuto.', 'info');
+    try {
+        const resp = await fetch('https://omr-backend-laboratorio.onrender.com/api/gerar_adaptacao', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ perfil: perfil, atividade_original: original, contexto: contexto })
+        });
+        const dados = await resp.json();
+        if (!resp.ok || !dados.sucesso) throw new Error(dados.erro || 'Erro na IA');
+
+        adaptacaoAtual = { perfil: perfil, original: original, contexto: contexto, adaptacao: dados.adaptacao, prompt: dados.prompt_usado || '' };
+        toast('✅ Adaptação gerada! Revise no modo co-piloto.', 'success');
+        abrirModoCopiloto();
+    } catch (e) {
+        toast('❌ ' + e.message, 'error');
+    }
+}
+
+// ========================================================================
+// 👀 MODO CO-PILOTO (ORIGINAL × ADAPTADA, EDITÁVEL)
+// ========================================================================
+
+function abrirModoCopiloto() {
+    if (!adaptacaoAtual) return;
+    const a = adaptacaoAtual.adaptacao || {};
+    const questoes = a.questoes || [];
+    const antigo = document.getElementById('modalCoPiloto');
+    if (antigo) antigo.remove();
+
     const modalHTML = `
-        <div id="modalCoPiloto" class="modal active" style="z-index: 10000;">
-            <div class="modal-content" style="max-width: 95%; width: 95%; max-height: 90vh; overflow-y: auto;">
-                <div class="modal-header">
-                    <h3>🎯 Modo Co-Piloto: Revisar Atividade Adaptada</h3>
-                    <button class="btn btn-sm" onclick="fecharModal('modalCoPiloto')">✕</button>
+    <div id="modalCoPiloto" class="modal active" style="z-index:10000;">
+        <div class="modal-content" style="max-width:95%; width:95%; max-height:90vh; overflow-y:auto;">
+            <div class="modal-header">
+                <h3>🎯 Co-Piloto — ${adaptacaoAtual.perfil.nome_aluno} (${adaptacaoAtual.perfil.tipo_nee})</h3>
+                <button class="btn btn-sm" onclick="fecharModal('modalCoPiloto')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                    <div>
+                        <h4 style="color:#1565c0;">📄 Atividade Original</h4>
+                        <div style="border:2px solid #1565c0; padding:15px; border-radius:8px; background:#f5f5f5; white-space:pre-wrap; max-height:450px; overflow-y:auto;">${escaparHTML(adaptacaoAtual.original)}</div>
+                    </div>
+                    <div>
+                        <h4 style="color:#6a1b9a;">🧩 Adaptada pela IA (edite à vontade)</h4>
+                        <div style="border:2px solid #6a1b9a; padding:15px; border-radius:8px; background:#f3e5f5; max-height:450px; overflow-y:auto;">
+                            <label style="font-weight:bold;">Título</label>
+                            <input id="adaptTitulo" value="${escaparHTML(a.titulo || '')}" style="width:100%; margin-bottom:10px;">
+                            <label style="font-weight:bold;">Instruções gerais</label>
+                            <textarea id="adaptInstrucoes" rows="2" style="width:100%; margin-bottom:10px;">${escaparHTML(a.instrucoes_gerais || '')}</textarea>
+                            ${a.exemplo_resolvido ? `<div style="background:#fff; padding:8px; border-radius:4px; margin-bottom:10px;"><strong>💡 Exemplo resolvido:</strong><br>${escaparHTML(a.exemplo_resolvido.enunciado || '')}<br><strong>Resposta:</strong> ${escaparHTML(a.exemplo_resolvido.resposta || '')}</div>` : ''}
+                            ${questoes.map((q, i) => `
+                            <div style="background:#fff; padding:10px; border-radius:4px; margin-bottom:10px;">
+                                <strong>Questão ${q.numero || (i + 1)}</strong>
+                                <textarea id="enunciadoAdaptado${i}" rows="4" style="width:100%; margin-top:5px;">${escaparHTML(q.enunciado || '')}</textarea>
+                                ${(q.passos && q.passos.length) ? `<small>📝 Passos: ${escaparHTML(q.passos.join(' → '))}</small><br>` : ''}
+                                ${(q.alternativas && q.alternativas.length) ? `<small>${escaparHTML(q.alternativas.join(' | '))}</small><br>` : ''}
+                                ${q.imagem_sugerida ? `<small style="color:#666;">🖼️ Imagem sugerida: ${escaparHTML(q.imagem_sugerida)}</small>` : ''}
+                            </div>`).join('')}
+                            ${a.tempo_sugerido_minutos ? `<small>⏰ Tempo sugerido: ${a.tempo_sugerido_minutos} min</small>` : ''}
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Revise as adaptações sugeridas pela IA. Você pode editar o texto de cada questão antes de salvar.</p>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                        <div>
-                            <h4 style="color: #1565c0; margin-top: 0;">📄 Atividade Original</h4>
-                            <div style="border: 2px solid #1565c0; padding: 15px; border-radius: 8px; background: #f5f5f5; max-height: 400px; overflow-y: auto;">
-                                ${questoesOriginais.map(q => `<div style="margin-bottom: 15px; padding: 10px; background: white; border-radius: 4px;"><strong>Questão ${q.numero}:</strong><br>${q.enunciado}</div>`).join('')}
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <h4 style="color: #6a1b9a; margin-top: 0;">🧩 Atividade Adaptada (IA)</h4>
-                            <div style="border: 2px solid #6a1b9a; padding: 15px; border-radius: 8px; background: #f3e5f5; max-height: 400px; overflow-y: auto;">
-                                ${questoesAdaptadas.map((q, i) => `
-                                    <div style="margin-bottom: 15px; padding: 10px; background: white; border-radius: 4px;">
-                                        <strong>Questão ${q.numero}:</strong><br>
-                                        <textarea id="enunciadoAdaptado${i}" rows="4" style="width: 100%; margin-top: 5px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">${q.enunciado}</textarea>
-                                        ${q.imagem_sugerida ? `<small style="color: #666; display: block; margin-top: 5px;">🖼️ Imagem sugerida: ${q.imagem_sugerida}</small>` : ''}
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end;">
-                        <button class="btn btn-secondary" onclick="fecharModal('modalCoPiloto')">Cancelar</button>
-                        <button class="btn btn-warning" onclick="alert('Funcionalidade de regenerar será conectada ao backend na próxima etapa!')">🔄 Gerar Novamente</button>
-                        <button class="btn btn-success" onclick="salvarAdaptacao(${planejamentoId}, ${perfilId})">💾 Salvar Adaptação</button>
-                    </div>
+                <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end;">
+                    <button class="btn btn-secondary" onclick="fecharModal('modalCoPiloto')">Cancelar</button>
+                    <button class="btn btn-warn" onclick="regenerarAdaptacao()">🔄 Gerar Novamente</button>
+                    <button class="btn btn-success" onclick="salvarAdaptacao()">💾 Salvar Adaptação</button>
                 </div>
             </div>
         </div>
-    `;
+    </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 }
 
-async function salvarAdaptacao(planejamentoId, perfilId) {
-    toast('💾 Salvando adaptação...', 'info');
-    
-    const questoesAdaptadas = [];
-    let i = 0;
-    while (document.getElementById(`enunciadoAdaptado${i}`)) {
-        questoesAdaptadas.push({
-            numero: i + 1,
-            enunciado: document.getElementById(`enunciadoAdaptado${i}`).value
-        });
-        i++;
-    }
-    
-    const dadosAdaptacao = {
-        planejamento_id: planejamentoId,
-        perfil_nee_id: perfilId,
-        atividade_original: JSON.stringify([{teste: "original"}]), 
-        atividade_adaptada: JSON.stringify(questoesAdaptadas),
+async function salvarAdaptacao() {
+    if (!adaptacaoAtual) return;
+    const a = adaptacaoAtual.adaptacao;
+    a.titulo = document.getElementById('adaptTitulo').value;
+    a.instrucoes_gerais = document.getElementById('adaptInstrucoes').value;
+    (a.questoes || []).forEach((q, i) => {
+        const el = document.getElementById('enunciadoAdaptado' + i);
+        if (el) q.enunciado = el.value;
+    });
+
+    const dados = {
+        aluno_id: adaptacaoAtual.perfil.aluno_id || null,
+        perfil_nee_id: adaptacaoAtual.perfil.id,
+        atividade_original: { texto: adaptacaoAtual.original, contexto: adaptacaoAtual.contexto },
+        atividade_adaptada: a,
+        prompt_usado: adaptacaoAtual.prompt,
         gerado_por: localStorage.getItem('sb_email')
     };
-    
     try {
-        const r = await sbFetch('POST', '/rest/v1/adaptacoes_geradas', dadosAdaptacao);
-        if (!r.ok) throw new Error('Erro ao salvar');
-        
+        toast('💾 Salvando adaptação...', 'info');
+        const r = await sbFetch('POST', '/rest/v1/adaptacoes_geradas', dados);
+        if (!r.ok) throw new Error((await r.json()).message || 'Erro ao salvar');
         toast('✅ Adaptação salva com sucesso!', 'success');
         fecharModal('modalCoPiloto');
     } catch (e) {
-        toast('❌ Erro ao salvar: ' + e.message, 'error');
+        toast('❌ ' + e.message, 'error');
     }
+}
+
+function regenerarAdaptacao() {
+    fecharModal('modalCoPiloto');
+    gerarAdaptacaoIA();
 }

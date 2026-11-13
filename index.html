@@ -55,7 +55,7 @@
         <div class="menu-item" data-modulo="qr" onclick="navegarPara('view-qr', this)">🔲 QR Codes</div>
         
         <!-- MENU DE INCLUSÃO -->
-        <div class="menu-item" data-modulo="inclusao_perfis" onclick="navegarPara('view-inclusao-perfis', this); carregarPerfisNEE();">🧩 Perfis de Alunos</div>
+        <div class="menu-item" data-modulo="inclusao_perfis" onclick="navegarPara('view-inclusao-perfis', this); carregarPerfisNEE(); carregarTurmasPermitidas('selTurmaNEE');">🧩 Perfis de Alunos</div>
         <div class="menu-item" data-modulo="inclusao_gerar" onclick="navegarPara('view-inclusao-gerar', this); carregarPerfisParaSelect();">🎯 Gerar Atividade Adaptada</div>
         <div class="menu-item" data-modulo="inclusao_colaboracao" onclick="navegarPara('view-inclusao-colaboracao', this)">🤝 Colaboração AEE</div>
         <div class="menu-item" data-modulo="inclusao_relatorios" onclick="navegarPara('view-inclusao-relatorios', this)">📊 Relatórios de Inclusão</div>
@@ -421,9 +421,19 @@
             
             <div class="card">
                 <h3>Cadastrar Novo Perfil</h3>
-                <div class="form-group">
-                    <label>Nome do Aluno</label>
-                    <input type="text" id="nomeAlunoNEE" placeholder="Ex: João Silva">
+                  <div class="form-row">
+                    <div class="form-group">
+                        <label>🏫 Turma</label>
+                        <select id="selTurmaNEE" onchange="carregarAlunosNEE()">
+                            <option value="">Carregando turmas...</option>
+                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label>👤 Aluno (cadastrado no sistema)</label>
+                        <select id="selAlunoNEE">
+                            <option value="">Selecione a turma primeiro...</option>
+                        </select>
+                    </div>
                 </div>
                 
                 <div class="form-row">
