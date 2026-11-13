@@ -56,7 +56,7 @@
         
         <!-- MENU DE INCLUSÃO -->
         <div class="menu-item" data-modulo="inclusao_perfis" onclick="navegarPara('view-inclusao-perfis', this); carregarPerfisNEE();">🧩 Perfis de Alunos</div>
-        <div class="menu-item" data-modulo="inclusao_gerar" onclick="navegarPara('view-inclusao-gerar', this)">🎯 Gerar Atividade Adaptada</div>
+        <div class="menu-item" data-modulo="inclusao_gerar" onclick="navegarPara('view-inclusao-gerar', this); carregarPerfisParaSelect();">🎯 Gerar Atividade Adaptada</div>
         <div class="menu-item" data-modulo="inclusao_colaboracao" onclick="navegarPara('view-inclusao-colaboracao', this)">🤝 Colaboração AEE</div>
         <div class="menu-item" data-modulo="inclusao_relatorios" onclick="navegarPara('view-inclusao-relatorios', this)">📊 Relatórios de Inclusão</div>
         
@@ -488,6 +488,42 @@
                 <div id="listaPerfisNEE" class="loading">Carregando...</div>
             </div>
         </div>
+
+<!-- VIEW: GERAR ATIVIDADE ADAPTADA -->
+<div id="view-inclusao-gerar" class="view">
+    <h2>🎯 Gerar Atividade Adaptada</h2>
+    <div class="card">
+        <div class="form-group">
+            <label>🧩 Aluno (perfil NEE)</label>
+            <select id="selPerfilAdaptacao">
+                <option value="">Carregando perfis...</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Disciplina</label>
+                <input type="text" id="adaptDisciplina" value="Matemática">
+            </div>
+            <div class="form-group">
+                <label>Ano/Série</label>
+                <input type="text" id="adaptAno" placeholder="Ex: 5º ano">
+            </div>
+            <div class="form-group">
+                <label>Tema da Aula</label>
+                <input type="text" id="adaptTema" placeholder="Ex: Frações equivalentes">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Habilidade BNCC / Descritor SAEB (opcional)</label>
+            <input type="text" id="adaptHabilidade" placeholder="Ex: EF05MA05 / D25">
+        </div>
+        <div class="form-group">
+            <label>📄 Atividade Original (cole aqui as questões)</label>
+            <textarea id="adaptOriginal" rows="8" placeholder="Cole aqui a atividade ou as questões que o aluno com NEE precisa fazer..."></textarea>
+        </div>
+        <button class="btn btn-primary" style="width: 100%; padding: 14px;" onclick="gerarAdaptacaoIA()">🤖 GERAR ADAPTAÇÃO COM IA</button>
+    </div>
+</div>
 
     </div> <!-- ✅ AQUI FECHA A div.content CORRETAMENTE -->
 </div> <!-- ✅ AQUI FECHA A div.main-screen CORRETAMENTE -->
