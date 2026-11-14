@@ -502,6 +502,7 @@
 <!-- VIEW: GERAR ATIVIDADE ADAPTADA -->
 <div id="view-inclusao-gerar" class="view">
     <h2>🎯 Gerar Atividade Adaptada</h2>
+
     <div class="card">
         <div class="form-group">
             <label>🧩 Aluno (perfil NEE)</label>
@@ -532,6 +533,38 @@
             <textarea id="adaptOriginal" rows="8" placeholder="Cole aqui a atividade ou as questões que o aluno com NEE precisa fazer..."></textarea>
         </div>
         <button class="btn btn-primary" style="width: 100%; padding: 14px;" onclick="gerarAdaptacaoIA()">🤖 GERAR ADAPTAÇÃO COM IA</button>
+    </div>
+
+    <!-- 📚 ADAPTAÇÕES SALVAS (FASE 2) -->
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <h3 style="margin:0;">📚 Adaptações Salvas (<span id="contadorAdaptacoes">0</span>)</h3>
+            <button class="btn btn-secondary btn-sm" onclick="carregarAdaptacoesSalvas()">🔄 Atualizar</button>
+        </div>
+        <div class="form-row" style="margin-top:12px;">
+            <div class="form-group">
+                <label>🔍 Buscar</label>
+                <input type="text" id="buscaAdaptacao" placeholder="Nome do aluno ou título..." oninput="renderizarAdaptacoesSalvas()">
+            </div>
+            <div class="form-group">
+                <label>🧩 Tipo de NEE</label>
+                <select id="filtroTipoAdapt" onchange="renderizarAdaptacoesSalvas()">
+                    <option value="">Todos</option>
+                    <option value="TEA">TEA</option>
+                    <option value="TDAH">TDAH</option>
+                    <option value="TEA_TDAH">TEA + TDAH</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>↕️ Ordenar</label>
+                <select id="ordemAdaptacao" onchange="renderizarAdaptacoesSalvas()">
+                    <option value="recentes">Mais recentes</option>
+                    <option value="antigas">Mais antigas</option>
+                    <option value="aluno">Aluno (A–Z)</option>
+                </select>
+            </div>
+        </div>
+        <div id="listaAdaptacoesSalvas" class="loading">Carregando...</div>
     </div>
 </div>
 
