@@ -3,8 +3,21 @@
    Grupos retráteis + auto-ocultar + botão flutuante
    ======================================================================== */
 
-body.omr-menu-v2 .main-screen { display: block !important; }
-body.omr-menu-v2 .content {
+/* 🔒 Nada do menu aparece na tela de login */
+body:not(.omr-app-ativo) .omr-fab,
+body:not(.omr-app-ativo) .omr-scrim,
+body:not(.omr-app-ativo) .omr-drawer,
+body:not(.omr-app-ativo) #meuRobo {
+    display: none !important;
+}
+body.omr-menu-v2 #mainScreen.hidden,
+body.omr-menu-v2 .main-screen.hidden {
+    display: none !important;
+}
+body.omr-menu-v2.omr-app-ativo #mainScreen:not(.hidden) {
+    display: block !important;
+}
+body.omr-menu-v2.omr-app-ativo .content {
     margin-left: 0 !important; width: 100% !important; max-width: none !important;
     padding: 84px 26px 32px !important; box-sizing: border-box;
 }
@@ -159,7 +172,7 @@ body.omr-menu-v2 .omr-solo .omr-folha:hover { border-color: rgba(var(--g), .5); 
 
 /* ---------- Responsivo ---------- */
 @media (max-width: 640px) {
-    body.omr-menu-v2 .content { padding: 74px 14px 24px !important; }
+    body.omr-menu-v2.omr-app-ativo .content { padding: 74px 14px 24px !important; }
     .omr-fab { top: 12px; left: 12px; gap: 8px; }
     .omr-fab-texto { display: none; }
     .omr-fab-btn { padding: 11px 14px; }
@@ -171,6 +184,6 @@ body.omr-menu-v2 .omr-solo .omr-folha:hover { border-color: rgba(var(--g), .5); 
     .omr-drawer, .omr-grupo-itens, .omr-folha, .omr-grupo-btn, .omr-fab, .omr-scrim { transition: none !important; animation: none !important; }
 }
 @media print {
-    .omr-fab, .omr-scrim, .omr-drawer { display: none !important; }
+    .omr-fab, .omr-scrim, .omr-drawer, #meuRobo { display: none !important; }
     body.omr-menu-v2 .content { padding: 0 !important; }
 }
