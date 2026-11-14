@@ -956,25 +956,78 @@
     </div>
 </div>
 
-<!-- MODAL: EDITAR PERFIL COMPLETO -->
+<!-- MODAL: EDITAR PERMISSÕES (MÓDULOS + TURMAS) -->
 <div id="modalEditPerfil" class="modal">
-    <div class="modal-content" style="max-width: 600px;">
+    <div class="modal-content" style="max-width: 780px; max-height: 92vh; overflow-y: auto;">
         <div class="modal-header">
-            <h3>⚙️ Editar Permissões do Professor</h3>
-            <button class="btn btn-sm" onclick="fecharModal('modalEditPerfil')">✕</button>
+            <h3>⚙️ Permissões do Professor</h3>
+            <button class="btn btn-sm" onclick="pmCancelar()">✕</button>
         </div>
-        <p style="font-size: 13px; color: #666; margin-bottom: 12px;">Usuário: <strong id="nomeUsuarioEditando">...</strong> (<span id="emailUsuarioEditando">...</span>)</p>
-        <h4 style="margin: 15px 0 8px 0; color: #008080;">📱 Módulos de Acesso:</h4>
-        <div id="listaModulosCheckbox" style="max-height: 150px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 6px; background: #f9f9f9; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <p style="text-align:center; color:#999; grid-column: 1/-1;">Carregando módulos...</p>
+
+        <div class="pm-modal-topo">
+            <div class="pm-avatar" id="permAvatar">U</div>
+            <div style="flex:1;">
+                <div style="font-weight:800;color:#1d2a4d;font-size:15px;" id="nomeUsuarioEditando">...</div>
+                <div style="font-size:12px;color:#667;" id="emailUsuarioEditando">...</div>
+            </div>
+            <div class="form-group" style="margin:0;min-width:170px;">
+                <label style="font-size:11px;">Tipo de acesso</label>
+                <select id="permTipoUsuario" onchange="pmMudarTipo()">
+                    <option value="professor">👨‍🏫 Professor</option>
+                    <option value="admin">👑 Administrador</option>
+                </select>
+            </div>
         </div>
-        <h4 style="margin: 20px 0 8px 0; color: #008080;">🏫 Turmas Permitidas:</h4>
-        <div id="listaTurmasCheckbox" style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 6px; background: #fafafa;">
-            <p style="text-align:center; color:#999;">Carregando turmas...</p>
+
+        <div class="pm-secao-titulo">
+            <h4>📱 Módulos liberados</h4>
+            <div class="pm-acoes-linha">
+                <span id="permContadorModulos" class="pm-tag">0 módulos</span>
+                <button type="button" class="pm-mini-btn" onclick="pmTodosModulos(true)">✅ Todos</button>
+                <button type="button" class="pm-mini-btn" onclick="pmTodosModulos(false)">❌ Nenhum</button>
+            </div>
         </div>
-        <div style="display: flex; gap: 8px; margin-top: 20px;">
-            <button class="btn btn-secondary" style="flex: 1;" onclick="fecharModal('modalEditPerfil')">Cancelar</button>
-            <button class="btn btn-primary" style="flex: 1;" onclick="salvarPerfilCompleto()" id="btnSalvarPerfil">💾 SALVAR ALTERAÇÕES</button>
+
+        <div class="form-row" style="margin-bottom:10px;">
+            <div class="form-group" style="margin:0;">
+                <label style="font-size:11px;">🚀 Aplicar perfil pronto</label>
+                <select id="permPreset" onchange="pmAplicarPreset()">
+                    <option value="">— Escolher perfil pronto —</option>
+                    <option value="professor">👨‍🏫 Professor (provas e resultados)</option>
+                    <option value="professor_inclusao">🧩 Professor + Inclusão</option>
+                    <option value="aee">🤝 Professor de AEE</option>
+                    <option value="coordenacao">📊 Coordenação (tudo, menos Gestão)</option>
+                    <option value="gestor">👑 Gestor total</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin:0;">
+                <label style="font-size:11px;">🔍 Buscar módulo</label>
+                <input type="text" id="permBuscaModulos" placeholder="Ex: inclusão, OMR, PDF..." oninput="renderizarModulosPublico()">
+            </div>
+        </div>
+
+        <div id="listaModulosCheckbox" class="pm-scroll"></div>
+
+        <div class="pm-secao-titulo">
+            <h4>🏫 Turmas permitidas</h4>
+            <div class="pm-acoes-linha">
+                <span id="permContadorTurmas" class="pm-tag">0 turmas</span>
+                <button type="button" class="pm-mini-btn" onclick="pmTodasTurmas(true)">✅ Todas</button>
+                <button type="button" class="pm-mini-btn" onclick="pmTodasTurmas(false)">❌ Nenhuma</button>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:8px;">
+            <input type="text" id="permBuscaTurmas" placeholder="🔍 Buscar turma..." oninput="renderizarTurmasPublico()">
+        </div>
+        <div id="listaTurmasCheckbox" class="pm-scroll" style="max-height:220px;"></div>
+
+        <div class="pm-rodape">
+            <span id="permStatusAlteracoes" class="pm-limpo">Nenhuma alteração pendente</span>
+            <div style="display:flex;gap:8px;">
+                <button class="btn btn-secondary" onclick="pmCancelar()">Cancelar</button>
+                <button class="btn btn-primary" id="btnSalvarPerfil" onclick="salvarPerfilCompleto()">💾 SALVAR ALTERAÇÕES</button>
+            </div>
         </div>
     </div>
 </div>
@@ -1050,6 +1103,7 @@
 <script src="js/menu.js"></script>
 <script src="js/inclusao.js"></script>
 <script src="js/inclusao-avancado.js"></script>
+<script src="js/permissoes.js"></script>
 
 </body>
 </html>
