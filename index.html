@@ -568,6 +568,51 @@
     </div>
 </div>
 
+<!-- VIEW: COLABORAÇÃO AEE -->
+<div id="view-inclusao-colaboracao" class="view">
+    <h2>🤝 Colaboração AEE</h2>
+    <div class="inc-adv-hero">
+        <div>
+            <strong>Professor da sala regular + Professor de AEE, juntos.</strong>
+            <p>Envie uma adaptação para revisão, receba sugestões e aprove o material antes de aplicar em sala.</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="carregarColaboracoesAEE()">🔄 Atualizar</button>
+    </div>
+    <div class="card">
+        <div class="ia-tabs">
+            <button class="ia-tab active" id="tabAeeRecebidas" onclick="mudarAbaAEE('recebidas')">📥 Recebidas para revisar</button>
+            <button class="ia-tab" id="tabAeeEnviadas" onclick="mudarAbaAEE('enviadas')">📤 Enviadas por mim</button>
+        </div>
+        <div id="aeeRecebidas" class="inc-adv-list"></div>
+        <div id="aeeEnviadas" class="inc-adv-list" style="display:none;"></div>
+    </div>
+</div>
+
+<!-- VIEW: RELATÓRIOS DE INCLUSÃO -->
+<div id="view-inclusao-relatorios" class="view">
+    <h2>📊 Relatórios de Inclusão</h2>
+    <div class="inc-adv-hero">
+        <div>
+            <strong>O sistema aprende com cada aula.</strong>
+            <p>Feedback dos professores alimenta a memória coletiva: as estratégias com maior sucesso aparecem primeiro nas próximas adaptações.</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="carregarRelatoriosInclusao()">🔄 Atualizar</button>
+    </div>
+    <div id="incStatsGrid" class="inc-stats-grid"></div>
+    <div class="inc-charts-grid">
+        <div class="card"><h3>🧩 Perfis por tipo de NEE</h3><canvas id="chartNeTipos" height="220"></canvas></div>
+        <div class="card"><h3>📝 Feedback das adaptações</h3><canvas id="chartFeedback" height="220"></canvas></div>
+    </div>
+    <div class="card">
+        <h3>🧠 Memória do sistema — estratégias que mais funcionam</h3>
+        <div id="incEstrategiasRank" class="inc-adv-list"></div>
+    </div>
+    <div class="card">
+        <h3>🕒 Atividade recente</h3>
+        <div id="incRecentes" class="inc-adv-list"></div>
+    </div>
+</div>
+
     </div> <!-- ✅ AQUI FECHA A div.content CORRETAMENTE -->
 </div> <!-- ✅ AQUI FECHA A div.main-screen CORRETAMENTE -->
 
@@ -913,6 +958,7 @@
 <script src="js/gestao.js"></script>
 <script src="js/main.js"></script>
 <script src="js/inclusao.js"></script>
+<script src="js/inclusao-avancado.js"></script>
 
 </body>
 </html>
