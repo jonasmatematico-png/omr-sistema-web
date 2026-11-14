@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OMR Sistema 2.0</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/menu.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
@@ -40,44 +41,133 @@
 <!-- TELA PRINCIPAL -->
 <div id="mainScreen" class="main-screen hidden">
 
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h1>📊 OMR Sistema</h1>
-            <p>Gestão de Avaliações</p>
-        </div>
-        
-        <!-- MENU LATERAL -->
-        <div class="menu-item active" data-modulo="dissertativa" onclick="navegarPara('view-provas', this)">📝 Criar Prova Aberta</div>
-        <div class="menu-item" data-modulo="objetiva" onclick="navegarPara('view-objetivas', this)">✅ Criar Prova Objetiva</div>
-        <div class="menu-item" data-modulo="diagnostico" onclick="navegarPara('view-diagnostico', this)">📊 Diagnóstico</div>
-        <div class="menu-item" data-modulo="planilha" onclick="navegarPara('view-planilha', this)">📋 Planilha</div>
-        <div class="menu-item" data-modulo="corretor" onclick="navegarPara('view-corretor', this)">✏️ Corretor Manual</div>
-        <div class="menu-item" data-modulo="qr" onclick="navegarPara('view-qr', this)">🔲 QR Codes</div>
-        
-        <!-- MENU DE INCLUSÃO -->
-        <div class="menu-item" data-modulo="inclusao_perfis" onclick="navegarPara('view-inclusao-perfis', this); carregarPerfisNEE(); carregarTurmasPermitidas('selTurmaNEE');">🧩 Perfis de Alunos</div>
-        <div class="menu-item" data-modulo="inclusao_gerar" onclick="navegarPara('view-inclusao-gerar', this); carregarPerfisParaSelect();">🎯 Gerar Atividade Adaptada</div>
-        <div class="menu-item" data-modulo="inclusao_colaboracao" onclick="navegarPara('view-inclusao-colaboracao', this)">🤝 Colaboração AEE</div>
-        <div class="menu-item" data-modulo="inclusao_relatorios" onclick="navegarPara('view-inclusao-relatorios', this)">📊 Relatórios de Inclusão</div>
-        
-        <!-- Links externos -->
-        <div class="menu-item" data-modulo="omr" onclick="window.open('correcao-objetiva.html', '_blank')" style="background: #e8f5e9; border-left-color: #28a745; color: #28a745; font-weight: 600;">🔍 Correção Objetiva (OMR)</div>
-        <div class="menu-item" data-modulo="correcao_dissertativa" onclick="window.open('correcao-dissertativa.html', '_blank')" style="background: #e0f7fa; border-left-color: #008080; color: #008080; font-weight: 600;">✍️ Correção Dissertativa</div>
-        <div class="menu-item" data-modulo="gestao" onclick="navegarPara('view-gestao', this)">👥 Gestão</div>
-        
-        <div class="sidebar-footer">
-            <div class="user-info">
-                <div class="user-avatar" id="userAvatar">U</div>
-                <div class="user-email" id="userEmail">usuario@email.com</div>
+    <!-- 🧭 MENU LATERAL V2 -->
+<div id="omrMenuScrim" class="omr-scrim" onclick="omrMenuFechar()" aria-hidden="true"></div>
+
+<div id="omrMenuFab" class="omr-fab">
+    <button id="omrMenuBtn" type="button" class="omr-fab-btn" onclick="omrMenuAbrir()" aria-label="Abrir menu" aria-expanded="false" aria-controls="omrSidebar">
+        <span class="omr-fab-icone"><span></span><span></span><span></span></span>
+        <span class="omr-fab-texto">Menu</span>
+    </button>
+    <button id="omrMenuContexto" type="button" class="omr-contexto" onclick="omrMenuAbrir()" title="Página atual — clique para abrir o menu">📝 Criar Prova Aberta</button>
+</div>
+
+<aside id="omrSidebar" class="sidebar omr-drawer" role="navigation" aria-label="Menu principal">
+    <div class="omr-drawer-topo">
+        <div class="omr-marca">
+            <div class="omr-logo">
+                <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">
+                    <defs><linearGradient id="omrLogoG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00e5c7"/><stop offset="1" stop-color="#b388ff"/></linearGradient></defs>
+                    <rect x="3" y="3" width="26" height="26" rx="8" fill="url(#omrLogoG)"/>
+                    <path d="M10 17l4 4 8-9" stroke="#0e1426" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
             </div>
-            <button class="btn-logout" onclick="sair()">Sair</button>
+            <div><h1>OMR Sistema</h1><p>Gestão de Avaliações</p></div>
+        </div>
+        <button type="button" class="omr-fechar" onclick="omrMenuFechar()" aria-label="Fechar menu">✕</button>
+    </div>
+
+    <div class="omr-drawer-body">
+        <!-- 📝 PROVAS ABERTAS: criar + corrigir juntas -->
+        <section class="omr-grupo" data-grupo="abertas" style="--g:0,229,199; --i:0;">
+            <button type="button" class="omr-grupo-btn" onclick="omrMenuToggleGrupo('abertas')" aria-expanded="true" aria-controls="omr-grupo-abertas">
+                <span class="omr-grupo-icone">📝</span><span class="omr-grupo-nome">Provas Abertas</span>
+                <span class="omr-grupo-count" data-count>2</span><span class="omr-chevron">▾</span>
+            </button>
+            <div class="omr-grupo-itens" id="omr-grupo-abertas">
+                <div class="omr-grupo-inner">
+                    <button type="button" class="menu-item omr-folha" data-modulo="dissertativa" data-view="view-provas" onclick="navegarPara('view-provas', this)">
+                        <span class="omr-folha-icone">✏️</span> Criar Prova Aberta
+                    </button>
+                    <button type="button" class="menu-item omr-folha" data-modulo="correcao_dissertativa" onclick="omrMenuExternal('correcao-dissertativa.html')">
+                        <span class="omr-folha-icone">✍️</span> Correção Dissertativa <span class="omr-ext">↗</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ✅ PROVAS OBJETIVAS: criar + corrigir juntas -->
+        <section class="omr-grupo" data-grupo="objetivas" style="--g:41,121,255; --i:1;">
+            <button type="button" class="omr-grupo-btn" onclick="omrMenuToggleGrupo('objetivas')" aria-expanded="false" aria-controls="omr-grupo-objetivas">
+                <span class="omr-grupo-icone">✅</span><span class="omr-grupo-nome">Provas Objetivas</span>
+                <span class="omr-grupo-count" data-count>2</span><span class="omr-chevron">▾</span>
+            </button>
+            <div class="omr-grupo-itens" id="omr-grupo-objetivas">
+                <div class="omr-grupo-inner">
+                    <button type="button" class="menu-item omr-folha" data-modulo="objetiva" onclick="navegarPara('view-objetivas', this)" data-view="view-objetivas">
+                        <span class="omr-folha-icone">🎯</span> Criar Prova Objetiva
+                    </button>
+                    <button type="button" class="menu-item omr-folha" data-modulo="omr" onclick="omrMenuExternal('correcao-objetiva.html')">
+                        <span class="omr-folha-icone">🔍</span> Correção Objetiva (OMR) <span class="omr-ext">↗</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 🧩 INCLUSÃO: os 4 itens dentro de um grupo só -->
+        <section class="omr-grupo" data-grupo="inclusao" style="--g:179,136,255; --i:2;">
+            <button type="button" class="omr-grupo-btn" onclick="omrMenuToggleGrupo('inclusao')" aria-expanded="false" aria-controls="omr-grupo-inclusao">
+                <span class="omr-grupo-icone">🧩</span><span class="omr-grupo-nome">Inclusão</span>
+                <span class="omr-grupo-count" data-count>4</span><span class="omr-chevron">▾</span>
+            </button>
+            <div class="omr-grupo-itens" id="omr-grupo-inclusao">
+                <div class="omr-grupo-inner">
+                    <button type="button" class="menu-item omr-folha" data-modulo="inclusao_perfis" data-view="view-inclusao-perfis" onclick="navegarPara('view-inclusao-perfis', this); carregarPerfisNEE(); carregarTurmasPermitidas('selTurmaNEE');">
+                        <span class="omr-folha-icone">👤</span> Perfis de Alunos
+                    </button>
+                    <button type="button" class="menu-item omr-folha" data-modulo="inclusao_gerar" data-view="view-inclusao-gerar" onclick="navegarPara('view-inclusao-gerar', this); carregarPerfisParaSelect();">
+                        <span class="omr-folha-icone">🎯</span> Gerar Atividade Adaptada
+                    </button>
+                    <button type="button" class="menu-item omr-folha" data-modulo="inclusao_colaboracao" data-view="view-inclusao-colaboracao" onclick="navegarPara('view-inclusao-colaboracao', this); carregarColaboracoesAEE();">
+                        <span class="omr-folha-icone">🤝</span> Colaboração AEE
+                    </button>
+                    <button type="button" class="menu-item omr-folha" data-modulo="inclusao_relatorios" data-view="view-inclusao-relatorios" onclick="navegarPara('view-inclusao-relatorios', this); carregarRelatoriosInclusao();">
+                        <span class="omr-folha-icone">📈</span> Relatórios de Inclusão
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 📊 RESULTADOS: diagnóstico, planilha, corretor, QR -->
+        <section class="omr-grupo" data-grupo="resultados" style="--g:255,179,0; --i:3;">
+            <button type="button" class="omr-grupo-btn" onclick="omrMenuToggleGrupo('resultados')" aria-expanded="false" aria-controls="omr-grupo-resultados">
+                <span class="omr-grupo-icone">📊</span><span class="omr-grupo-nome">Resultados</span>
+                <span class="omr-grupo-count" data-count>4</span><span class="omr-chevron">▾</span>
+            </button>
+            <div class="omr-grupo-itens" id="omr-grupo-resultados">
+                <div class="omr-grupo-inner">
+                    <button type="button" class="menu-item omr-folha" data-modulo="diagnostico" data-view="view-diagnostico" onclick="navegarPara('view-diagnostico', this)">
+                        <span class="omr-folha-icone">📊</span> Diagnóstico
+                    </button>
+                    <button type="button" class="menu-item omr-folha" data-modulo="planilha" data-view="view-planilha" onclick="navegarPara('view-planilha', this)">
+                        <span class="omr-folha-icone">📋</span> Planilha
+                    </button>
+                    <button type="button" class="menu-item omr-folha" data-modulo="corretor" data-view="view-corretor" onclick="navegarPara('view-corretor', this)">
+                        <span class="omr-folha-icone">✏️</span> Corretor Manual
+                    </button>
+                    <button type="button" class="menu-item omr-folha" data-modulo="qr" data-view="view-qr" onclick="navegarPara('view-qr', this)">
+                        <span class="omr-folha-icone">🔲</span> QR Codes
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 👥 GESTÃO -->
+        <div class="omr-solo" style="--g:0,200,83;">
+            <button type="button" class="menu-item omr-folha" data-modulo="gestao" data-view="view-gestao" onclick="navegarPara('view-gestao', this)">
+                <span class="omr-folha-icone">👥</span> Gestão de Usuários
+            </button>
         </div>
     </div>
 
-    <!-- ======================================================================== -->
-    <!-- ÁREA DE CONTEÚDO (TODAS AS TELAS DEVEM FICAR DENTRO DESTE BLOCO) -->
-    <!-- ======================================================================== -->
-    <div class="content">
+    <div class="omr-drawer-rodape">
+        <div class="omr-usuario">
+            <div class="user-avatar" id="userAvatar">U</div>
+            <div class="user-email" id="userEmail">usuario@email.com</div>
+        </div>
+        <button type="button" class="omr-sair" onclick="sair()">🚪 Sair da conta</button>
+    </div>
+</aside>
         
         <!-- VIEW: PROVAS ABERTAS -->
         <div id="view-provas" class="view active">
@@ -957,6 +1047,7 @@
 <script src="js/ia.js"></script>
 <script src="js/gestao.js"></script>
 <script src="js/main.js"></script>
+<script src="js/menu.js"></script>
 <script src="js/inclusao.js"></script>
 <script src="js/inclusao-avancado.js"></script>
 
