@@ -155,6 +155,7 @@ async function carregarDiagnosticoTurma() {
                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100, ticks: { callback: function(value) { return value + "%"; } } } }, plugins: { legend: { display: false } } }
             });
         }, 100);
+        await car9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8(selProva.value, selTurma.value);
     } catch(e) {
         console.error("Erro no diagnóstico:", e);
         if (area) area.innerHTML = '<div style="padding:20px; background:#ffe6e6; border-radius:8px; text-align:center; color:#dc3545;"><strong>❌ Erro Técnico:</strong><br>' + e.message + '</div>';
@@ -270,5 +271,71 @@ async function processarTriagem() {
     } catch (e) {
         console.error(e);
         areaTriagem.innerHTML = '<p style="color: red; text-align: center;">❌ Erro: ' + e.message + '</p>';
+    }
+}
+
+// ========================================================================
+// 📊 NOVO: RENDERIZAR DESEMPENHO POR QUESTÃO
+// ========================================================================
+async function car9yMnTm4NSzvG9rrwjM2ec8xZgh1cafXH8(idAvaliacao, idTurma) {
+    const area = document.getElementById('areaDesempenhoQuestoes');
+    const lista = document.getElementById('listaDesempenhoQuestoes');
+    
+    if (!idAvaliacao) {
+        area.style.display = 'none';
+        return;
+    }
+    
+    lista.innerHTML = '<p style="text-align:center; padding:20px; color:#666;">⏳ Calculando desempenho por questão...</p>';
+    area.style.display = 'block';
+    
+    try {
+        let url = `/api/diagnostico_questoes/${idAvaliacao}`;
+        if (idTurma) url += `?id_turma=${idTurma}`;
+        
+        const r = await fetch('https://omr-backend-laboratorio.onrender.com' + url);
+        const dados = await r.json();
+        
+        if (!dados.sucesso || !dados.questoes || dados.questoes.length === 0) {
+            lista.innerHTML = '<p style="text-align:center; padding:20px; color:#888;">📭 Nenhuma resposta encontrada para esta prova/turma.</p>';
+            return;
+ }
+        
+        lista.innerHTML = dados.questoes.map(q => {
+            // Define a cor da barra baseada na taxa de acerto
+            let cor = '#66bb6a'; // Verde (Bom)
+            let textoCor = 'Bom';
+            if (q.taxa_acerto < 50) { cor = '#ef5350'; textoCor = 'Crítico'; }
+            else if (q.taxa_acerto < 70) { cor = '#ffa726'; textoCor = 'Atenção'; }
+            
+            return `
+            <div style="background:#fff; border:1px solid #eee; border-left:5px solid ${cor}; border-radius:8px; padding:14px; margin-bottom:12px; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <div>
+                        <strong style="font-size:15px; color:#333;">Questão ${q.numero}</strong>
+                        <span style="font-size:12px; color:#888; margin-left:8px;">(Gabarito: ${q.gabarito})</span>
+                    </div>
+                    <div style="text-align:right;">
+                        <span style="font-size:18px; font-weight:800; color:${cor};">${q.taxa_acerto}%</span>
+                        <span style="font-size:11px; color:#666; display:block;">${textoCor}</span>
+                    </div>
+                </div>
+                
+                <!-- Barra de Progresso -->
+                <div style="width:100%; height:12px; background:#f0f0f0; border-radius:6px; overflow:hidden; margin-bottom:8px;">
+                    <div style="width:${q.taxa_acerto}%; height:100%; background:${cor}; border-radius:6px; transition:width 0.6s ease;"></div>
+                </div>
+                
+                <div style="display:flex; justify-content:space-between; font-size:12px; color:#666;">
+                    <span>✅ Acertos: <strong>${q.acertos}</strong> de ${q.total_respostas}</span>
+                    <span>❌ Erros: <strong>${q.erros}</strong></span>
+                </div>
+            </div>
+            `;
+        }).join('');
+        
+    } catch (e) {
+        console.error(e);
+        lista.innerHTML = '<p style="text-align:center; padding:20px; color:#dc3545;">❌ Erro ao carregar dados das questões.</p>';
     }
 }
