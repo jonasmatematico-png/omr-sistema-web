@@ -17,11 +17,13 @@
                 { chave: 'correcao_dissertativa', nome: 'Correção Dissertativa', desc: 'Corrigir provas abertas por foto com IA', icone: '✍️' }
             ]
         },
+
         {
             id: 'objetivas', nome: 'Provas Objetivas', icone: '✅', cor: '41,121,255',
             itens: [
                 { chave: 'objetiva', nome: 'Criar Prova Objetiva', desc: 'Elaborar múltipla escolha e gabaritos', icone: '🎯' },
-                { chave: 'omr', nome: 'Correção Objetiva (OMR)', desc: 'Ler cartões-resposta pela câmera', icone: '🔍' }
+                { chave: 'omr', nome: 'Correção Objetiva (OMR)', desc: 'Ler cartões-resposta pela câmera', icone: '🔍' },
+                { chave: 'correcao_rapida', nome: 'Correção Rápida (Scanner)', desc: 'Modo scanner contínuo com QR Code', icone: '🚀' }
             ]
         },
         {

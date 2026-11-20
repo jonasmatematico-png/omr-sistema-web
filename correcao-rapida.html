@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>🚀 Correção Rápida - OMR Sistema</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #0f1528 0%, #1d2a4d 100%);
+    color: #fff;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+.topo {
+    background: rgba(0,0,0,0.5);
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.topo h1 { font-size: 16px; color: #00e5c7; font-weight: 800; }
+.contador {
+    background: linear-gradient(135deg, #00bfa5, #7c4dff);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-weight: 800;
+    font-size: 13px;
+    color: #fff;
+}
+.setup { padding: 20px; max-width: 500px; margin: 0 auto; }
+.setup h2 { font-size: 20px; margin-bottom: 16px; color: #00e5c7; }
+.setup label { display: block; margin: 12px 0 6px; font-weight: 700; font-size: 13px; color: #b388ff; text-transform: uppercase; letter-spacing: 0.5px; }
+.setup select {
+    width: 100%; padding: 14px; border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.08); color: #fff;
+    font-size: 15px; font-weight: 600; appearance: none;
+}
+.setup select option { background: #1d2a4d; color: #fff; }
+.btn-iniciar {
+    width: 100%; padding: 18px; margin-top: 24px;
+    background: linear-gradient(135deg, #00bfa5, #00e5c7);
+    border: none; border-radius: 14px; color: #0f1528;
+    font-size: 17px; font-weight: 900; cursor: pointer;
+    box-shadow: 0 8px 24px rgba(0,229,199,0.3);
+}
+.btn-iniciar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.scanner-area {
+    position: relative; width: 100%; max-width: 500px; margin: 0 auto;
+    background: #000; border-radius: 16px; overflow: hidden;
+}
+#reader { width: 100%; }
+#reader video { 
+    width: 100% !important; height: auto !important; 
+    border-radius: 16px; object-fit: cover;
+    /* 🍎 CORREÇÃO CRÍTICA PARA iPHONE */
+    -webkit-playsinline: true; playsinline: true; 
+}
+.overlay-scan {
+    position: absolute; inset: 0; pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+}
+.quadro-leitura {
+    width: 65%; aspect-ratio: 1;
+    border: 3px dashed #00e5c7; border-radius: 16px;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+    animation: pulso 2s ease-in-out infinite;
+}
+@keyframes pulso {
+    0%, 100% { box-shadow: 0 0 0 9999px rgba(0,0,0,0.5), 0 0 0 0 rgba(0,229,199,0.6); }
+    50% { box-shadow: 0 0 0 9999px rgba(0,0,0,0.5), 0 0 0 12px rgba(0,229,199,0); }
+}
+.status-scan {
+    text-align: center; padding: 12px;
+    background: rgba(0,0,0,0.6); color: #00e5c7;
+    font-weight: 700; font-size: 14px;
+}
+
+.confirmacao {
+    display: none; padding: 20px; max-width: 500px; margin: 0 auto;
+    animation: slideUp 0.3s ease-out;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+.card-aluno {
+    background: linear-gradient(135deg, rgba(0,229,199,0.15), rgba(179,136,255,0.15));
+    border: 2px solid #00e5c7; border-radius: 16px; padding: 18px; margin-bottom: 16px;
+}
+.card-aluno .label { font-size: 11px; color: #b388ff; font-weight: 800; letter-spacing: 1px; }
+.card-aluno .turma { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.card-aluno .numero {
+    display: inline-block; background: #7c4dff; color: #fff;
+    padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 14px; margin-right: 8px;
+}
+.card-aluno .nome { font-size: 22px; font-weight: 900; margin-top: 8px; color: #fff; text-transform: uppercase; }
+
+.card-nota {
+    background: #fff; color: #1d2a4d; border-radius: 16px;
+    padding: 20px; margin-bottom: 16px; text-align: center;
+}
+.nota-final { font-size: 52px; font-weight: 900; color: #00bfa5; line-height: 1; }
+.nota-max { font-size: 18px; color: #888; }
+.resumo-acertos { display: flex; justify-content: space-around; margin-top: 14px; }
+.resumo-acertos div { text-align: center; }
+.resumo-acertos .valor { font-size: 22px; font-weight: 800; }
+.resumo-acertos .lbl { font-size: 11px; color: #666; font-weight: 700; }
+.acerto { color: #00bfa5; }
+.erro { color: #ef5350; }
+
+.btn-grande {
+    width: 100%; padding: 22px; border: none; border-radius: 16px;
+    font-size: 18px; font-weight: 900; cursor: pointer; margin-bottom: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3); transition: transform 0.1s;
+}
+.btn-grande:active { transform: scale(0.97); }
+.btn-salvar { background: linear-gradient(135deg, #00bfa5, #00e5c7); color: #0f1528; }
+.btn-refazer { background: rgba(255,255,255,0.1); color: #fff; border: 2px solid rgba(255,255,255,0.3); }
+.btn-finalizar { background: linear-gradient(135deg, #7c4dff, #b388ff); color: #fff; margin-top: 8px; }
+
+.processando {
+    display: none; text-align: center; padding: 40px 20px;
+}
+.processando .spinner {
+    width: 60px; height: 60px; border: 5px solid rgba(0,229,199,0.2);
+    border-top-color: #00e5c7; border-radius: 50%;
+    animation: spin 1s linear infinite; margin: 0 auto 20px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #1d2a4d; color: #fff; padding: 12px 24px; border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 9999;
+    font-weight: 700; opacity: 0; transition: opacity 0.3s; text-align: center; width: 90%; max-width: 400px;
+}
+.toast.show { opacity: 1; }
+.toast.sucesso { background: linear-gradient(135deg, #00bfa5, #00e5c7); color: #0f1528; }
+.toast.erro { background: #ef5350; }
+</style>
+</head>
+<body>
+
+<div class="topo">
+    <h1>🚀 Correção Rápida</h1>
+    <div class="contador" id="contador">0 / 0</div>
+</div>
+
+<!-- TELA 1: CONFIGURAÇÃO -->
+<div class="setup" id="telaSetup">
+    <h2>📋 Configurar Correção</h2>
+    <label>🏫 Turma</label>
+    <select id="selTurma"><option value="">Carregando turmas...</option></select>
+    
+    <label>📝 Prova</label>
+    <select id="selProva"><option value="">Selecione uma turma primeiro</option></select>
+    
+    <button class="btn-iniciar" id="btnIniciar" onclick="iniciarScanner()" disabled>📸 INICIAR SCANNER</button>
+    
+    <p style="text-align:center; margin-top:20px; font-size:12px; color:#8fa0c8; line-height: 1.5;">
+        💡 Aponte a câmera para o <strong>QR Code</strong> da prova.<br>
+        O sistema identifica e processa automaticamente.
+    </p>
+</div>
+
+<!-- TELA 2: SCANNER ATIVO -->
+<div id="telaScanner" style="display:none;">
+    <div class="scanner-area">
+        <div id="reader"></div>
+        <div class="overlay-scan"><div class="quadro-leitura"></div></div>
+    </div>
+    <div class="status-scan" id="statusScan">📷 Aponte para o QR Code da prova...</div>
+</div>
+
+<!-- TELA 3: PROCESSANDO -->
+<div class="processando" id="telaProcessando">
+    <div class="spinner"></div>
+    <h3 style="color:#00e5c7;">Processando respostas...</h3>
+    <p style="color:#8fa0c8; margin-top:8px;">Analisando o cartão-resposta</p>
+</div>
+
+<!-- TELA 4: CONFIRMAÇÃO -->
+<div class="confirmacao" id="telaConfirmacao">
+    <div class="card-aluno">
+        <div class="label">👤 ALUNO IDENTIFICADO</div>
+        <div class="turma" id="confTurma">🏫 Turma</div>
+        <div><span class="numero" id="confNumero">Nº 0</span></div>
+        <div class="nome" id="confNome">Nome do Aluno</div>
+    </div>
+    
+    <div class="card-nota">
+        <div class="label" style="color:#888;">📊 RESULTADO DA CORREÇÃO</div>
+        <div style="margin-top:8px;">
+            <span class="nota-final" id="confNota">0</span>
+            <span class="nota-max" id="confNotaMax">/ 10</span>
+        </div>
+        <div class="resumo-acertos">
+            <div><div class="valor acerto" id="confAcertos">0</div><div class="lbl">✅ ACERTOS</div></div>
+            <div><div class="valor erro" id="confErros">0</div><div class="lbl">❌ ERROS</div></div>
+            <div><div class="valor" id="confTotal" style="color:#1d2a4d;">0</div><div class="lbl">📝 QUESTÕES</div></div>
+        </div>
+    </div>
+    
+    <button class="btn-grande btn-salvar" onclick="salvarEProximo()">✅ SALVAR E PRÓXIMO ALUNO</button>
+    <button class="btn-grande btn-refazer" onclick="tirarOutra()">🔄 FOTO RUIM / TIRAR OUTRA</button>
+    <button class="btn-grande btn-finalizar" onclick="finalizarTurma()">🏁 FINALIZAR TURMA</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ========================================================================
+// 🔧 CONFIGURAÇÃO
+// ========================================================================
+const SUPABASE_URL = 'https://mkqnaiuplkqiitwxltli.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rcW5haXVwbGtxaWl0d3hsdGxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzOTg5MzMsImV4cCI6MjA5OTk3NDkzM30.MtrmkMjW9ODjl7FcNw6VIu8SJTeuewwmoFeiSSvRk1U';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const API_BACKEND = 'https://omr-backend-laboratorio.onrender.com';
+
+let scanner = null;
+let turmaAtual = null;
+let provaAtual = null;
+let alunosTurma = [];
+let alunoAtual = null;
+let resultadoAtual = null;
+let corrigidos = [];
+let totalAlunos = 0;
+let processando = false;
+let nomeTurmaStr = '';
+
+// ========================================================================
+// 📋 INICIALIZAÇÃO
+// ========================================================================
+async function inicializar() {
+    try {
+        const { data: turmas, error } = await supabase.from('turmas').select('id, nome').order('nome');
+        if (error) throw error;
+        const selTurma = document.getElementById('selTurma');
+        selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
+        turmas.forEach(t => { selTurma.innerHTML += `<option value="${t.id}">${t.nome}</option>`; });
+        selTurma.addEventListener('change', carregarProvas);
+    } catch (e) { showToast('❌ Erro ao carregar turmas', 'erro'); }
+}
+
+async function carregarProvas() {
+    const idTurma = document.getElementById('selTurma').value;
+    const selProva = document.getElementById('selProva');
+    if (!idTurma) { selProva.innerHTML = '<option value="">Selecione uma turma primeiro</option>'; return; }
+    
+    try {
+        const { data: provas, error } = await supabase.from('avaliacoes').select('id, nome').eq('modo_correcao', 'objetiva').order('id', { ascending: false });
+        if (error) throw error;
+        selProva.innerHTML = '<option value="">Selecione a prova...</option>';
+        provas.forEach(p => { selProva.innerHTML += `<option value="${p.id}">${p.nome}</option>`; });
+        selProva.addEventListener('change', verificarPronto);
+    } catch (e) { showToast('❌ Erro ao carregar provas', 'erro'); }
+}
+
+function verificarPronto() {
+    const turma = document.getElementById('selTurma').value;
+    const prova = document.getElementById('selProva').value;
+    document.getElementById('btnIniciar').disabled = !(turma && prova);
+}
+
+// ========================================================================
+// 📸 SCANNER CONTÍNUO
+// ========================================================================
+async function iniciarScanner() {
+    turmaAtual = document.getElementById('selTurma').value;
+    provaAtual = document.getElementById('selProva').value;
+    
+    try {
+        const { data: alunos } = await supabase.from('alunos').select('id, nome_completo, numero_chamada, id_turma').eq('id_turma', turmaAtual).order('numero_chamada');
+        alunosTurma = alunos || [];
+        totalAlunos = alunosTurma.length;
+        atualizarContador();
+        
+        const { data: tInfo } = await supabase.from('turmas').select('nome').eq('id', turmaAtual).single();
+        nomeTurmaStr = tInfo ? tInfo.nome : 'Turma';
+    } catch (e) { showToast('❌ Erro ao carregar alunos', 'erro'); return; }
+    
+    document.getElementById('telaSetup').style.display = 'none';
+    document.getElementById('telaScanner').style.display = 'block';
+    
+    try {
+        scanner = new Html5Qrcode("reader");
+        await scanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            onScanSuccess,
+            () => {} // Ignora falhas de scan contínuo
+        );
+        showToast('📷 Scanner ativo!', 'sucesso');
+    } catch (e) {
+        showToast('❌ Erro ao iniciar câmera. Verifique as permissões.', 'erro');
+    }
+}
+
+async function onScanSuccess(decodedText) {
+    if (processando) return;
+    
+    let idAluno = null;
+    if (decodedText.startsWith('OMRCARD:')) idAluno = parseInt(decodedText.replace('OMRCARD:', ''));
+    else if (decodedText.startsWith('OMRALUNO:')) {
+        const partes = decodedText.split(':');
+        idAluno = parseInt(partes[2]);
+    }
+    
+    if (!idAluno) return;
+    
+    const aluno = alunosTurma.find(a => a.id === idAluno);
+    if (!aluno) { showToast('❌ Aluno não pertence a esta turma', 'erro'); return; }
+    if (corrigidos.includes(idAluno)) { showToast('⚠️ Este aluno já foi corrigido!', 'erro'); return; }
+    
+    processando = true;
+    alunoAtual = aluno;
+    await scanner.pause(true);
+    document.getElementById('statusScan').textContent = '⚙️ Processando...';
+    
+    const video = document.querySelector('#reader video');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    const imagemBase64 = canvas.toDataURL('image/jpeg', 0.9);
+    
+    document.getElementById('telaScanner').style.display = 'none';
+    document.getElementById('telaProcessando').style.display = 'block';
+    
+    try {
+        const response = await fetch(API_BACKEND + '/api/processar_imagem_omr', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imagem: imagemBase64, id_aluno: idAluno, id_avaliacao: parseInt(provaAtual) })
+        });
+        const resultado = await response.json();
+        if (!resultado.sucesso) throw new Error(resultado.erro || 'Erro no processamento');
+        
+        resultadoAtual = resultado;
+        mostrarConfirmacao();
+    } catch (e) {
+        showToast('❌ Erro ao processar: ' + e.message, 'erro');
+        voltarAoScanner();
+    }
+}
+
+// ========================================================================
+// 👀 CONFIRMAÇÃO E AÇÕES
+// ========================================================================
+function mostrarConfirmacao() {
+    document.getElementById('telaProcessando').style.display = 'none';
+    document.getElementById('telaConfirmacao').style.display = 'block';
+    
+    document.getElementById('confTurma').textContent = '🏫 ' + nomeTurmaStr;
+    document.getElementById('confNumero').textContent = 'Nº ' + (alunoAtual.numero_chamada || '?');
+    document.getElementById('confNome').textContent = (alunoAtual.nome_completo || 'Aluno').toUpperCase();
+    
+    const nota = resultadoAtual.nota_final || 0;
+    const acertos = resultadoAtual.acertos || 0;
+    const total = resultadoAtual.total_questoes || 0;
+    
+    document.getElementById('confNota').textContent = nota.toFixed(1);
+    document.getElementById('confAcertos').textContent = acertos;
+    document.getElementById('confErros').textContent = total - acertos;
+    document.getElementById('confTotal').textContent = total;
+}
+
+async function salvarEProximo() {
+    if (!resultadoAtual || !alunoAtual) return;
+    try {
+        const response = await fetch(API_BACKEND + '/api/salvar_correcao_omr', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id_aluno: alunoAtual.id,
+                id_avaliacao: parseInt(provaAtual),
+                detalhes_respostas: resultadoAtual.detalhes_respostas || []
+            })
+        });
+        const res = await response.json();
+        if (!res.sucesso) throw new Error(res.erro);
+        
+        corrigidos.push(alunoAtual.id);
+        atualizarContador();
+        showToast('✅ Nota ' + resultadoAtual.nota_final.toFixed(1) + ' salva!', 'sucesso');
+        voltarAoScanner();
+    } catch (e) { showToast('❌ Erro ao salvar: ' + e.message, 'erro'); }
+}
+
+function tirarOutra() {
+    showToast('🔄 Aponte a câmera novamente...', 'sucesso');
+    voltarAoScanner();
+}
+
+async function voltarAoScanner() {
+    document.getElementById('telaConfirmacao').style.display = 'none';
+    document.getElementById('telaProcessando').style.display = 'none';
+    document.getElementById('telaScanner').style.display = 'block';
+    document.getElementById('statusScan').textContent = '📷 Aponte para o QR Code da próxima prova...';
+    processando = false; alunoAtual = null; resultadoAtual = null;
+    try { if (scanner) await scanner.resume(); } catch (e) {}
+}
+
+function finalizarTurma() {
+    if (confirm('Deseja finalizar a correção desta turma?')) {
+        if (scanner) scanner.stop().then(() => { scanner.clear(); location.reload(); });
+        else location.reload();
+    }
+}
+
+function atualizarContador() { document.getElementById('contador').textContent = corrigidos.length + ' / ' + totalAlunos; }
+function showToast(msg, tipo) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast show ' + (tipo || '');
+    setTimeout(() => t.className = 'toast', 3000);
+}
+
+inicializar();
+</script>
+</body>
+</html>
