@@ -14,7 +14,8 @@ body {
     background: linear-gradient(135deg, #0f1528 0%, #1d2a4d 100%);
     color: #fff;
     min-height: 100vh;
-    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
 }
 .topo {
     background: rgba(0,0,0,0.5);
@@ -37,34 +38,48 @@ body {
     font-size: 13px;
     color: #fff;
 }
-.setup { padding: 20px; max-width: 500px; margin: 0 auto; }
-.setup h2 { font-size: 20px; margin-bottom: 16px; color: #00e5c7; }
-.setup label { display: block; margin: 12px 0 6px; font-weight: 700; font-size: 13px; color: #b388ff; text-transform: uppercase; letter-spacing: 0.5px; }
-.setup select {
-    width: 100%; padding: 14px; border-radius: 12px;
-    border: 2px solid rgba(255,255,255,0.15);
-    background: rgba(255,255,255,0.08); color: #fff;
-    font-size: 15px; font-weight: 600; appearance: none;
-}
-.setup select option { background: #1d2a4d; color: #fff; }
-.btn-iniciar {
-    width: 100%; padding: 18px; margin-top: 24px;
-    background: linear-gradient(135deg, #00bfa5, #00e5c7);
-    border: none; border-radius: 14px; color: #0f1528;
-    font-size: 17px; font-weight: 900; cursor: pointer;
-    box-shadow: 0 8px 24px rgba(0,229,199,0.3);
-}
-.btn-iniciar:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.scanner-area {
-    position: relative; width: 100%; max-width: 500px; margin: 0 auto;
-    background: #000; border-radius: 16px; overflow: hidden;
+/* Tela Inicial Simplificada */
+.tela-inicio {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
 }
-#reader { width: 100%; }
+.tela-inicio h2 { font-size: 24px; margin-bottom: 16px; color: #00e5c7; }
+.tela-inicio p { font-size: 15px; color: #b388ff; margin-bottom: 32px; line-height: 1.5; }
+.btn-gigante {
+    width: 100%;
+    max-width: 350px;
+    padding: 24px;
+    background: linear-gradient(135deg, #00bfa5, #00e5c7);
+    border: none;
+    border-radius: 16px;
+    color: #0f1528;
+    font-size: 20px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(0,229,199,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+.btn-gigante:active { transform: scale(0.97); }
+
+/* Scanner */
+.scanner-area {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    background: #000;
+}
+#reader { width: 100%; height: 100%; }
 #reader video { 
-    width: 100% !important; height: auto !important; 
-    border-radius: 16px; object-fit: cover;
-    /* 🍎 CORREÇÃO CRÍTICA PARA iPHONE */
+    width: 100% !important; height: 100% !important; object-fit: cover;
     -webkit-playsinline: true; playsinline: true; 
 }
 .overlay-scan {
@@ -72,23 +87,25 @@ body {
     display: flex; align-items: center; justify-content: center;
 }
 .quadro-leitura {
-    width: 65%; aspect-ratio: 1;
+    width: 70%; aspect-ratio: 1;
     border: 3px dashed #00e5c7; border-radius: 16px;
-    box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.6);
     animation: pulso 2s ease-in-out infinite;
 }
 @keyframes pulso {
-    0%, 100% { box-shadow: 0 0 0 9999px rgba(0,0,0,0.5), 0 0 0 0 rgba(0,229,199,0.6); }
-    50% { box-shadow: 0 0 0 9999px rgba(0,0,0,0.5), 0 0 0 12px rgba(0,229,199,0); }
+    0%, 100% { box-shadow: 0 0 0 9999px rgba(0,0,0,0.6), 0 0 0 0 rgba(0,229,199,0.6); }
+    50% { box-shadow: 0 0 0 9999px rgba(0,0,0,0.6), 0 0 0 12px rgba(0,229,199,0); }
 }
 .status-scan {
-    text-align: center; padding: 12px;
-    background: rgba(0,0,0,0.6); color: #00e5c7;
-    font-weight: 700; font-size: 14px;
+    position: absolute; bottom: 0; left: 0; right: 0;
+    text-align: center; padding: 16px;
+    background: rgba(0,0,0,0.7); color: #00e5c7;
+    font-weight: 700; font-size: 15px;
 }
 
+/* Confirmação */
 .confirmacao {
-    display: none; padding: 20px; max-width: 500px; margin: 0 auto;
+    display: none; flex: 1; padding: 20px; max-width: 500px; margin: 0 auto; width: 100%;
     animation: slideUp 0.3s ease-out;
 }
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -126,10 +143,10 @@ body {
 .btn-grande:active { transform: scale(0.97); }
 .btn-salvar { background: linear-gradient(135deg, #00bfa5, #00e5c7); color: #0f1528; }
 .btn-refazer { background: rgba(255,255,255,0.1); color: #fff; border: 2px solid rgba(255,255,255,0.3); }
-.btn-finalizar { background: linear-gradient(135deg, #7c4dff, #b388ff); color: #fff; margin-top: 8px; }
+.btn-fechar { background: linear-gradient(135deg, #7c4dff, #b388ff); color: #fff; margin-top: 8px; }
 
 .processando {
-    display: none; text-align: center; padding: 40px 20px;
+    display: none; flex: 1; align-items: center; justify-content: center; flex-direction: column;
 }
 .processando .spinner {
     width: 60px; height: 60px; border: 5px solid rgba(0,229,199,0.2);
@@ -153,28 +170,18 @@ body {
 
 <div class="topo">
     <h1>🚀 Correção Rápida</h1>
-    <div class="contador" id="contador">0 / 0</div>
+    <div class="contador" id="contador">0 corrigidos</div>
 </div>
 
-<!-- TELA 1: CONFIGURAÇÃO -->
-<div class="setup" id="telaSetup">
-    <h2>📋 Configurar Correção</h2>
-    <label>🏫 Turma</label>
-    <select id="selTurma"><option value="">Carregando turmas...</option></select>
-    
-    <label>📝 Prova</label>
-    <select id="selProva"><option value="">Selecione uma turma primeiro</option></select>
-    
-    <button class="btn-iniciar" id="btnIniciar" onclick="iniciarScanner()" disabled>📸 INICIAR SCANNER</button>
-    
-    <p style="text-align:center; margin-top:20px; font-size:12px; color:#8fa0c8; line-height: 1.5;">
-        💡 Aponte a câmera para o <strong>QR Code</strong> da prova.<br>
-        O sistema identifica e processa automaticamente.
-    </p>
+<!-- TELA 1: INÍCIO -->
+<div class="tela-inicio" id="telaInicio">
+    <h2>Modo Scanner Contínuo</h2>
+    <p>O sistema identificará automaticamente a Prova, o Aluno e a Turma ao ler o QR Code.<br><br>Apenas aponte a câmera e confirme.</p>
+    <button class="btn-gigante" onclick="iniciarScanner()">📸 INICIAR CÂMERA</button>
 </div>
 
-<!-- TELA 2: SCANNER ATIVO -->
-<div id="telaScanner" style="display:none;">
+<!-- TELA 2: SCANNER -->
+<div id="telaScanner" style="display:none; flex:1; flex-direction:column;">
     <div class="scanner-area">
         <div id="reader"></div>
         <div class="overlay-scan"><div class="quadro-leitura"></div></div>
@@ -213,7 +220,7 @@ body {
     
     <button class="btn-grande btn-salvar" onclick="salvarEProximo()">✅ SALVAR E PRÓXIMO ALUNO</button>
     <button class="btn-grande btn-refazer" onclick="tirarOutra()">🔄 FOTO RUIM / TIRAR OUTRA</button>
-    <button class="btn-grande btn-finalizar" onclick="finalizarTurma()">🏁 FINALIZAR TURMA</button>
+    <button class="btn-grande btn-fechar" onclick="location.reload()">🏁 FINALIZAR E VOLTAR</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -228,69 +235,17 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const API_BACKEND = 'https://omr-backend-laboratorio.onrender.com';
 
 let scanner = null;
-let turmaAtual = null;
-let provaAtual = null;
-let alunosTurma = [];
 let alunoAtual = null;
 let resultadoAtual = null;
-let corrigidos = [];
-let totalAlunos = 0;
+let corrigidosCount = 0;
 let processando = false;
-let nomeTurmaStr = '';
 
 // ========================================================================
-// 📋 INICIALIZAÇÃO
-// ========================================================================
-async function inicializar() {
-    try {
-        const { data: turmas, error } = await supabase.from('turmas').select('id, nome').order('nome');
-        if (error) throw error;
-        const selTurma = document.getElementById('selTurma');
-        selTurma.innerHTML = '<option value="">Selecione a turma...</option>';
-        turmas.forEach(t => { selTurma.innerHTML += `<option value="${t.id}">${t.nome}</option>`; });
-        selTurma.addEventListener('change', carregarProvas);
-    } catch (e) { showToast('❌ Erro ao carregar turmas', 'erro'); }
-}
-
-async function carregarProvas() {
-    const idTurma = document.getElementById('selTurma').value;
-    const selProva = document.getElementById('selProva');
-    if (!idTurma) { selProva.innerHTML = '<option value="">Selecione uma turma primeiro</option>'; return; }
-    
-    try {
-        const { data: provas, error } = await supabase.from('avaliacoes').select('id, nome').eq('modo_correcao', 'objetiva').order('id', { ascending: false });
-        if (error) throw error;
-        selProva.innerHTML = '<option value="">Selecione a prova...</option>';
-        provas.forEach(p => { selProva.innerHTML += `<option value="${p.id}">${p.nome}</option>`; });
-        selProva.addEventListener('change', verificarPronto);
-    } catch (e) { showToast('❌ Erro ao carregar provas', 'erro'); }
-}
-
-function verificarPronto() {
-    const turma = document.getElementById('selTurma').value;
-    const prova = document.getElementById('selProva').value;
-    document.getElementById('btnIniciar').disabled = !(turma && prova);
-}
-
-// ========================================================================
-// 📸 SCANNER CONTÍNUO
+// 📸 SCANNER
 // ========================================================================
 async function iniciarScanner() {
-    turmaAtual = document.getElementById('selTurma').value;
-    provaAtual = document.getElementById('selProva').value;
-    
-    try {
-        const { data: alunos } = await supabase.from('alunos').select('id, nome_completo, numero_chamada, id_turma').eq('id_turma', turmaAtual).order('numero_chamada');
-        alunosTurma = alunos || [];
-        totalAlunos = alunosTurma.length;
-        atualizarContador();
-        
-        const { data: tInfo } = await supabase.from('turmas').select('nome').eq('id', turmaAtual).single();
-        nomeTurmaStr = tInfo ? tInfo.nome : 'Turma';
-    } catch (e) { showToast('❌ Erro ao carregar alunos', 'erro'); return; }
-    
-    document.getElementById('telaSetup').style.display = 'none';
-    document.getElementById('telaScanner').style.display = 'block';
+    document.getElementById('telaInicio').style.display = 'none';
+    document.getElementById('telaScanner').style.display = 'flex';
     
     try {
         scanner = new Html5Qrcode("reader");
@@ -303,53 +258,90 @@ async function iniciarScanner() {
         showToast('📷 Scanner ativo!', 'sucesso');
     } catch (e) {
         showToast('❌ Erro ao iniciar câmera. Verifique as permissões.', 'erro');
+        location.reload();
     }
 }
 
 async function onScanSuccess(decodedText) {
     if (processando) return;
     
+    // Formato esperado: OMRALUNO:{id_prova}:{id_aluno}
+    let idProva = null;
     let idAluno = null;
-    if (decodedText.startsWith('OMRCARD:')) idAluno = parseInt(decodedText.replace('OMRCARD:', ''));
-    else if (decodedText.startsWith('OMRALUNO:')) {
+    
+    if (decodedText.startsWith('OMRALUNO:')) {
         const partes = decodedText.split(':');
+        idProva = parseInt(partes[1]);
         idAluno = parseInt(partes[2]);
+    } else if (decodedText.startsWith('OMRCARD:')) {
+        // Fallback para formato antigo, mas idealmente usamos OMRALUNO
+        idAluno = parseInt(decodedText.replace('OMRCARD:', ''));
+        showToast('⚠️ QR antigo detectado. Use o novo padrão OMRALUNO.', 'erro');
+        return;
     }
     
-    if (!idAluno) return;
-    
-    const aluno = alunosTurma.find(a => a.id === idAluno);
-    if (!aluno) { showToast('❌ Aluno não pertence a esta turma', 'erro'); return; }
-    if (corrigidos.includes(idAluno)) { showToast('⚠️ Este aluno já foi corrigido!', 'erro'); return; }
+    if (!idProva || !idAluno) {
+        showToast('❌ QR Code inválido ou incompleto', 'erro');
+        return;
+    }
     
     processando = true;
-    alunoAtual = aluno;
     await scanner.pause(true);
-    document.getElementById('statusScan').textContent = '⚙️ Processando...';
-    
-    const video = document.querySelector('#reader video');
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
-    const imagemBase64 = canvas.toDataURL('image/jpeg', 0.9);
-    
-    document.getElementById('telaScanner').style.display = 'none';
-    document.getElementById('telaProcessando').style.display = 'block';
+    document.getElementById('statusScan').textContent = '⚙️ Identificando aluno e processando...';
     
     try {
+        // 1. Buscar dados do aluno (inclui id_turma)
+        const { data: aluno, error: errAluno } = await supabase
+            .from('alunos')
+            .select('id, nome_completo, numero_chamada, id_turma')
+            .eq('id', idAluno)
+            .single();
+            
+        if (errAluno || !aluno) throw new Error('Aluno não encontrado no banco de dados.');
+        alunoAtual = aluno;
+        
+        // 2. Buscar nome da turma
+        const { data: turma } = await supabase
+            .from('turmas')
+            .select('nome')
+            .eq('id', aluno.id_turma)
+            .single();
+            
+        const nomeTurma = turma ? turma.nome : 'Turma não identificada';
+        
+        // 3. Capturar frame da câmera
+        const video = document.querySelector('#reader video');
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        const imagemBase64 = canvas.toDataURL('image/jpeg', 0.9);
+        
+        // 4. Mostrar tela de processamento
+        document.getElementById('telaScanner').style.display = 'none';
+        document.getElementById('telaProcessando').style.display = 'flex';
+        
+        // 5. Enviar para backend processar OMR
         const response = await fetch(API_BACKEND + '/api/processar_imagem_omr', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imagem: imagemBase64, id_aluno: idAluno, id_avaliacao: parseInt(provaAtual) })
+            body: JSON.stringify({ 
+                imagem: imagemBase64, 
+                id_aluno: idAluno, 
+                id_avaliacao: idProva 
+            })
         });
+        
         const resultado = await response.json();
-        if (!resultado.sucesso) throw new Error(resultado.erro || 'Erro no processamento');
+        if (!resultado.sucesso) throw new Error(resultado.erro || 'Erro no processamento OMR');
         
         resultadoAtual = resultado;
+        resultadoAtual.nomeTurma = nomeTurma; // Anexar para exibir
+        
         mostrarConfirmacao();
+        
     } catch (e) {
-        showToast('❌ Erro ao processar: ' + e.message, 'erro');
+        showToast('❌ Erro: ' + e.message, 'erro');
         voltarAoScanner();
     }
 }
@@ -361,7 +353,7 @@ function mostrarConfirmacao() {
     document.getElementById('telaProcessando').style.display = 'none';
     document.getElementById('telaConfirmacao').style.display = 'block';
     
-    document.getElementById('confTurma').textContent = '🏫 ' + nomeTurmaStr;
+    document.getElementById('confTurma').textContent = '🏫 ' + resultadoAtual.nomeTurma;
     document.getElementById('confNumero').textContent = 'Nº ' + (alunoAtual.numero_chamada || '?');
     document.getElementById('confNome').textContent = (alunoAtual.nome_completo || 'Aluno').toUpperCase();
     
@@ -383,18 +375,22 @@ async function salvarEProximo() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 id_aluno: alunoAtual.id,
-                id_avaliacao: parseInt(provaAtual),
+                id_avaliacao: resultadoAtual.id_avaliacao || parseInt(document.querySelector('#reader').dataset.prova || 0), // Fallback
                 detalhes_respostas: resultadoAtual.detalhes_respostas || []
             })
         });
         const res = await response.json();
         if (!res.sucesso) throw new Error(res.erro);
         
-        corrigidos.push(alunoAtual.id);
-        atualizarContador();
+        corrigidosCount++;
+        document.getElementById('contador').textContent = corrigidosCount + ' corrigidos';
         showToast('✅ Nota ' + resultadoAtual.nota_final.toFixed(1) + ' salva!', 'sucesso');
+        
         voltarAoScanner();
-    } catch (e) { showToast('❌ Erro ao salvar: ' + e.message, 'erro'); }
+    } catch (e) { 
+        showToast('❌ Erro ao salvar: ' + e.message, 'erro'); 
+        // Mesmo com erro de save, permitimos tentar de novo ou pular
+    }
 }
 
 function tirarOutra() {
@@ -405,27 +401,23 @@ function tirarOutra() {
 async function voltarAoScanner() {
     document.getElementById('telaConfirmacao').style.display = 'none';
     document.getElementById('telaProcessando').style.display = 'none';
-    document.getElementById('telaScanner').style.display = 'block';
+    document.getElementById('telaScanner').style.display = 'flex';
     document.getElementById('statusScan').textContent = '📷 Aponte para o QR Code da próxima prova...';
-    processando = false; alunoAtual = null; resultadoAtual = null;
-    try { if (scanner) await scanner.resume(); } catch (e) {}
+    processando = false; 
+    alunoAtual = null; 
+    resultadoAtual = null;
+    
+    try { 
+        if (scanner) await scanner.resume(); 
+    } catch (e) {}
 }
 
-function finalizarTurma() {
-    if (confirm('Deseja finalizar a correção desta turma?')) {
-        if (scanner) scanner.stop().then(() => { scanner.clear(); location.reload(); });
-        else location.reload();
-    }
-}
-
-function atualizarContador() { document.getElementById('contador').textContent = corrigidos.length + ' / ' + totalAlunos; }
 function showToast(msg, tipo) {
     const t = document.getElementById('toast');
-    t.textContent = msg; t.className = 'toast show ' + (tipo || '');
+    t.textContent = msg; 
+    t.className = 'toast show ' + (tipo || '');
     setTimeout(() => t.className = 'toast', 3000);
 }
-
-inicializar();
 </script>
 </body>
 </html>
