@@ -48,9 +48,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .btn-salvar { background: linear-gradient(135deg, #00bfa5, #00e5c7); color: #0f1528; }
 .btn-refazer { background: rgba(255,255,255,0.1); color: #fff; border: 2px solid rgba(255,255,255,0.3); }
 .btn-fechar { background: linear-gradient(135deg, #7c4dff, #b388ff); color: #fff; }
-.processando { display: none; flex: 1; align-items: center; justify-content: center; flex-direction: column; }
+.processando { display: none; flex: 1; align-items: center; justify-content: center; flex-direction: column; padding: 20px; }
 .processando .spinner { width: 60px; height: 60px; border: 5px solid rgba(0,229,199,0.2); border-top-color: #00e5c7; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.processando .progresso { font-size: 14px; color: #b388ff; margin-top: 12px; text-align: center; }
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1d2a4d; color: #fff; padding: 12px 24px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 9999; font-weight: 700; opacity: 0; transition: opacity 0.3s; text-align: center; width: 90%; max-width: 420px; }
 .toast.show { opacity: 1; } .toast.sucesso { background: linear-gradient(135deg, #00bfa5, #00e5c7); color: #0f1528; } .toast.erro { background: #ef5350; }
 </style>
@@ -84,7 +85,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 <div class="processando" id="telaProcessando">
     <div class="spinner"></div>
-    <h3 style="color:#00e5c7;" id="txtProcessando">Lendo QR da foto...</h3>
+    <h3 style="color:#00e5c7;" id="txtProcessando">Processando...</h3>
+    <div class="progresso" id="txtProgresso">Aguarde...</div>
 </div>
 
 <div class="confirmacao" id="telaConfirmacao">
@@ -140,9 +142,6 @@ var corrigidosCount = 0, processando = false;
 
 log('✅ Script vivo! ' + (typeof Html5Qrcode !== 'undefined' ? 'html5-qrcode OK' : '❌ html5-qrcode FALTOU') + ' | ' + (typeof jsQR !== 'undefined' ? 'jsQR OK' : '❌ jsQR FALTOU'), 'in');
 
-// ========================================================================
-// 📸 CÂMERA EM ALTA RESOLUÇÃO (o segredo para ler QR pequeno!)
-// ========================================================================
 async function iniciarScanner() {
     document.getElementById('telaInicio').style.display = 'none';
     document.getElementById('telaScanner').style.display = 'flex';
@@ -154,7 +153,6 @@ async function iniciarScanner() {
             {
                 fps: 10,
                 qrbox: function (vw, vh) { var lado = Math.min(vw, vh) * 0.95; return { width: lado, height: lado }; },
-                // 👇 PEDIMOS A RESOLUÇÃO MÁXIMA DO SENSOR
                 videoConstraints: {
                     facingMode: "environment",
                     width: { ideal: 4000 },
@@ -162,11 +160,11 @@ async function iniciarScanner() {
                     frameRate: { ideal: 30 }
                 }
             },
-            function () {}, // não dependemos da leitura ao vivo
+            function () {},
             function () {}
         );
         var v = document.querySelector('#reader video');
-        log('✅ Câmera ativa. Resolução do vídeo: ' + (v.videoWidth || '?') + 'x' + (v.videoHeight || '?'), 'ok');
+        log('✅ Câmera ativa. Resolução: ' + (v.videoWidth || '?') + 'x' + (v.videoHeight || '?'), 'ok');
         document.getElementById('statusScan').textContent = '📷 Enquadre a folha inteira e toque em FOTOGRAFAR';
     } catch (e) {
         log('❌ ' + e.message, 'er');
@@ -175,14 +173,15 @@ async function iniciarScanner() {
     }
 }
 
-// ========================================================================
-// 📸 FOTOGRAFAR: captura frame alta-res → lê QR da FOTO (com escalas) → processa
-// ========================================================================
 async function capturarEProcessar() {
     if (processando) return;
     processando = true;
     var video = document.querySelector('#reader video');
-    if (!video || !video.videoWidth) { showToast('❌ Câmera não está pronta', 'erro'); processando = false; return; }
+    if (!video || !video.videoWidth) {
+        showToast('❌ Câmera não está pronta', 'erro');
+        processando = false;
+        return;
+    }
 
     var canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
@@ -195,35 +194,56 @@ async function capturarEProcessar() {
     document.getElementById('telaScanner').style.display = 'none';
     document.getElementById('telaProcessando').style.display = 'flex';
     document.getElementById('txtProcessando').textContent = 'Lendo QR da foto...';
+    document.getElementById('txtProgresso').textContent = 'Analisando imagem em alta resolução...';
 
     try {
         if (scanner) await scanner.pause(true);
 
-        // 👇 LER QR DA FOTO COM MÚLTIPLAS ESCALAS (igual ao fluxo antigo que funcionava)
         var qr = await lerQRdaFoto(base64);
         if (!qr) {
             throw new Error('QR não encontrado na foto. Segure firme, enquadre a folha inteira (com o QR no canto) e fotografe de novo.');
         }
-        log('✅ QR lido da foto: ' + JSON.stringify(qr), 'ok');
+        log('✅ QR lido: ' + JSON.stringify(qr), 'ok');
 
         document.getElementById('txtProcessando').textContent = 'Buscando aluno...';
+        document.getElementById('txtProgresso').textContent = 'Conectando ao servidor...';
+        
         var r = await fetch(API_BACKEND + '/api/dados_correcao_rapida/' + qr.idAluno);
         var d = await r.json();
         if (!d.sucesso || !d.aluno) throw new Error(d.erro || ('Aluno ' + qr.idAluno + ' não encontrado'));
         alunoAtual = d.aluno;
+        log('✅ Aluno: ' + alunoAtual.nome_completo + ' | Turma: ' + d.nome_turma, 'ok');
 
         var idProva = qr.idProva || d.id_prova;
         if (!idProva) throw new Error('Prova não identificada pelo QR');
 
         document.getElementById('txtProcessando').textContent = 'Corrigindo bolinhas...';
+        document.getElementById('txtProgresso').textContent = 'Enviando imagem ao servidor OMR...';
         log('🤖 Enviando foto ao OMR (prova ' + idProva + ')...', 'in');
+        
         var response = await fetch(API_BACKEND + '/api/processar_imagem_omr', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ imagem: base64, id_aluno: qr.idAluno, id_avaliacao: idProva })
         });
+        
+        log('📡 Resposta do backend: status ' + response.status, 'in');
+        
+        if (!response.ok) {
+            var erroTexto = await response.text();
+            throw new Error('Backend retornou erro ' + response.status + ': ' + erroTexto.substring(0, 200));
+        }
+        
         var resultado = await response.json();
-        if (!resultado.sucesso) throw new Error(resultado.erro || 'Erro no processamento OMR');
+        log('📦 Backend retornou: ' + JSON.stringify(resultado).substring(0, 300), 'in');
+        
+        if (!resultado || !resultado.sucesso) {
+            throw new Error((resultado && resultado.erro) || 'Erro no processamento OMR (resultado inválido)');
+        }
+        
+        if (!resultado.nota_final && resultado.nota_final !== 0) {
+            throw new Error('Backend retornou sucesso mas sem nota_final. Dados: ' + JSON.stringify(resultado).substring(0, 200));
+        }
 
         resultadoAtual = resultado;
         resultadoAtual.nomeTurma = d.nome_turma || 'Turma';
@@ -237,7 +257,6 @@ async function capturarEProcessar() {
     }
 }
 
-// Lê o QR da foto tentando várias escalas/contrastes (robusto para QR pequeno)
 function lerQRdaFoto(base64) {
     return new Promise(function (resolve) {
         var img = new Image();
@@ -281,9 +300,6 @@ function extrairIds(texto) {
     return null;
 }
 
-// ========================================================================
-// 🖼️ FOTO DA GALERIA (mesmo fluxo, foto de altíssima resolução)
-// ========================================================================
 async function processarFotoManual(input) {
     if (!input.files || !input.files[0]) return;
     processando = true;
@@ -308,7 +324,7 @@ async function processarFotoManual(input) {
                 body: JSON.stringify({ imagem: e.target.result, id_aluno: qr.idAluno, id_avaliacao: idProva })
             });
             var resultado = await response.json();
-            if (!resultado.sucesso) throw new Error(resultado.erro || 'Erro OMR');
+            if (!resultado || !resultado.sucesso) throw new Error((resultado && resultado.erro) || 'Erro OMR');
             resultadoAtual = resultado;
             resultadoAtual.nomeTurma = d.nome_turma || 'Turma';
             resultadoAtual.idProva = idProva;
@@ -322,9 +338,6 @@ async function processarFotoManual(input) {
     input.value = '';
 }
 
-// ========================================================================
-// 👀 CONFIRMAÇÃO COM BOLINHAS VERDES (agora aparece!)
-// ========================================================================
 function mostrarConfirmacao() {
     document.getElementById('telaProcessando').style.display = 'none';
     document.getElementById('telaConfirmacao').style.display = 'block';
