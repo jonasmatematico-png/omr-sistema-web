@@ -17,7 +17,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .tela-inicio p { font-size: 14px; color: #b388ff; margin-bottom: 20px; line-height: 1.5; max-width: 420px; }
 .btn-gigante { width: 100%; max-width: 360px; padding: 22px; background: linear-gradient(135deg, #00bfa5, #00e5c7); border: none; border-radius: 16px; color: #0f1528; font-size: 19px; font-weight: 900; cursor: pointer; box-shadow: 0 8px 24px rgba(0,229,199,0.3); margin-bottom: 12px; }
 .btn-gigante.secundario { background: rgba(255,255,255,0.1); color: #fff; border: 2px solid rgba(255,255,255,0.3); font-size: 15px; padding: 16px; }
-.log-box { background: #0f0f1e; border: 1px solid #333; border-radius: 8px; padding: 10px; width: 100%; max-width: 460px; font-family: monospace; font-size: 11px; max-height: 130px; overflow-y: auto; white-space: pre-wrap; text-align: left; margin-top: 12px; }
+.log-box { background: #0f0f1e; border: 1px solid #333; border-radius: 8px; padding: 10px; width: 100%; max-width: 460px; font-family: monospace; font-size: 11px; max-height: 100px; overflow-y: auto; white-space: pre-wrap; text-align: left; margin-top: 12px; }
 .log-box .ok { color: #00e5c7; } .log-box .er { color: #ff5252; } .log-box .in { color: #ffab40; }
 .scanner-area { position: relative; width: 100%; flex: 1; background: #000; min-height: 55vh; }
 #reader { width: 100%; height: 100%; }
@@ -26,28 +26,31 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .status-scan.pegou { background: rgba(0,191,165,0.9); color: #0f1528; animation: flash 0.4s ease 3; }
 @keyframes flash { 50% { opacity: 0.4; } }
 .acoes-scanner { position: absolute; bottom: 0; left: 0; right: 0; padding: 12px; background: rgba(0,0,0,0.85); display: flex; gap: 10px; }
-.btn-acao { flex: 1; padding: 15px; border: none; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; }
+.btn-acao { flex: 1; padding: 16px; border: none; border-radius: 12px; font-size: 15px; font-weight: 800; cursor: pointer; }
 .btn-foto { background: linear-gradient(135deg, #00bfa5, #00e5c7); color: #0f1528; }
-.btn-longe { background: linear-gradient(135deg, #ff9800, #ffab40); color: #000; }
 .btn-cancelar { background: rgba(255,255,255,0.15); color: #fff; max-width: 70px; }
-.confirmacao { display: none; flex: 1; padding: 16px; max-width: 520px; margin: 0 auto; width: 100%; overflow-y: auto; }
-.card-aluno { background: linear-gradient(135deg, rgba(0,229,199,0.15), rgba(179,136,255,0.15)); border: 2px solid #00e5c7; border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+.confirmacao { display: none; flex: 1; padding: 12px; max-width: 520px; margin: 0 auto; width: 100%; overflow-y: auto; }
+.card-aluno { background: linear-gradient(135deg, rgba(0,229,199,0.15), rgba(179,136,255,0.15)); border: 2px solid #00e5c7; border-radius: 16px; padding: 14px; margin-bottom: 10px; }
 .card-aluno .label { font-size: 11px; color: #b388ff; font-weight: 800; letter-spacing: 1px; }
-.card-aluno .turma { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
-.card-aluno .numero { display: inline-block; background: #7c4dff; color: #fff; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 14px; }
-.card-aluno .nome { font-size: 20px; font-weight: 900; margin-top: 8px; color: #fff; text-transform: uppercase; }
-.card-nota { background: #fff; color: #1d2a4d; border-radius: 16px; padding: 16px; margin-bottom: 14px; text-align: center; }
-.nota-final { font-size: 48px; font-weight: 900; color: #00bfa5; line-height: 1; }
+.card-aluno .turma { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.card-aluno .numero { display: inline-block; background: #7c4dff; color: #fff; padding: 3px 10px; border-radius: 20px; font-weight: 800; font-size: 13px; }
+.card-aluno .nome { font-size: 18px; font-weight: 900; margin-top: 6px; color: #fff; text-transform: uppercase; }
+.card-nota { background: #fff; color: #1d2a4d; border-radius: 16px; padding: 14px; margin-bottom: 10px; text-align: center; }
+.nota-final { font-size: 44px; font-weight: 900; color: #00bfa5; line-height: 1; }
 .nota-max { font-size: 16px; color: #888; }
-.resumo-acertos { display: flex; justify-content: space-around; margin-top: 12px; }
-.resumo-acertos .valor { font-size: 20px; font-weight: 800; }
-.resumo-acertos .lbl { font-size: 11px; color: #666; font-weight: 700; }
+.resumo-acertos { display: flex; justify-content: space-around; margin-top: 10px; }
+.resumo-acertos .valor { font-size: 18px; font-weight: 800; }
+.resumo-acertos .lbl { font-size: 10px; color: #666; font-weight: 700; }
 .acerto { color: #00bfa5; } .erro { color: #ef5350; }
-.card-imgs { background: #fff; border-radius: 16px; padding: 14px; margin-bottom: 14px; }
-.card-imgs h4 { color: #4a148c; margin: 0 0 8px; font-size: 14px; }
-.card-imgs img { width: 100%; border-radius: 8px; border: 2px solid #008080; margin-bottom: 10px; }
-.card-imgs .legenda { font-size: 11px; color: #666; text-align: center; }
-.btn-grande { width: 100%; padding: 20px; border: none; border-radius: 16px; font-size: 17px; font-weight: 900; cursor: pointer; margin-bottom: 12px; }
+.card-imgs { background: #fff; border-radius: 16px; padding: 12px; margin-bottom: 10px; }
+.card-imgs h4 { color: #4a148c; margin: 0 0 6px; font-size: 13px; }
+.card-imgs img { width: 100%; border-radius: 8px; border: 2px solid #008080; margin-bottom: 8px; }
+/* 🆕 Foto original COMPACTA por padrão */
+.img-thumb { max-height: 150px !important; object-fit: contain; background: #000; cursor: pointer; }
+.img-full { max-height: none !important; }
+.btn-toggle { background: #ff9800; color: #000; border: none; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; margin: 6px auto; display: block; }
+.card-imgs .legenda { font-size: 10px; color: #666; text-align: center; margin-bottom: 8px; }
+.btn-grande { width: 100%; padding: 18px; border: none; border-radius: 16px; font-size: 16px; font-weight: 900; cursor: pointer; margin-bottom: 10px; }
 .btn-salvar { background: linear-gradient(135deg, #00bfa5, #00e5c7); color: #0f1528; }
 .btn-refazer { background: rgba(255,255,255,0.1); color: #fff; border: 2px solid rgba(255,255,255,0.3); }
 .btn-fechar { background: linear-gradient(135deg, #7c4dff, #b388ff); color: #fff; }
@@ -67,8 +70,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 </div>
 
 <div class="tela-inicio" id="telaInicio">
-    <h2>🔔 Modo Automático + Zoom</h2>
-    <p>Aponte a câmera para a prova a uma <strong>distância confortável (30-40cm)</strong>.<br>Se o QR não piscar em poucos segundos, o sistema dá <strong>ZOOM AUTOMÁTICO</strong> no canto e lê sozinho.</p>
+    <h2>📸 Modo Automático</h2>
+    <p>Enquadre a folha a uma distância <strong>nítida</strong>.<br>O sistema detecta o QR e processa <strong>sozinho</strong>.<br>Se precisar, use o botão FOTOGRAFAR.</p>
     <button class="btn-gigante" id="btnIniciarCam">📸 ABRIR CÂMERA</button>
     <button class="btn-gigante secundario" id="btnFotoManual">🖼️ USAR FOTO DA GALERIA</button>
     <div class="log-box" id="logInicio">📋 Aguardando script...</div>
@@ -77,10 +80,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div id="telaScanner" style="display:none; flex:1; flex-direction:column;">
     <div class="scanner-area">
         <div id="reader"></div>
-        <div class="status-scan" id="statusScan">📷 Aponte a prova inteira (30-40cm)...</div>
+        <div class="status-scan" id="statusScan">📷 Aponte a prova (30-40cm)...</div>
         <div class="acoes-scanner">
             <button class="btn-acao btn-foto" id="btnCapturar">📸 FOTOGRAFAR</button>
-            <button class="btn-acao btn-longe" id="btnZoomAgora">🔍 LER DE LONGE</button>
             <button class="btn-acao btn-cancelar" id="btnCancelar">✕</button>
         </div>
     </div>
@@ -102,7 +104,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     </div>
     <div class="card-nota">
         <div class="label" style="color:#888;">📊 RESULTADO</div>
-        <div style="margin-top:6px;">
+        <div style="margin-top:4px;">
             <span class="nota-final" id="confNota">0</span>
             <span class="nota-max">/ 10</span>
         </div>
@@ -112,10 +114,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
             <div><div class="valor" id="confTotal" style="color:#1d2a4d;">0</div><div class="lbl">📝 QUESTÕES</div></div>
         </div>
     </div>
-    <div class="card-imgs" id="cardImgs" style="display:none;">
-        <h4>🔍 Conferência visual</h4>
-        <img id="imgProcessada" alt="Gabarito com bolinhas">
-        <div class="legenda">Bolinhas verdes = detectadas como marcadas</div>
+    <div class="card-imgs">
+        <h4>📸 Foto capturada (toque para ampliar)</h4>
+        <img id="imgOriginal" class="img-thumb" alt="Foto original" onclick="toggleFoto()">
+        <button class="btn-toggle" id="btnToggleFoto" onclick="toggleFoto()">🔍 Ver foto completa</button>
+        <h4 style="margin-top:10px;">🔍 Bolinhas detectadas</h4>
+        <img id="imgProcessada" alt="Gabarito com bolinhas" style="display:none;">
+        <div class="legenda" id="legendaProcessada" style="display:none;">Bolinhas verdes = detectadas como marcadas</div>
     </div>
     <button class="btn-grande btn-salvar" id="btnSalvar">✅ SALVAR E PRÓXIMO</button>
     <button class="btn-grande btn-refazer" id="btnRepetir">🔄 FOTO RUIM / TENTAR OUTRA</button>
@@ -140,6 +145,8 @@ function log(msg, tipo) {
     console.log('[' + (tipo || 'info') + '] ' + msg);
 }
 
+function errMsg(e) { return (e && e.message) ? e.message : String(e); }
+
 var API_BACKEND = 'https://omr-backend-laboratorio.onrender.com';
 var scanner = null, alunoAtual = null, resultadoAtual = null;
 var corrigidosCount = 0, processando = false, ultimoAluno = null, ultimoTempo = 0, travaInicio = 0;
@@ -149,11 +156,18 @@ var timerZoom = null, ultimaDeteccao = 0;
 function travado() { return processando && (Date.now() - travaInicio > 45000); }
 function setProcessando(v) { processando = v; if (v) travaInicio = Date.now(); }
 
+function armarTimerZoom() {
+    if (timerZoom) clearInterval(timerZoom);
+    ultimaDeteccao = Date.now();
+    timerZoom = setInterval(varreduraZoomAutomatica, 2500);
+    log('⏱️ Zoom assistente armado', 'in');
+}
+function pararTimerZoom() {
+    if (timerZoom) { clearInterval(timerZoom); timerZoom = null; }
+}
+
 log('✅ Script vivo! ' + (typeof Html5Qrcode !== 'undefined' ? 'html5-qrcode OK' : '❌ FALTOU') + ' | ' + (typeof jsQR !== 'undefined' ? 'jsQR OK' : '❌ FALTOU'), 'in');
 
-// ========================================================================
-// 📸 CÂMERA + DETECÇÃO AUTOMÁTICA (igual à que funcionou!)
-// ========================================================================
 async function iniciarScanner() {
     if (travado()) setProcessando(false);
     document.getElementById('telaInicio').style.display = 'none';
@@ -175,15 +189,12 @@ async function iniciarScanner() {
             var v = document.querySelector('#reader video');
             if (v && v.videoWidth) log('✅ Câmera: ' + v.videoWidth + 'x' + v.videoHeight, 'ok');
         }, 1500);
-        document.getElementById('statusScan').textContent = '📷 Aponte a prova inteira (30-40cm)...';
+        document.getElementById('statusScan').textContent = '📷 Aponte a prova (30-40cm)...';
         log('✅ Scanner ATIVO', 'ok');
-
-        // 🆕 ZOOM AUTOMÁTICO: se nada for detectado em 4s, o sistema amplia o canto e tenta sozinho
-        timerZoom = setInterval(varreduraZoomAutomatica, 2000);
-        log('🔍 Zoom automático armado (a cada 2s, se não detectar há 4s)', 'ok');
+        armarTimerZoom();
     } catch (e) {
-        log('❌ ' + e.message, 'er');
-        showToast('❌ ' + e.message, 'erro');
+        log('❌ ' + errMsg(e), 'er');
+        showToast('❌ ' + errMsg(e), 'erro');
     }
 }
 
@@ -191,12 +202,12 @@ async function onScanSuccess(decodedText) {
     if (processando || travado()) { if (travado()) setProcessando(false); return; }
     var ids = extrairIds(decodedText);
     if (!ids) return;
-
     var agora = Date.now();
     if (ids.idAluno === ultimoAluno && agora - ultimoTempo < 5000) return;
     ultimoAluno = ids.idAluno; ultimoTempo = agora; ultimaDeteccao = agora;
 
-    log('🔔 QR DETECTADO: ' + decodedText, 'ok');
+    log('🔔 QR DETECTADO ao vivo: ' + decodedText, 'ok');
+    pararTimerZoom();
     var st = document.getElementById('statusScan');
     st.textContent = '✅ QR PEGO! Processando...';
     st.classList.add('pegou');
@@ -210,163 +221,116 @@ async function onScanSuccess(decodedText) {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0);
-        var base64 = canvas.toDataURL('image/jpeg', 0.95);
+        var base64 = canvas.toDataURL('image/jpeg', 0.98);
         if (scanner) await scanner.pause(true);
         await processarFoto(base64, ids);
     } catch (e) {
-        log('❌ ' + e.message, 'er');
-        showToast('❌ ' + e.message, 'erro');
+        log('❌ ' + errMsg(e), 'er');
+        showToast('❌ ' + errMsg(e), 'erro');
         setProcessando(false);
         voltarAoScanner();
     }
 }
 
-// ========================================================================
-// 🆕 NOVO: ZOOM DIGITAL — recorta o canto do QR e AMPLIA (o "óculos" da câmera)
-// ========================================================================
+async function capturarManual() {
+    if (processando || travado()) { if (travado()) setProcessando(false); return; }
+    var video = document.querySelector('#reader video');
+    if (!video || !video.videoWidth) { showToast('❌ Câmera não pronta', 'erro'); return; }
+    setProcessando(true);
+    pararTimerZoom();
+    log('📸 FOTOGRAFAR clicado', 'in');
+    try {
+        var canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        var base64 = canvas.toDataURL('image/jpeg', 0.98);
+        document.getElementById('telaScanner').style.display = 'none';
+        document.getElementById('telaProcessando').style.display = 'flex';
+        document.getElementById('txtProcessando').textContent = 'Lendo QR da foto...';
+        var ids = await lerQRdaFotoRobusto(base64);
+        if (!ids) throw new Error('QR não visto. Enquadre a folha inteira e fotografe de novo.');
+        if (scanner) await scanner.pause(true);
+        await processarFoto(base64, ids);
+    } catch (e) {
+        log('❌ ' + errMsg(e), 'er');
+        showToast('❌ ' + errMsg(e), 'erro');
+        setProcessando(false);
+        voltarAoScanner();
+    }
+}
+
+function varreduraZoomAutomatica() {
+    if (processando || travado()) return;
+    if (alunoAtual) return; 
+    if (Date.now() - ultimaDeteccao < 4000) return; 
+    var res = lerQRComZoom();
+    if (!res) return;
+    var agora = Date.now();
+    if (res.ids.idAluno === ultimoAluno && agora - ultimoTempo < 5000) return;
+    ultimoAluno = res.ids.idAluno; ultimoTempo = agora; ultimaDeteccao = agora;
+
+    log('🔔 ZOOM assistente detectou aluno ' + res.ids.idAluno, 'ok');
+    pararTimerZoom();
+    var st = document.getElementById('statusScan');
+    st.textContent = '✅ QR PEGO NO ZOOM! Processando...';
+    if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+    setProcessando(true);
+    (async function () {
+        try {
+            if (scanner) await scanner.pause(true);
+            await processarFoto(res.base64, res.ids);
+        } catch (e) {
+            log('❌ ' + errMsg(e), 'er');
+            showToast('❌ ' + errMsg(e), 'erro');
+            setProcessando(false);
+            voltarAoScanner();
+        }
+    })();
+}
+
 function lerQRComZoom() {
-    // Retorna {ids, base64Completo} ou null. NÃO precisa aproximar!
     var video = document.querySelector('#reader video');
     if (!video || !video.videoWidth) return null;
     var W = video.videoWidth, H = video.videoHeight;
-
     var canvas = document.createElement('canvas');
     var ctx = canvas.getContext('2d', { willReadFrequently: true });
-
-    // Foto completa (para mandar ao OMR depois)
     canvas.width = W; canvas.height = H;
     ctx.drawImage(video, 0, 0);
-    var base64Completo = canvas.toDataURL('image/jpeg', 0.95);
-
-    // Regiões prováveis do QR: canto inferior direito (principal), cantos alternativos, centro-baixo
+    var base64Completo = canvas.toDataURL('image/jpeg', 0.98);
     var regioes = [
         { x: W * 0.62, y: H * 0.66, w: W * 0.38, h: H * 0.34 },
         { x: W * 0.55, y: H * 0.55, w: W * 0.45, h: H * 0.45 },
-        { x: W * 0.00, y: H * 0.66, w: W * 0.38, h: H * 0.34 },
-        { x: W * 0.25, y: H * 0.25, w: W * 0.50, h: H * 0.50 }
+        { x: 0, y: H * 0.66, w: W * 0.38, h: H * 0.34 }
     ];
-
     for (var r = 0; r < regioes.length; r++) {
         var reg = regioes[r];
         var rx = Math.floor(reg.x), ry = Math.floor(reg.y);
         var rw = Math.floor(reg.w), rh = Math.floor(reg.h);
         if (rw < 20 || rh < 20) continue;
-
-        // 👇 O PULO DO GATO: desenhar o recorte num canvas GRANDE = ampliação digital
-        var alvos = [Math.min(900, rw * 3), Math.min(900, rw * 2), rw];
+        var alvos = [Math.min(900, rw * 3), Math.min(900, rw * 2)];
         for (var a = 0; a < alvos.length; a++) {
             var lado = alvos[a];
             canvas.width = lado; canvas.height = lado;
-            ctx.imageSmoothingEnabled = false; // nitidez máxima para QR
+            ctx.imageSmoothingEnabled = false;
             ctx.drawImage(video, rx, ry, rw, rh, 0, 0, lado, lado);
             var data = ctx.getImageData(0, 0, lado, lado);
             var code = jsQR(data.data, lado, lado, { inversionAttempts: "attemptBoth" });
             if (code && code.data) {
                 var ids = extrairIds(code.data);
-                if (ids) {
-                    log('🔍 ZOOM achou QR! Região ' + (r + 1) + ', ampliação ' + (lado / rw).toFixed(1) + 'x', 'ok');
-                    return { ids: ids, base64: base64Completo };
-                }
+                if (ids) return { ids: ids, base64: base64Completo };
             }
-            // tenta com contraste
             aplicarContraste(data.data, 1.8);
             code = jsQR(data.data, lado, lado, { inversionAttempts: "attemptBoth" });
             if (code && code.data) {
                 var ids2 = extrairIds(code.data);
-                if (ids2) {
-                    log('🔍 ZOOM achou QR (contraste)! Região ' + (r + 1), 'ok');
-                    return { ids: ids2, base64: base64Completo };
-                }
+                if (ids2) return { ids: ids2, base64: base64Completo };
             }
         }
     }
     return null;
 }
 
-// 🆕 Varredura automática: dispara o zoom quando o scanner ao vivo não pega
-function varreduraZoomAutomatica() {
-    if (processando || travado()) return;
-    if (Date.now() - ultimaDeteccao < 4000 && ultimaDeteccao > 0) return;
-    var res = lerQRComZoom();
-    if (res) {
-        var agora = Date.now();
-        if (res.ids.idAluno === ultimoAluno && agora - ultimoTempo < 5000) return;
-        ultimoAluno = res.ids.idAluno; ultimoTempo = agora; ultimaDeteccao = agora;
-        log('🔔 ZOOM AUTOMÁTICO detectou aluno ' + res.ids.idAluno, 'ok');
-        var st = document.getElementById('statusScan');
-        st.textContent = '✅ QR PEGO NO ZOOM! Processando...';
-        st.classList.add('pegou');
-        setTimeout(function () { st.classList.remove('pegou'); }, 1500);
-        if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
-        setProcessando(true);
-        (async function () {
-            try {
-                if (scanner) await scanner.pause(true);
-                await processarFoto(res.base64, res.ids);
-            } catch (e) {
-                log('❌ ' + e.message, 'er');
-                showToast('❌ ' + e.message, 'erro');
-                setProcessando(false);
-                voltarAoScanner();
-            }
-        })();
-    }
-}
-
-// 🆕 Botão manual "LER DE LONGE"
-async function lerDeLonge() {
-    if (processando || travado()) { if (travado()) setProcessando(false); return; }
-    log('🔍 Botão LER DE LONGE clicado', 'in');
-    var res = lerQRComZoom();
-    if (!res) {
-        showToast('❌ QR não visto nem com zoom. Segure firme e tente de novo.', 'erro');
-        return;
-    }
-    setProcessando(true);
-    var st = document.getElementById('statusScan');
-    st.textContent = '✅ QR PEGO NO ZOOM! Processando...';
-    if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
-    try {
-        if (scanner) await scanner.pause(true);
-        await processarFoto(res.base64, res.ids);
-    } catch (e) {
-        log('❌ ' + e.message, 'er');
-        showToast('❌ ' + e.message, 'erro');
-        setProcessando(false);
-        voltarAoScanner();
-    }
-}
-
-// 📸 FOTOGRAFAR (fallback antigo que já funcionava)
-async function capturarManual() {
-    if (processando || travado()) { if (travado()) setProcessando(false); return; }
-    var video = document.querySelector('#reader video');
-    if (!video || !video.videoWidth) { showToast('❌ Câmera não pronta', 'erro'); return; }
-    setProcessando(true);
-    try {
-        var canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        var base64 = canvas.toDataURL('image/jpeg', 0.95);
-        document.getElementById('telaScanner').style.display = 'none';
-        document.getElementById('telaProcessando').style.display = 'flex';
-        document.getElementById('txtProcessando').textContent = 'Lendo QR da foto...';
-        var ids = await lerQRdaFotoRobusto(base64);
-        if (!ids) throw new Error('QR não visto. Use 🔍 LER DE LONGE ou aproxime um pouco.');
-        if (scanner) await scanner.pause(true);
-        await processarFoto(base64, ids);
-    } catch (e) {
-        log('❌ ' + e.message, 'er');
-        showToast('❌ ' + e.message, 'erro');
-        setProcessando(false);
-        voltarAoScanner();
-    }
-}
-
-// ========================================================================
-// ⚙️ NÚCLEO INTACTO (o que já funcionou perfeitamente!)
-// ========================================================================
 async function processarFoto(base64, ids) {
     document.getElementById('telaScanner').style.display = 'none';
     document.getElementById('telaInicio').style.display = 'none';
@@ -374,8 +338,8 @@ async function processarFoto(base64, ids) {
     document.getElementById('txtProcessando').textContent = 'Buscando aluno...';
     document.getElementById('txtProgresso').textContent = 'ID aluno ' + ids.idAluno + ' | prova ' + (ids.idProva || 'auto');
 
-    if (alunosCorrigidos[ids.idAluno]) {
-        throw new Error('⚠️ ' + ids.idAluno + ' já corrigido! Nota: ' + alunosCorrigidos[ids.idAluno].toFixed(1));
+    if (alunosCorrigidos[ids.idAluno] !== undefined) {
+        throw new Error('⚠️ Este aluno já foi SALVO! Nota: ' + Number(alunosCorrigidos[ids.idAluno]).toFixed(1));
     }
 
     var r = await fetch(API_BACKEND + '/api/dados_correcao_rapida/' + ids.idAluno);
@@ -404,6 +368,7 @@ async function processarFoto(base64, ids) {
     resultadoAtual = resultado;
     resultadoAtual.nomeTurma = d.nome_turma || 'Turma';
     resultadoAtual.idProva = idProva;
+    resultadoAtual.fotoOriginal = base64;
     log('✅ Nota: ' + resultado.nota_final + ' | Acertos: ' + (resultado.acertos || 0), 'ok');
     mostrarConfirmacao();
 }
@@ -419,16 +384,41 @@ function mostrarConfirmacao() {
     document.getElementById('confAcertos').textContent = acertos;
     document.getElementById('confErros').textContent = total - acertos;
     document.getElementById('confTotal').textContent = total;
-    var card = document.getElementById('cardImgs');
+
+    var imgO = document.getElementById('imgOriginal');
+    imgO.src = resultadoAtual.fotoOriginal || '';
+    imgO.className = 'img-thumb'; 
+    document.getElementById('btnToggleFoto').textContent = '🔍 Ver foto completa';
+
+    var imgP = document.getElementById('imgProcessada');
+    var legP = document.getElementById('legendaProcessada');
     if (resultadoAtual.imagem_processada) {
-        document.getElementById('imgProcessada').src = resultadoAtual.imagem_processada;
-        card.style.display = 'block';
-    } else { card.style.display = 'none'; }
+        imgP.src = resultadoAtual.imagem_processada;
+        imgP.style.display = 'block';
+        legP.style.display = 'block';
+    } else { imgP.style.display = 'none'; legP.style.display = 'none'; }
     setProcessando(false);
 }
 
+function toggleFoto() {
+    var img = document.getElementById('imgOriginal');
+    var btn = document.getElementById('btnToggleFoto');
+    if (img.classList.contains('img-thumb')) {
+        img.classList.remove('img-thumb');
+        img.classList.add('img-full');
+        btn.textContent = '🔼 Recolher foto';
+    } else {
+        img.classList.remove('img-full');
+        img.classList.add('img-thumb');
+        btn.textContent = '🔍 Ver foto completa';
+    }
+}
+
 async function salvarEProximo() {
-    if (!resultadoAtual || !alunoAtual) return;
+    if (!resultadoAtual || !alunoAtual || !alunoAtual.id) {
+        showToast('❌ Dados indisponíveis. Toque em TENTAR OUTRA.', 'erro');
+        return;
+    }
     try {
         var response = await fetch(API_BACKEND + '/api/salvar_correcao_omr', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -446,18 +436,18 @@ async function salvarEProximo() {
         if (navigator.vibrate) navigator.vibrate(60);
         showToast('✅ ' + (alunoAtual.nome_completo || '').split(' ')[0] + ': ' + resultadoAtual.nota_final.toFixed(1) + ' salvo!', 'sucesso');
         voltarAoScanner();
-    } catch (e) { showToast('❌ ' + e.message, 'erro'); }
+    } catch (e) { showToast('❌ ' + errMsg(e), 'erro'); }
 }
 
 function voltarAoScanner() {
     document.getElementById('telaConfirmacao').style.display = 'none';
     document.getElementById('telaProcessando').style.display = 'none';
     document.getElementById('telaScanner').style.display = 'flex';
-    document.getElementById('statusScan').textContent = '📷 Aponte a prova inteira (30-40cm)...';
+    document.getElementById('statusScan').textContent = '📷 Aponte a prova (30-40cm)...';
     alunoAtual = null; resultadoAtual = null; ultimoAluno = null;
-    ultimaDeteccao = Date.now();
     setProcessando(false);
     try { if (scanner) scanner.resume(); } catch (e) {}
+    armarTimerZoom();
 }
 
 function lerQRdaFotoRobusto(base64) {
@@ -514,6 +504,7 @@ function extrairIds(texto) {
 async function processarFotoManual(input) {
     if (!input.files || !input.files[0]) return;
     setProcessando(true);
+    pararTimerZoom();
     document.getElementById('telaInicio').style.display = 'none';
     document.getElementById('telaProcessando').style.display = 'flex';
     document.getElementById('txtProcessando').textContent = 'Lendo QR da foto...';
@@ -524,7 +515,7 @@ async function processarFotoManual(input) {
             if (!ids) throw new Error('QR não encontrado na foto.');
             await processarFoto(e.target.result, ids);
         } catch (err) {
-            showToast('❌ ' + err.message, 'erro');
+            showToast('❌ ' + errMsg(err), 'erro');
             setProcessando(false);
             document.getElementById('telaProcessando').style.display = 'none';
             document.getElementById('telaInicio').style.display = 'flex';
@@ -544,13 +535,12 @@ document.getElementById('btnIniciarCam').addEventListener('click', iniciarScanne
 document.getElementById('btnFotoManual').addEventListener('click', function () { document.getElementById('inputManual').click(); });
 document.getElementById('inputManual').addEventListener('change', function () { processarFotoManual(this); });
 document.getElementById('btnCapturar').addEventListener('click', capturarManual);
-document.getElementById('btnZoomAgora').addEventListener('click', lerDeLonge);
-document.getElementById('btnCancelar').addEventListener('click', function () { if (timerZoom) clearInterval(timerZoom); location.reload(); });
+document.getElementById('btnCancelar').addEventListener('click', function () { pararTimerZoom(); location.reload(); });
 document.getElementById('btnSalvar').addEventListener('click', salvarEProximo);
 document.getElementById('btnRepetir').addEventListener('click', voltarAoScanner);
-document.getElementById('btnFinalizar').addEventListener('click', function () { if (timerZoom) clearInterval(timerZoom); location.reload(); });
+document.getElementById('btnFinalizar').addEventListener('click', function () { pararTimerZoom(); location.reload(); });
 
-log('✅ Pronto! Abra a câmera e aponte a 30-40cm.', 'ok');
+log('✅ Pronto! Abra a câmera.', 'ok');
 </script>
 </body>
 </html>
