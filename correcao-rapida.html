@@ -7,7 +7,6 @@
 <title>🚀 Correção Rápida - OMR</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #0f1528 0%, #1d2a4d 100%); color: #fff; min-height: 100vh; display: flex; flex-direction: column; }
@@ -19,7 +18,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .tela-inicio p { font-size: 14px; color: #b388ff; margin-bottom: 24px; line-height: 1.5; max-width: 400px; }
 .btn-gigante { width: 100%; max-width: 350px; padding: 22px; background: linear-gradient(135deg, #00bfa5, #00e5c7); border: none; border-radius: 16px; color: #0f1528; font-size: 19px; font-weight: 900; cursor: pointer; box-shadow: 0 8px 24px rgba(0,229,199,0.3); margin-bottom: 12px; }
 .btn-gigante.secundario { background: rgba(255,255,255,0.1); color: #fff; border: 2px solid rgba(255,255,255,0.3); font-size: 15px; padding: 16px; }
-.log-box { background: #0f0f1e; border: 1px solid #333; border-radius: 8px; padding: 10px; width: 100%; max-width: 460px; font-family: monospace; font-size: 11px; max-height: 140px; overflow-y: auto; white-space: pre-wrap; text-align: left; margin-top: 14px; }
+.log-box { background: #0f0f1e; border: 1px solid #333; border-radius: 8px; padding: 10px; width: 100%; max-width: 460px; font-family: monospace; font-size: 11px; max-height: 130px; overflow-y: auto; white-space: pre-wrap; text-align: left; margin-top: 14px; }
 .log-box .ok { color: #00e5c7; } .log-box .er { color: #ff5252; } .log-box .in { color: #ffab40; }
 .scanner-area { position: relative; width: 100%; flex: 1; background: #000; min-height: 55vh; }
 #reader { width: 100%; height: 100%; }
@@ -116,19 +115,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 <script>
 // ========================================================================
-// 🛡️ CAPTURA GLOBAL DE ERROS (o sistema nunca mais fica mudo)
+// 🛡️ CAPTURA GLOBAL DE ERROS
 // ========================================================================
-window.onerror = function (msg, src, line) {
-    log('❌ ERRO JS: ' + msg + ' (linha ' + line + ')', 'er');
-    return false;
-};
-window.addEventListener('unhandledrejection', function (e) {
-    log('❌ ERRO async: ' + (e.reason && e.reason.message ? e.reason.message : e.reason), 'er');
-});
+window.onerror = function (msg, src, line) { log('❌ ERRO JS: ' + msg + ' (linha ' + line + ')', 'er'); return false; };
+window.addEventListener('unhandledrejection', function (e) { log('❌ ERRO async: ' + (e.reason && e.reason.message ? e.reason.message : e.reason), 'er'); });
 
-// ========================================================================
-// 📋 LOG (escreve em TODAS as caixinhas de log existentes)
-// ========================================================================
 function log(msg, tipo) {
     var caixas = document.querySelectorAll('.log-box');
     caixas.forEach(function (box) {
@@ -142,38 +133,18 @@ function log(msg, tipo) {
 }
 
 // ========================================================================
-// 🔧 CONFIGURAÇÃO (client Supabase criado LAZY — só quando precisar!)
+// 🔧 CONFIG (busca de aluno agora é pelo BACKEND — atravessa o RLS!)
 // ========================================================================
-var SUPABASE_URL = 'https://mkqnaiuplkqiitwxltli.supabase.co';
-var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rcW5haXVwbGtxaWl0d3hsdGxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzOTg5MzMsImV4cCI6MjA5OTk3NDkzM30.MtrmkMjW9ODjl7FcNw6VIu8SJTeuewwmoFeiSSvRk1U';
 var API_BACKEND = 'https://omr-backend-laboratorio.onrender.com';
-
-var _sb = null;
-function getSupabase() {
-    if (_sb) return _sb;
-    if (!window.supabase || !window.supabase.createClient) {
-        throw new Error('SDK Supabase não carregou. Verifique a internet e recarregue.');
-    }
-    _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    return _sb;
-}
-
 var scanner = null, alunoAtual = null, resultadoAtual = null;
-var corrigidosCount = 0, processando = false, ultimaDeteccao = 0;
+var corrigidosCount = 0, processando = false, ultimaDeteccao = 0, timerScan = null;
+
+log('✅ Script vivo! Dependências:', 'ok');
+log((typeof Html5Qrcode !== 'undefined' ? '✅' : '❌') + ' html5-qrcode', 'in');
+log((typeof jsQR !== 'undefined' ? '✅' : '❌') + ' jsQR', 'in');
 
 // ========================================================================
-// ✅ VERIFICAÇÃO DE DEPENDÊNCIAS (roda IMEDIATAMENTE)
-// ========================================================================
-log('✅ Script carregado e vivo!', 'ok');
-if (typeof Html5Qrcode === 'undefined') log('❌ Biblioteca html5-qrcode NÃO carregou', 'er');
-else log('✅ html5-qrcode OK', 'ok');
-if (typeof jsQR === 'undefined') log('❌ Biblioteca jsQR NÃO carregou', 'er');
-else log('✅ jsQR OK', 'ok');
-if (window.supabase) log('✅ Supabase SDK OK', 'ok');
-else log('⚠️ Supabase SDK ainda não carregou (ok, criaremos depois)', 'in');
-
-// ========================================================================
-// 📸 SCANNER CONTÍNUO (config da versão debug que ABRIU a câmera)
+// 📸 SCANNER CONTÍNUO + LEITURA POR INTERVALOS (pega QR em qualquer canto)
 // ========================================================================
 async function iniciarScanner() {
     log('Clique: INICIAR CÂMERA', 'in');
@@ -184,23 +155,20 @@ async function iniciarScanner() {
     try {
         if (typeof Html5Qrcode === 'undefined') throw new Error('html5-qrcode não carregou');
         scanner = new Html5Qrcode("reader");
-        log('Scanner criado', 'ok');
 
         await scanner.start(
             { facingMode: "environment" },
-            {
-                fps: 10,
-                aspectRatio: 1.0,
-                qrbox: function (vw, vh) {
-                    var lado = Math.min(vw, vh) * 0.9;
-                    return { width: lado, height: lado };
-                }
-            },
+            { fps: 10, aspectRatio: 1.0,
+              qrbox: function (vw, vh) { var lado = Math.min(vw, vh) * 0.9; return { width: lado, height: lado }; } },
             onScanSuccess,
             function () {}
         );
-        log('✅ Scanner ativo!', 'ok');
+        log('✅ Scanner contínuo ativo', 'ok');
         document.getElementById('statusScan').textContent = '📷 Aponte para a prova...';
+
+        // 🆕 LEITURA POR INTERVALOS: a cada 1,2s congela o frame e procura o QR em QUALQUER canto
+        timerScan = setInterval(varreduraForcada, 1200);
+        log('🔍 Varredura forcada iniciada (1,2s)', 'ok');
     } catch (e) {
         log('❌ ' + e.message, 'er');
         document.getElementById('statusScan').textContent = '❌ ' + e.message;
@@ -208,15 +176,36 @@ async function iniciarScanner() {
     }
 }
 
+async function varreduraForcada() {
+    if (processando) return;
+    var agora = Date.now();
+    if (agora - ultimaDeteccao < 3000) return;
+    try {
+        var video = document.querySelector('#reader video');
+        if (!video || !video.videoWidth) return;
+        var canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        var base64 = canvas.toDataURL('image/jpeg', 0.95);
+        var qr = await lerQRdaImagem(base64);
+        if (qr) {
+            log('🔍 Varredura pegou QR no canto: ' + JSON.stringify(qr), 'ok');
+            ultimaDeteccao = agora;
+            processando = true;
+            if (scanner) await scanner.pause(true);
+            await processarImagem(base64, qr.idAluno, qr.idProva);
+        }
+    } catch (e) { /* silencioso, é varredura contínua */ }
+}
+
 async function onScanSuccess(decodedText) {
     var agora = Date.now();
     if (processando || (agora - ultimaDeteccao < 3000)) return;
     ultimaDeteccao = agora;
     log('QR lido: ' + decodedText, 'ok');
-
     var ids = extrairIds(decodedText);
     if (!ids) { showToast('❌ QR Code inválido', 'erro'); return; }
-
     processando = true;
     document.getElementById('statusScan').textContent = '✅ QR detectado! Processando...';
     try {
@@ -247,7 +236,7 @@ function extrairIds(texto) {
 }
 
 // ========================================================================
-// 📸 CAPTURAR AGORA (congelar frame + ler QR com jsQR)
+// 📸 CAPTURAR AGORA
 // ========================================================================
 async function capturarManual() {
     if (processando) return;
@@ -262,7 +251,7 @@ async function capturarManual() {
         var base64 = canvas.toDataURL('image/jpeg', 0.95);
         var qr = await lerQRdaImagem(base64);
         if (!qr) {
-            showToast('❌ QR não visto. Aproxime mais do QR e tente.', 'erro');
+            showToast('❌ QR não visto. Aproxime um pouco e tente.', 'erro');
             voltarAoScanner();
             return;
         }
@@ -298,11 +287,11 @@ function lerQRdaImagem(base64) {
 }
 
 // ========================================================================
-// 🖼️ FOTO MANUAL (câmera nativa do celular)
+// 🖼️ FOTO MANUAL
 // ========================================================================
 async function processarFotoManual(input) {
-    if (!input.files || !input.files[0]) { log('Foto manual: nenhum arquivo', 'in'); return; }
-    log('Foto manual recebida: ' + input.files[0].name, 'ok');
+    if (!input.files || !input.files[0]) return;
+    log('Foto manual recebida', 'ok');
     processando = true;
     document.getElementById('telaInicio').style.display = 'none';
     document.getElementById('telaProcessando').style.display = 'flex';
@@ -310,7 +299,7 @@ async function processarFotoManual(input) {
     reader.onload = async function (e) {
         try {
             var qr = await lerQRdaImagem(e.target.result);
-            if (!qr) throw new Error('QR não encontrado na foto. Tente de novo aproximando o QR.');
+            if (!qr) throw new Error('QR não encontrado na foto. Tente de novo.');
             await processarImagem(e.target.result, qr.idAluno, qr.idProva);
         } catch (err) {
             log('❌ Foto manual: ' + err.message, 'er');
@@ -318,38 +307,29 @@ async function processarFotoManual(input) {
             setTimeout(function () { location.reload(); }, 2500);
         }
     };
-    reader.onerror = function () { showToast('❌ Erro ao ler a foto', 'erro'); location.reload(); };
     reader.readAsDataURL(input.files[0]);
     input.value = '';
 }
 
 // ========================================================================
-// ⚙️ PROCESSAMENTO (aluno + turma + OMR)
+// ⚙️ PROCESSAMENTO (aluno via BACKEND — resolve o RLS!)
 // ========================================================================
 async function processarImagem(base64, idAluno, idProva) {
     document.getElementById('telaScanner').style.display = 'none';
     document.getElementById('telaInicio').style.display = 'none';
     document.getElementById('telaProcessando').style.display = 'flex';
 
-    var sb = getSupabase();
+    log('Buscando aluno ' + idAluno + ' no backend...', 'in');
+    var r = await fetch(API_BACKEND + '/api/dados_correcao_rapida/' + idAluno);
+    var d = await r.json();
+    if (!d.sucesso || !d.aluno) throw new Error(d.erro || ('Aluno ' + idAluno + ' não encontrado'));
+    alunoAtual = d.aluno;
+    log('✅ ' + alunoAtual.nome_completo + ' | Turma: ' + d.nome_turma, 'ok');
 
-    log('Buscando aluno ' + idAluno + '...', 'in');
-    var rAluno = await sb.from('alunos')
-        .select('id, nome_completo, numero_chamada, id_turma').eq('id', idAluno).single();
-    if (!rAluno.data) throw new Error('Aluno ' + idAluno + ' não encontrado');
-    alunoAtual = rAluno.data;
+    if (!idProva) idProva = d.id_prova;
+    if (!idProva) throw new Error('Prova não identificada. Use o QR OMRALUNO com o ID da prova.');
 
-    var rTurma = await sb.from('turmas').select('nome').eq('id', alunoAtual.id_turma).single();
-
-    if (!idProva) {
-        var rProva = await sb.from('avaliacoes')
-            .select('id').eq('id_turma', alunoAtual.id_turma).eq('modo_correcao', 'objetiva')
-            .order('id', { ascending: false }).limit(1);
-        idProva = (rProva.data && rProva.data[0]) ? rProva.data[0].id : null;
-    }
-    if (!idProva) throw new Error('Prova não identificada pelo QR');
-
-    log('Enviando imagem ao backend OMR...', 'in');
+    log('Enviando imagem ao OMR (prova ' + idProva + ')...', 'in');
     var response = await fetch(API_BACKEND + '/api/processar_imagem_omr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -359,7 +339,7 @@ async function processarImagem(base64, idAluno, idProva) {
     if (!resultado.sucesso) throw new Error(resultado.erro || 'Erro no processamento OMR');
 
     resultadoAtual = resultado;
-    resultadoAtual.nomeTurma = (rTurma.data && rTurma.data.nome) ? rTurma.data.nome : 'Turma';
+    resultadoAtual.nomeTurma = d.nome_turma;
     resultadoAtual.idProva = idProva;
     log('✅ OMR pronto. Nota: ' + resultado.nota_final, 'ok');
     mostrarConfirmacao();
@@ -385,7 +365,6 @@ function mostrarConfirmacao() {
 async function salvarEProximo() {
     if (!resultadoAtual || !alunoAtual) return;
     try {
-        log('Salvando nota de ' + alunoAtual.nome_completo + '...', 'in');
         var response = await fetch(API_BACKEND + '/api/salvar_correcao_omr', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -399,16 +378,13 @@ async function salvarEProximo() {
         if (!res.sucesso) throw new Error(res.erro || 'Falha ao salvar');
         corrigidosCount++;
         document.getElementById('contador').textContent = corrigidosCount + ' corrigidos';
-        log('💾 Salvo com sucesso!', 'ok');
+        log('💾 Salvo: ' + alunoAtual.nome_completo, 'ok');
         showToast('✅ Nota ' + resultadoAtual.nota_final.toFixed(1) + ' salva!', 'sucesso');
         voltarAoScanner();
     } catch (e) { log('❌ ' + e.message, 'er'); showToast('❌ ' + e.message, 'erro'); }
 }
 
-function tirarOutra() {
-    showToast('🔄 Aponte novamente...', 'sucesso');
-    voltarAoScanner();
-}
+function tirarOutra() { showToast('🔄 Aponte novamente...', 'sucesso'); voltarAoScanner(); }
 
 async function voltarAoScanner() {
     document.getElementById('telaConfirmacao').style.display = 'none';
@@ -427,13 +403,10 @@ function showToast(msg, tipo) {
 }
 
 // ========================================================================
-// 🔗 BOTÕES (via addEventListener — à prova de cache de onclick inline)
+// 🔗 BOTÕES
 // ========================================================================
 document.getElementById('btnIniciarCam').addEventListener('click', iniciarScanner);
-document.getElementById('btnFotoManual').addEventListener('click', function () {
-    log('Clique: USAR FOTO MANUAL', 'in');
-    document.getElementById('inputManual').click();
-});
+document.getElementById('btnFotoManual').addEventListener('click', function () { document.getElementById('inputManual').click(); });
 document.getElementById('inputManual').addEventListener('change', function () { processarFotoManual(this); });
 document.getElementById('btnCapturar').addEventListener('click', capturarManual);
 document.getElementById('btnCancelar').addEventListener('click', function () { location.reload(); });
