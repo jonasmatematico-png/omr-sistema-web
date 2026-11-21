@@ -15,10 +15,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .topo h1 { font-size: 16px; color: #00e5c7; font-weight: 800; }
 .contador { background: linear-gradient(135deg, #00bfa5, #7c4dff); padding: 6px 14px; border-radius: 20px; font-weight: 800; font-size: 13px; }
 .tela-inicio { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
-.tela-inicio h2 { font-size: 24px; margin-bottom: 16px; color: #00e5c7; }
-.tela-inicio p { font-size: 15px; color: #b388ff; margin-bottom: 28px; line-height: 1.5; max-width: 400px; }
+.tela-inicio h2 { font-size: 24px; margin-bottom: 12px; color: #00e5c7; }
+.tela-inicio p { font-size: 14px; color: #b388ff; margin-bottom: 24px; line-height: 1.5; max-width: 400px; }
 .btn-gigante { width: 100%; max-width: 350px; padding: 22px; background: linear-gradient(135deg, #00bfa5, #00e5c7); border: none; border-radius: 16px; color: #0f1528; font-size: 19px; font-weight: 900; cursor: pointer; box-shadow: 0 8px 24px rgba(0,229,199,0.3); margin-bottom: 12px; }
 .btn-gigante.secundario { background: rgba(255,255,255,0.1); color: #fff; border: 2px solid rgba(255,255,255,0.3); font-size: 15px; padding: 16px; }
+.log-box { background: #0f0f1e; border: 1px solid #333; border-radius: 8px; padding: 10px; width: 100%; max-width: 460px; font-family: monospace; font-size: 11px; max-height: 140px; overflow-y: auto; white-space: pre-wrap; text-align: left; margin-top: 14px; }
+.log-box .ok { color: #00e5c7; } .log-box .er { color: #ff5252; } .log-box .in { color: #ffab40; }
 .scanner-area { position: relative; width: 100%; flex: 1; background: #000; min-height: 55vh; }
 #reader { width: 100%; height: 100%; }
 #reader video { width: 100% !important; height: 100% !important; object-fit: cover; -webkit-playsinline: true; }
@@ -27,8 +29,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .btn-acao { flex: 1; padding: 15px; border: none; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; }
 .btn-manual { background: linear-gradient(135deg, #ff9800, #ffab40); color: #000; }
 .btn-cancelar { background: rgba(255,255,255,0.15); color: #fff; }
-.log-box { background: #0f0f1e; border: 1px solid #333; border-radius: 8px; padding: 10px; margin: 12px 16px; font-family: monospace; font-size: 11px; max-height: 110px; overflow-y: auto; white-space: pre-wrap; }
-.log-box .ok { color: #00e5c7; } .log-box .er { color: #ff5252; } .log-box .in { color: #ffab40; }
 .confirmacao { display: none; flex: 1; padding: 20px; max-width: 500px; margin: 0 auto; width: 100%; animation: slideUp 0.3s ease-out; overflow-y: auto; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 .card-aluno { background: linear-gradient(135deg, rgba(0,229,199,0.15), rgba(179,136,255,0.15)); border: 2px solid #00e5c7; border-radius: 16px; padding: 18px; margin-bottom: 16px; }
@@ -65,8 +65,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div class="tela-inicio" id="telaInicio">
     <h2>Modo Scanner Contínuo</h2>
     <p>Aponte a câmera para a prova.<br>O QR Code é detectado <strong>em qualquer lugar da tela</strong>.</p>
-    <button class="btn-gigante" onclick="iniciarScanner()">📸 INICIAR CÂMERA</button>
-    <button class="btn-gigante secundario" onclick="document.getElementById('inputManual').click()">🖼️ USAR FOTO MANUAL</button>
+    <button class="btn-gigante" id="btnIniciarCam">📸 INICIAR CÂMERA</button>
+    <button class="btn-gigante secundario" id="btnFotoManual">🖼️ USAR FOTO MANUAL</button>
+    <div class="log-box" id="logInicio">📋 Aguardando script...</div>
 </div>
 
 <div id="telaScanner" style="display:none; flex:1; flex-direction:column;">
@@ -74,11 +75,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
         <div id="reader"></div>
         <div class="status-scan" id="statusScan">📷 Aponte para a prova...</div>
         <div class="acoes-scanner">
-            <button class="btn-acao btn-manual" onclick="capturarManual()">📸 CAPTURAR AGORA</button>
-            <button class="btn-acao btn-cancelar" onclick="location.reload()">✕ Cancelar</button>
+            <button class="btn-acao btn-manual" id="btnCapturar">📸 CAPTURAR AGORA</button>
+            <button class="btn-acao btn-cancelar" id="btnCancelar">✕ Cancelar</button>
         </div>
     </div>
-    <div class="log-box" id="logBox"></div>
+    <div class="log-box" id="logScanner" style="margin:12px 16px;"></div>
 </div>
 
 <div class="processando" id="telaProcessando">
@@ -105,52 +106,93 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
             <div><div class="valor" id="confTotal" style="color:#1d2a4d;">0</div><div class="lbl">📝 QUESTÕES</div></div>
         </div>
     </div>
-    <button class="btn-grande btn-salvar" onclick="salvarEProximo()">✅ SALVAR E PRÓXIMO</button>
-    <button class="btn-grande btn-refazer" onclick="tirarOutra()">🔄 FOTO RUIM / TENTAR OUTRA</button>
-    <button class="btn-grande btn-fechar" onclick="location.reload()">🏁 FINALIZAR</button>
+    <button class="btn-grande btn-salvar" id="btnSalvar">✅ SALVAR E PRÓXIMO</button>
+    <button class="btn-grande btn-refazer" id="btnRepetir">🔄 FOTO RUIM / TENTAR OUTRA</button>
+    <button class="btn-grande btn-fechar" id="btnFinalizar">🏁 FINALIZAR</button>
 </div>
 
-<input type="file" id="inputManual" accept="image/*" capture="environment" style="display:none;" onchange="processarFotoManual(this)">
+<input type="file" id="inputManual" accept="image/*" capture="environment" style="display:none;">
 <div class="toast" id="toast"></div>
 
 <script>
-const SUPABASE_URL = 'https://mkqnaiuplkqiitwxltli.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rcW5haXVwbGtxaWl0d3hsdGxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzOTg5MzMsImV4cCI6MjA5OTk3NDkzM30.MtrmkMjW9ODjl7FcNw6VIu8SJTeuewwmoFeiSSvRk1U';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const API_BACKEND = 'https://omr-backend-laboratorio.onrender.com';
+// ========================================================================
+// 🛡️ CAPTURA GLOBAL DE ERROS (o sistema nunca mais fica mudo)
+// ========================================================================
+window.onerror = function (msg, src, line) {
+    log('❌ ERRO JS: ' + msg + ' (linha ' + line + ')', 'er');
+    return false;
+};
+window.addEventListener('unhandledrejection', function (e) {
+    log('❌ ERRO async: ' + (e.reason && e.reason.message ? e.reason.message : e.reason), 'er');
+});
 
-let scanner = null, alunoAtual = null, resultadoAtual = null;
-let corrigidosCount = 0, processando = false, ultimaDeteccao = 0;
-
+// ========================================================================
+// 📋 LOG (escreve em TODAS as caixinhas de log existentes)
+// ========================================================================
 function log(msg, tipo) {
-    const box = document.getElementById('logBox');
-    if (!box) return;
-    const d = document.createElement('div');
-    d.className = tipo || 'in';
-    d.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
-    box.appendChild(d);
-    box.scrollTop = box.scrollHeight;
+    var caixas = document.querySelectorAll('.log-box');
+    caixas.forEach(function (box) {
+        var d = document.createElement('div');
+        d.className = tipo || 'in';
+        d.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+        box.appendChild(d);
+        box.scrollTop = box.scrollHeight;
+    });
+    console.log('[' + (tipo || 'info') + '] ' + msg);
 }
 
+// ========================================================================
+// 🔧 CONFIGURAÇÃO (client Supabase criado LAZY — só quando precisar!)
+// ========================================================================
+var SUPABASE_URL = 'https://mkqnaiuplkqiitwxltli.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rcW5haXVwbGtxaWl0d3hsdGxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzOTg5MzMsImV4cCI6MjA5OTk3NDkzM30.MtrmkMjW9ODjl7FcNw6VIu8SJTeuewwmoFeiSSvRk1U';
+var API_BACKEND = 'https://omr-backend-laboratorio.onrender.com';
+
+var _sb = null;
+function getSupabase() {
+    if (_sb) return _sb;
+    if (!window.supabase || !window.supabase.createClient) {
+        throw new Error('SDK Supabase não carregou. Verifique a internet e recarregue.');
+    }
+    _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    return _sb;
+}
+
+var scanner = null, alunoAtual = null, resultadoAtual = null;
+var corrigidosCount = 0, processando = false, ultimaDeteccao = 0;
+
+// ========================================================================
+// ✅ VERIFICAÇÃO DE DEPENDÊNCIAS (roda IMEDIATAMENTE)
+// ========================================================================
+log('✅ Script carregado e vivo!', 'ok');
+if (typeof Html5Qrcode === 'undefined') log('❌ Biblioteca html5-qrcode NÃO carregou', 'er');
+else log('✅ html5-qrcode OK', 'ok');
+if (typeof jsQR === 'undefined') log('❌ Biblioteca jsQR NÃO carregou', 'er');
+else log('✅ jsQR OK', 'ok');
+if (window.supabase) log('✅ Supabase SDK OK', 'ok');
+else log('⚠️ Supabase SDK ainda não carregou (ok, criaremos depois)', 'in');
+
+// ========================================================================
+// 📸 SCANNER CONTÍNUO (config da versão debug que ABRIU a câmera)
+// ========================================================================
 async function iniciarScanner() {
-    log('Clique em INICIAR CÂMERA', 'in');
+    log('Clique: INICIAR CÂMERA', 'in');
     document.getElementById('telaInicio').style.display = 'none';
     document.getElementById('telaScanner').style.display = 'flex';
     document.getElementById('statusScan').textContent = '⏳ Solicitando câmera...';
 
     try {
+        if (typeof Html5Qrcode === 'undefined') throw new Error('html5-qrcode não carregou');
         scanner = new Html5Qrcode("reader");
         log('Scanner criado', 'ok');
 
-        // ✅ CONFIGURAÇÃO IDÊNTICA À VERSÃO DEBUG (que abriu a câmera!)
-        // + qrbox em FUNÇÃO cobrindo ~90% da tela (pega o QR do canto)
         await scanner.start(
             { facingMode: "environment" },
             {
                 fps: 10,
                 aspectRatio: 1.0,
-                qrbox: function (viewfinderWidth, viewfinderHeight) {
-                    const lado = Math.min(viewfinderWidth, viewfinderHeight) * 0.9;
+                qrbox: function (vw, vh) {
+                    var lado = Math.min(vw, vh) * 0.9;
                     return { width: lado, height: lado };
                 }
             },
@@ -159,32 +201,31 @@ async function iniciarScanner() {
         );
         log('✅ Scanner ativo!', 'ok');
         document.getElementById('statusScan').textContent = '📷 Aponte para a prova...';
-        showToast('📷 Câmera aberta!', 'sucesso');
     } catch (e) {
-        log('❌ ' + e.name + ': ' + e.message, 'er');
+        log('❌ ' + e.message, 'er');
+        document.getElementById('statusScan').textContent = '❌ ' + e.message;
         showToast('❌ ' + e.message, 'erro');
-        document.getElementById('statusScan').textContent = '❌ Erro: ' + e.message;
     }
 }
 
 async function onScanSuccess(decodedText) {
-    const agora = Date.now();
+    var agora = Date.now();
     if (processando || (agora - ultimaDeteccao < 3000)) return;
     ultimaDeteccao = agora;
     log('QR lido: ' + decodedText, 'ok');
 
-    const ids = extrairIds(decodedText);
+    var ids = extrairIds(decodedText);
     if (!ids) { showToast('❌ QR Code inválido', 'erro'); return; }
 
     processando = true;
     document.getElementById('statusScan').textContent = '✅ QR detectado! Processando...';
     try {
-        const video = document.querySelector('#reader video');
-        const canvas = document.createElement('canvas');
+        var video = document.querySelector('#reader video');
+        var canvas = document.createElement('canvas');
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0);
-        const base64 = canvas.toDataURL('image/jpeg', 0.95);
+        var base64 = canvas.toDataURL('image/jpeg', 0.95);
         if (scanner) await scanner.pause(true);
         await processarImagem(base64, ids.idAluno, ids.idProva);
     } catch (e) {
@@ -195,29 +236,36 @@ async function onScanSuccess(decodedText) {
 }
 
 function extrairIds(texto) {
-    if (texto.startsWith('OMRALUNO:')) {
-        const p = texto.split(':');
+    if (texto.indexOf('OMRALUNO:') === 0) {
+        var p = texto.split(':');
         return { idProva: parseInt(p[1]), idAluno: parseInt(p[2]) };
     }
-    if (texto.startsWith('OMRCARD:')) {
+    if (texto.indexOf('OMRCARD:') === 0) {
         return { idProva: null, idAluno: parseInt(texto.replace('OMRCARD:', '')) };
     }
     return null;
 }
 
+// ========================================================================
+// 📸 CAPTURAR AGORA (congelar frame + ler QR com jsQR)
+// ========================================================================
 async function capturarManual() {
     if (processando) return;
     processando = true;
-    log('CAPTURAR AGORA clicado', 'in');
+    log('Clique: CAPTURAR AGORA', 'in');
     try {
-        const video = document.querySelector('#reader video');
-        const canvas = document.createElement('canvas');
+        var video = document.querySelector('#reader video');
+        var canvas = document.createElement('canvas');
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0);
-        const base64 = canvas.toDataURL('image/jpeg', 0.95);
-        const qr = await lerQRdaImagem(base64);
-        if (!qr) { showToast('❌ QR não visto. Aproxime e tente de novo.', 'erro'); voltarAoScanner(); return; }
+        var base64 = canvas.toDataURL('image/jpeg', 0.95);
+        var qr = await lerQRdaImagem(base64);
+        if (!qr) {
+            showToast('❌ QR não visto. Aproxime mais do QR e tente.', 'erro');
+            voltarAoScanner();
+            return;
+        }
         if (scanner) await scanner.pause(true);
         await processarImagem(base64, qr.idAluno, qr.idProva);
     } catch (e) {
@@ -228,55 +276,92 @@ async function capturarManual() {
 }
 
 function lerQRdaImagem(base64) {
-    return new Promise((resolve) => {
-        const img = new Image();
+    return new Promise(function (resolve, reject) {
+        var img = new Image();
         img.onload = function () {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            const escala = Math.min(1, 1200 / Math.max(img.width, img.height));
-            canvas.width = Math.floor(img.width * escala);
-            canvas.height = Math.floor(img.height * escala);
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const code = jsQR(data.data, canvas.width, canvas.height, { inversionAttempts: "attemptBoth" });
-            resolve(code ? extrairIds(code.data) : null);
+            try {
+                var canvas = document.createElement('canvas');
+                var ctx = canvas.getContext('2d', { willReadFrequently: true });
+                var escala = Math.min(1, 1200 / Math.max(img.width, img.height));
+                canvas.width = Math.floor(img.width * escala);
+                canvas.height = Math.floor(img.height * escala);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                var data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                var code = jsQR(data.data, canvas.width, canvas.height, { inversionAttempts: "attemptBoth" });
+                if (code && code.data) resolve(extrairIds(code.data));
+                else resolve(null);
+            } catch (e) { reject(e); }
         };
-        img.onerror = function () { resolve(null); };
+        img.onerror = function () { reject(new Error('Falha ao carregar imagem')); };
         img.src = base64;
     });
 }
 
+// ========================================================================
+// 🖼️ FOTO MANUAL (câmera nativa do celular)
+// ========================================================================
+async function processarFotoManual(input) {
+    if (!input.files || !input.files[0]) { log('Foto manual: nenhum arquivo', 'in'); return; }
+    log('Foto manual recebida: ' + input.files[0].name, 'ok');
+    processando = true;
+    document.getElementById('telaInicio').style.display = 'none';
+    document.getElementById('telaProcessando').style.display = 'flex';
+    var reader = new FileReader();
+    reader.onload = async function (e) {
+        try {
+            var qr = await lerQRdaImagem(e.target.result);
+            if (!qr) throw new Error('QR não encontrado na foto. Tente de novo aproximando o QR.');
+            await processarImagem(e.target.result, qr.idAluno, qr.idProva);
+        } catch (err) {
+            log('❌ Foto manual: ' + err.message, 'er');
+            showToast('❌ ' + err.message, 'erro');
+            setTimeout(function () { location.reload(); }, 2500);
+        }
+    };
+    reader.onerror = function () { showToast('❌ Erro ao ler a foto', 'erro'); location.reload(); };
+    reader.readAsDataURL(input.files[0]);
+    input.value = '';
+}
+
+// ========================================================================
+// ⚙️ PROCESSAMENTO (aluno + turma + OMR)
+// ========================================================================
 async function processarImagem(base64, idAluno, idProva) {
     document.getElementById('telaScanner').style.display = 'none';
+    document.getElementById('telaInicio').style.display = 'none';
     document.getElementById('telaProcessando').style.display = 'flex';
 
-    const { data: aluno } = await supabase.from('alunos')
-        .select('id, nome_completo, numero_chamada, id_turma').eq('id', idAluno).single();
-    if (!aluno) throw new Error('Aluno não encontrado');
-    alunoAtual = aluno;
+    var sb = getSupabase();
 
-    const { data: turma } = await supabase.from('turmas').select('nome').eq('id', aluno.id_turma).single();
+    log('Buscando aluno ' + idAluno + '...', 'in');
+    var rAluno = await sb.from('alunos')
+        .select('id, nome_completo, numero_chamada, id_turma').eq('id', idAluno).single();
+    if (!rAluno.data) throw new Error('Aluno ' + idAluno + ' não encontrado');
+    alunoAtual = rAluno.data;
+
+    var rTurma = await sb.from('turmas').select('nome').eq('id', alunoAtual.id_turma).single();
 
     if (!idProva) {
-        const { data: al } = await supabase.from('avaliacoes')
-            .select('id').eq('id_turma', aluno.id_turma).eq('modo_correcao', 'objetiva')
+        var rProva = await sb.from('avaliacoes')
+            .select('id').eq('id_turma', alunoAtual.id_turma).eq('modo_correcao', 'objetiva')
             .order('id', { ascending: false }).limit(1);
-        idProva = al && al[0] ? al[0].id : null;
+        idProva = (rProva.data && rProva.data[0]) ? rProva.data[0].id : null;
     }
     if (!idProva) throw new Error('Prova não identificada pelo QR');
 
-    const response = await fetch(API_BACKEND + '/api/processar_imagem_omr', {
+    log('Enviando imagem ao backend OMR...', 'in');
+    var response = await fetch(API_BACKEND + '/api/processar_imagem_omr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imagem: base64, id_aluno: idAluno, id_avaliacao: idProva })
     });
-    const resultado = await response.json();
-    if (!resultado.sucesso) throw new Error(resultado.erro || 'Erro no processamento');
+    var resultado = await response.json();
+    if (!resultado.sucesso) throw new Error(resultado.erro || 'Erro no processamento OMR');
 
     resultadoAtual = resultado;
-    resultadoAtual.nomeTurma = turma ? turma.nome : 'Turma';
+    resultadoAtual.nomeTurma = (rTurma.data && rTurma.data.nome) ? rTurma.data.nome : 'Turma';
     resultadoAtual.idProva = idProva;
-    log('✅ OMR processado. Nota: ' + resultado.nota_final, 'ok');
+    log('✅ OMR pronto. Nota: ' + resultado.nota_final, 'ok');
     mostrarConfirmacao();
 }
 
@@ -286,18 +371,22 @@ function mostrarConfirmacao() {
     document.getElementById('confTurma').textContent = '🏫 ' + resultadoAtual.nomeTurma;
     document.getElementById('confNumero').textContent = 'Nº ' + (alunoAtual.numero_chamada || '?');
     document.getElementById('confNome').textContent = (alunoAtual.nome_completo || 'Aluno').toUpperCase();
-    const acertos = resultadoAtual.acertos || 0;
-    const total = resultadoAtual.total_questoes || 0;
+    var acertos = resultadoAtual.acertos || 0;
+    var total = resultadoAtual.total_questoes || 0;
     document.getElementById('confNota').textContent = (resultadoAtual.nota_final || 0).toFixed(1);
     document.getElementById('confAcertos').textContent = acertos;
     document.getElementById('confErros').textContent = total - acertos;
     document.getElementById('confTotal').textContent = total;
 }
 
+// ========================================================================
+// 💾 SALVAR / REPETIR / VOLTAR
+// ========================================================================
 async function salvarEProximo() {
     if (!resultadoAtual || !alunoAtual) return;
     try {
-        const response = await fetch(API_BACKEND + '/api/salvar_correcao_omr', {
+        log('Salvando nota de ' + alunoAtual.nome_completo + '...', 'in');
+        var response = await fetch(API_BACKEND + '/api/salvar_correcao_omr', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -306,17 +395,20 @@ async function salvarEProximo() {
                 detalhes_respostas: resultadoAtual.detalhes_respostas || []
             })
         });
-        const res = await response.json();
+        var res = await response.json();
         if (!res.sucesso) throw new Error(res.erro || 'Falha ao salvar');
         corrigidosCount++;
         document.getElementById('contador').textContent = corrigidosCount + ' corrigidos';
-        log('💾 Salvo: ' + alunoAtual.nome_completo, 'ok');
+        log('💾 Salvo com sucesso!', 'ok');
         showToast('✅ Nota ' + resultadoAtual.nota_final.toFixed(1) + ' salva!', 'sucesso');
         voltarAoScanner();
     } catch (e) { log('❌ ' + e.message, 'er'); showToast('❌ ' + e.message, 'erro'); }
 }
 
-function tirarOutra() { showToast('🔄 Aponte novamente...', 'sucesso'); voltarAoScanner(); }
+function tirarOutra() {
+    showToast('🔄 Aponte novamente...', 'sucesso');
+    voltarAoScanner();
+}
 
 async function voltarAoScanner() {
     document.getElementById('telaConfirmacao').style.display = 'none';
@@ -327,31 +419,29 @@ async function voltarAoScanner() {
     try { if (scanner) await scanner.resume(); } catch (e) {}
 }
 
-async function processarFotoManual(input) {
-    if (!input.files || !input.files[0]) return;
-    processando = true;
-    document.getElementById('telaInicio').style.display = 'none';
-    document.getElementById('telaProcessando').style.display = 'flex';
-    const reader = new FileReader();
-    reader.onload = async function (e) {
-        try {
-            const qr = await lerQRdaImagem(e.target.result);
-            if (!qr) throw new Error('QR não encontrado na foto');
-            await processarImagem(e.target.result, qr.idAluno, qr.idProva);
-        } catch (err) {
-            showToast('❌ ' + err.message, 'erro');
-            setTimeout(() => location.reload(), 1500);
-        }
-    };
-    reader.readAsDataURL(input.files[0]);
-}
-
 function showToast(msg, tipo) {
-    const t = document.getElementById('toast');
+    var t = document.getElementById('toast');
     t.textContent = msg;
     t.className = 'toast show ' + (tipo || '');
-    setTimeout(() => { t.className = 'toast'; }, 3000);
+    setTimeout(function () { t.className = 'toast'; }, 3000);
 }
+
+// ========================================================================
+// 🔗 BOTÕES (via addEventListener — à prova de cache de onclick inline)
+// ========================================================================
+document.getElementById('btnIniciarCam').addEventListener('click', iniciarScanner);
+document.getElementById('btnFotoManual').addEventListener('click', function () {
+    log('Clique: USAR FOTO MANUAL', 'in');
+    document.getElementById('inputManual').click();
+});
+document.getElementById('inputManual').addEventListener('change', function () { processarFotoManual(this); });
+document.getElementById('btnCapturar').addEventListener('click', capturarManual);
+document.getElementById('btnCancelar').addEventListener('click', function () { location.reload(); });
+document.getElementById('btnSalvar').addEventListener('click', salvarEProximo);
+document.getElementById('btnRepetir').addEventListener('click', tirarOutra);
+document.getElementById('btnFinalizar').addEventListener('click', function () { location.reload(); });
+
+log('✅ Tudo pronto! Pode clicar.', 'ok');
 </script>
 </body>
 </html>
