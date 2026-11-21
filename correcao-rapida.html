@@ -45,7 +45,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .card-imgs { background: #fff; border-radius: 16px; padding: 12px; margin-bottom: 10px; }
 .card-imgs h4 { color: #4a148c; margin: 0 0 6px; font-size: 13px; }
 .card-imgs img { width: 100%; border-radius: 8px; border: 2px solid #008080; margin-bottom: 8px; }
-/* 🆕 Foto original COMPACTA por padrão */
 .img-thumb { max-height: 150px !important; object-fit: contain; background: #000; cursor: pointer; }
 .img-full { max-height: none !important; }
 .btn-toggle { background: #ff9800; color: #000; border: none; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; margin: 6px auto; display: block; }
@@ -59,7 +58,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 @keyframes spin { to { transform: rotate(360deg); } }
 .processando .progresso { font-size: 14px; color: #b388ff; margin-top: 12px; text-align: center; }
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1d2a4d; color: #fff; padding: 12px 24px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 9999; font-weight: 700; opacity: 0; transition: opacity 0.3s; text-align: center; width: 90%; max-width: 420px; }
-.toast.show { opacity: 1; } .toast.sucesso { background: linear-gradient(135deg, #00bfa5, #00e5c7); color: #0f1528; } .toast.erro { background: #ef5350; }
+.toast.show { opacity: 1; } .toast.sucesso { background: linear-gradient(135deg, #00bfa5, #00e5c7); color: #0f1528; } .toast.erro { background: #ef5350; } .toast.aviso { background: #ff9800; color: #000; }
 </style>
 </head>
 <body>
@@ -150,7 +149,8 @@ function errMsg(e) { return (e && e.message) ? e.message : String(e); }
 var API_BACKEND = 'https://omr-backend-laboratorio.onrender.com';
 var scanner = null, alunoAtual = null, resultadoAtual = null;
 var corrigidosCount = 0, processando = false, ultimoAluno = null, ultimoTempo = 0, travaInicio = 0;
-var alunosCorrigidos = {};
+var alunosCorrigidos = {};   // id -> nota (salvos permanentemente)
+var alunoEmTela = null;      // 🆕 id do aluno que está na tela de confirmação (bloqueia reprocessar)
 var timerZoom = null, ultimaDeteccao = 0;
 
 function travado() { return processando && (Date.now() - travaInicio > 45000); }
@@ -202,6 +202,18 @@ async function onScanSuccess(decodedText) {
     if (processando || travado()) { if (travado()) setProcessando(false); return; }
     var ids = extrairIds(decodedText);
     if (!ids) return;
+
+    // 🆕 Bloqueio: se o aluno está na tela de confirmação, ignora
+    if (alunoEmTela === ids.idAluno) {
+        log('⏭️ Aluno ' + ids.idAluno + ' está na tela - ignorando', 'in');
+        return;
+    }
+    // Bloqueio: se já foi salvo
+    if (alunosCorrigidos[ids.idAluno] !== undefined) {
+        log('⏭️ Aluno ' + ids.idAluno + ' já salvo - ignorando', 'in');
+        return;
+    }
+
     var agora = Date.now();
     if (ids.idAluno === ultimoAluno && agora - ultimoTempo < 5000) return;
     ultimoAluno = ids.idAluno; ultimoTempo = agora; ultimaDeteccao = agora;
@@ -262,10 +274,18 @@ async function capturarManual() {
 
 function varreduraZoomAutomatica() {
     if (processando || travado()) return;
-    if (alunoAtual) return; 
-    if (Date.now() - ultimaDeteccao < 4000) return; 
+    if (alunoEmTela !== null) return; // 🆕 Bloqueia se tem aluno na tela
+    if (Date.now() - ultimaDeteccao < 4000) return;
     var res = lerQRComZoom();
     if (!res) return;
+
+    // 🆕 Bloqueios
+    if (alunoEmTela === res.ids.idAluno) return;
+    if (alunosCorrigidos[res.ids.idAluno] !== undefined) {
+        log('⏭️ Aluno ' + res.ids.idAluno + ' já salvo - ignorando', 'in');
+        return;
+    }
+
     var agora = Date.now();
     if (res.ids.idAluno === ultimoAluno && agora - ultimoTempo < 5000) return;
     ultimoAluno = res.ids.idAluno; ultimoTempo = agora; ultimaDeteccao = agora;
@@ -387,7 +407,7 @@ function mostrarConfirmacao() {
 
     var imgO = document.getElementById('imgOriginal');
     imgO.src = resultadoAtual.fotoOriginal || '';
-    imgO.className = 'img-thumb'; 
+    imgO.className = 'img-thumb';
     document.getElementById('btnToggleFoto').textContent = '🔍 Ver foto completa';
 
     var imgP = document.getElementById('imgProcessada');
@@ -397,6 +417,8 @@ function mostrarConfirmacao() {
         imgP.style.display = 'block';
         legP.style.display = 'block';
     } else { imgP.style.display = 'none'; legP.style.display = 'none'; }
+    
+    alunoEmTela = alunoAtual.id; // 🆕 Marca aluno na tela
     setProcessando(false);
 }
 
@@ -431,6 +453,7 @@ async function salvarEProximo() {
         var res = await response.json();
         if (!res.sucesso) throw new Error(res.erro || 'Falha ao salvar');
         alunosCorrigidos[alunoAtual.id] = resultadoAtual.nota_final;
+        alunoEmTela = null; // 🆕 Libera para próximo
         corrigidosCount++;
         document.getElementById('contador').textContent = corrigidosCount + ' corrigidos';
         if (navigator.vibrate) navigator.vibrate(60);
@@ -445,6 +468,7 @@ function voltarAoScanner() {
     document.getElementById('telaScanner').style.display = 'flex';
     document.getElementById('statusScan').textContent = '📷 Aponte a prova (30-40cm)...';
     alunoAtual = null; resultadoAtual = null; ultimoAluno = null;
+    alunoEmTela = null; // 🆕 Libera para detectar de novo (caso queira refazer)
     setProcessando(false);
     try { if (scanner) scanner.resume(); } catch (e) {}
     armarTimerZoom();
