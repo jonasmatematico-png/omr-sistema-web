@@ -3,215 +3,361 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>🚀 Correção Rápida - DEBUG</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>🚀 Correção Rápida - OMR</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #1a1a2e;
-    color: #fff;
-    min-height: 100vh;
-    padding: 20px;
+    background: linear-gradient(135deg, #0f1528 0%, #1d2a4d 100%);
+    color: #fff; min-height: 100vh; display: flex; flex-direction: column;
 }
-.container { max-width: 500px; margin: 0 auto; }
-h1 { color: #00e5c7; margin-bottom: 16px; font-size: 20px; }
-.btn {
-    width: 100%; padding: 16px; margin: 8px 0;
-    background: #00bfa5; color: #fff; border: none;
-    border-radius: 12px; font-size: 16px; font-weight: 700;
-    cursor: pointer;
+.topo {
+    background: rgba(0,0,0,0.5); padding: 12px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
 }
-.btn:active { opacity: 0.8; }
-.log-box {
-    background: #0f0f1e; border: 2px solid #333;
-    border-radius: 8px; padding: 16px; margin: 16px 0;
-    font-family: monospace; font-size: 12px;
-    max-height: 300px; overflow-y: auto;
-    white-space: pre-wrap;
-}
-.log-box .success { color: #00e5c7; }
-.log-box .error { color: #ff5252; }
-.log-box .info { color: #ffab40; }
-.status {
-    background: #2a2a3e; padding: 12px; border-radius: 8px;
-    margin: 12px 0; font-size: 14px;
-}
-#reader { width: 100%; }
-#reader video { 
-    width: 100% !important; height: auto !important;
-    -webkit-playsinline: true; playsinline: true;
-}
+.topo h1 { font-size: 16px; color: #00e5c7; font-weight: 800; }
+.contador { background: linear-gradient(135deg, #00bfa5, #7c4dff); padding: 6px 14px; border-radius: 20px; font-weight: 800; font-size: 13px; }
+.tela-inicio { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+.tela-inicio h2 { font-size: 24px; margin-bottom: 16px; color: #00e5c7; }
+.tela-inicio p { font-size: 15px; color: #b388ff; margin-bottom: 32px; line-height: 1.5; max-width: 400px; }
+.btn-gigante { width: 100%; max-width: 350px; padding: 24px; background: linear-gradient(135deg, #00bfa5, #00e5c7); border: none; border-radius: 16px; color: #0f1528; font-size: 20px; font-weight: 900; cursor: pointer; box-shadow: 0 8px 24px rgba(0,229,199,0.3); margin-bottom: 12px; }
+.btn-gigante.secundario { background: rgba(255,255,255,0.1); color: #fff; border: 2px solid rgba(255,255,255,0.3); font-size: 16px; padding: 18px; }
+.scanner-area { position: relative; width: 100%; flex: 1; background: #000; min-height: 50vh; }
+#reader { width: 100%; height: 100%; }
+#reader video { width: 100% !important; height: 100% !important; object-fit: cover; -webkit-playsinline: true; }
+.overlay-scan { position: absolute; inset: 0; pointer-events: none; }
+.quadro-leitura { position: absolute; inset: 10%; border: 3px dashed rgba(0,229,199,0.4); border-radius: 16px; }
+.status-scan { position: absolute; bottom: 80px; left: 0; right: 0; text-align: center; padding: 12px; background: rgba(0,0,0,0.7); color: #00e5c7; font-weight: 700; font-size: 14px; }
+.acoes-scanner { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; background: rgba(0,0,0,0.85); display: flex; gap: 10px; }
+.btn-acao { flex: 1; padding: 16px; border: none; border-radius: 12px; font-size: 15px; font-weight: 800; cursor: pointer; }
+.btn-manual { background: linear-gradient(135deg, #ff9800, #ffab40); color: #000; }
+.btn-cancelar { background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+.confirmacao { display: none; flex: 1; padding: 20px; max-width: 500px; margin: 0 auto; width: 100%; animation: slideUp 0.3s ease-out; overflow-y: auto; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.card-aluno { background: linear-gradient(135deg, rgba(0,229,199,0.15), rgba(179,136,255,0.15)); border: 2px solid #00e5c7; border-radius: 16px; padding: 18px; margin-bottom: 16px; }
+.card-aluno .label { font-size: 11px; color: #b388ff; font-weight: 800; letter-spacing: 1px; }
+.card-aluno .turma { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.card-aluno .numero { display: inline-block; background: #7c4dff; color: #fff; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 14px; margin-right: 8px; }
+.card-aluno .nome { font-size: 22px; font-weight: 900; margin-top: 8px; color: #fff; text-transform: uppercase; }
+.card-nota { background: #fff; color: #1d2a4d; border-radius: 16px; padding: 20px; margin-bottom: 16px; text-align: center; }
+.nota-final { font-size: 52px; font-weight: 900; color: #00bfa5; line-height: 1; }
+.nota-max { font-size: 18px; color: #888; }
+.resumo-acertos { display: flex; justify-content: space-around; margin-top: 14px; }
+.resumo-acertos .valor { font-size: 22px; font-weight: 800; }
+.resumo-acertos .lbl { font-size: 11px; color: #666; font-weight: 700; }
+.acerto { color: #00bfa5; } .erro { color: #ef5350; }
+.btn-grande { width: 100%; padding: 22px; border: none; border-radius: 16px; font-size: 18px; font-weight: 900; cursor: pointer; margin-bottom: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+.btn-salvar { background: linear-gradient(135deg, #00bfa5, #00e5c7); color: #0f1528; }
+.btn-refazer { background: rgba(255,255,255,0.1); color: #fff; border: 2px solid rgba(255,255,255,0.3); }
+.btn-fechar { background: linear-gradient(135deg, #7c4dff, #b388ff); color: #fff; }
+.processando { display: none; flex: 1; align-items: center; justify-content: center; flex-direction: column; }
+.processando .spinner { width: 60px; height: 60px; border: 5px solid rgba(0,229,199,0.2); border-top-color: #00e5c7; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1d2a4d; color: #fff; padding: 12px 24px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 9999; font-weight: 700; opacity: 0; transition: opacity 0.3s; text-align: center; width: 90%; max-width: 400px; }
+.toast.show { opacity: 1; } .toast.sucesso { background: linear-gradient(135deg, #00bfa5, #00e5c7); color: #0f1528; } .toast.erro { background: #ef5350; }
 .hidden { display: none !important; }
 </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>🚀 Correção Rápida - DIAGNÓSTICO</h1>
-    
-    <div class="status" id="statusInit">⏳ Verificando ambiente...</div>
-    
-    <button class="btn" id="btnIniciar" onclick="iniciarScanner()">📸 INICIAR CÂMERA</button>
-    
-    <div id="telaScanner" class="hidden">
-        <div id="reader"></div>
-        <div class="status">📷 Scanner ativo - Aponte para o QR Code</div>
-    </div>
-    
-    <div class="log-box" id="logBox">📋 Log de eventos:</div>
+<div class="topo">
+    <h1>🚀 Correção Rápida</h1>
+    <div class="contador" id="contador">0 corrigidos</div>
 </div>
+
+<div class="tela-inicio" id="telaInicio">
+    <h2>Modo Scanner Contínuo</h2>
+    <p>Aponte a câmera para a prova inteira.<br>O sistema detecta o QR Code em <strong>qualquer lugar da tela</strong> e processa automaticamente.</p>
+    <button class="btn-gigante" onclick="iniciarScanner()">📸 INICIAR CÂMERA</button>
+    <button class="btn-gigante secundario" onclick="usarFotoManual()">🖼️ USAR FOTO MANUAL</button>
+</div>
+
+<div id="telaScanner" style="display:none; flex:1; flex-direction:column;">
+    <div class="scanner-area">
+        <div id="reader"></div>
+        <div class="overlay-scan"><div class="quadro-leitura"></div></div>
+        <div class="status-scan" id="statusScan">📷 Aponte para a prova inteira...</div>
+        <div class="acoes-scanner">
+            <button class="btn-acao btn-manual" onclick="capturarManual()">📸 CAPTURAR AGORA</button>
+            <button class="btn-acao btn-cancelar" onclick="pararScanner()">✕ Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<div class="processando" id="telaProcessando">
+    <div class="spinner"></div>
+    <h3 style="color:#00e5c7;">Processando respostas...</h3>
+    <p style="color:#8fa0c8; margin-top:8px;">Analisando o cartão-resposta</p>
+</div>
+
+<div class="confirmacao" id="telaConfirmacao">
+    <div class="card-aluno">
+        <div class="label">👤 ALUNO IDENTIFICADO</div>
+        <div class="turma" id="confTurma">🏫 Turma</div>
+        <div><span class="numero" id="confNumero">Nº 0</span></div>
+        <div class="nome" id="confNome">Nome do Aluno</div>
+    </div>
+    <div class="card-nota">
+        <div class="label" style="color:#888;">📊 RESULTADO DA CORREÇÃO</div>
+        <div style="margin-top:8px;">
+            <span class="nota-final" id="confNota">0</span>
+            <span class="nota-max" id="confNotaMax">/ 10</span>
+        </div>
+        <div class="resumo-acertos">
+            <div><div class="valor acerto" id="confAcertos">0</div><div class="lbl">✅ ACERTOS</div></div>
+            <div><div class="valor erro" id="confErros">0</div><div class="lbl">❌ ERROS</div></div>
+            <div><div class="valor" id="confTotal" style="color:#1d2a4d;">0</div><div class="lbl">📝 QUESTÕES</div></div>
+        </div>
+    </div>
+    <button class="btn-grande btn-salvar" onclick="salvarEProximo()">✅ SALVAR E PRÓXIMO</button>
+    <button class="btn-grande btn-refazer" onclick="tirarOutra()">🔄 FOTO RUIM / TENTAR OUTRA</button>
+    <button class="btn-grande btn-fechar" onclick="location.reload()">🏁 FINALIZAR</button>
+</div>
+
+<input type="file" id="inputManual" accept="image/*" capture="environment" style="display:none;" onchange="processarFotoManual(this)">
+<div class="toast" id="toast"></div>
 
 <script>
 const SUPABASE_URL = 'https://mkqnaiuplkqiitwxltli.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1rcW5haXVwbGtxaWl0d3hsdGxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzOTg5MzMsImV4cCI6MjA5OTk3NDkzM30.MtrmkMjW9ODjl7FcNw6VIu8SJTeuewwmoFeiSSvRk1U';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const API_BACKEND = 'https://omr-backend-laboratorio.onrender.com';
 
-let logBox = null;
 let scanner = null;
+let alunoAtual = null;
+let resultadoAtual = null;
+let corrigidosCount = 0;
+let processando = false;
+let ultimaDeteccao = 0;
 
-function log(msg, tipo = 'info') {
-    const timestamp = new Date().toLocaleTimeString();
-    const entry = document.createElement('div');
-    entry.className = tipo;
-    entry.textContent = `[${timestamp}] ${msg}`;
-    logBox.appendChild(entry);
-    logBox.scrollTop = logBox.scrollHeight;
-    console.log(`[${tipo.toUpperCase()}] ${msg}`);
-}
-
-function setStatus(msg) {
-    document.getElementById('statusInit').textContent = msg;
-}
-
-// ========================================================================
-// VERIFICAÇÃO INICIAL
-// ========================================================================
-function verificarAmbiente() {
-    logBox = document.getElementById('logBox');
-    
-    // 1. Verificar HTTPS
-    const isHTTPS = window.location.protocol === 'https:';
-    log(`Protocolo: ${window.location.protocol}`, isHTTPS ? 'success' : 'error');
-    if (!isHTTPS) {
-        setStatus('❌ ERRO: Câmera requer HTTPS!');
-        log('⚠️ Câmera só funciona em HTTPS (exceto localhost)', 'error');
-    }
-    
-    // 2. Verificar se Html5Qrcode foi carregado
-    if (typeof Html5Qrcode === 'undefined') {
-        setStatus('❌ ERRO: Biblioteca Html5Qrcode não carregou!');
-        log('Biblioteca Html5Qrcode não está disponível', 'error');
-        document.getElementById('btnIniciar').disabled = true;
-        return;
-    }
-    log('✅ Biblioteca Html5Qrcode carregada', 'success');
-    
-    // 3. Verificar suporte a câmera
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setStatus('❌ ERRO: Navegador não suporta câmera!');
-        log('navigator.mediaDevices.getUserMedia não disponível', 'error');
-        document.getElementById('btnIniciar').disabled = true;
-        return;
-    }
-    log('✅ Navegador suporta câmera', 'success');
-    
-    // 4. Verificar permissões
-    setStatus('✅ Ambiente OK - Clique para iniciar');
-    log('Ambiente verificado com sucesso', 'success');
-}
-
-// ========================================================================
-// INICIAR SCANNER
-// ========================================================================
 async function iniciarScanner() {
-    log('📸 Iniciando scanner...', 'info');
-    setStatus('⏳ Solicitando permissão de câmera...');
+    document.getElementById('telaInicio').style.display = 'none';
+    document.getElementById('telaScanner').style.display = 'flex';
     
     try {
-        // Teste 1: Solicitar permissão manualmente primeiro
-        log('Testando permissão de câmera...', 'info');
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'environment' },
-            audio: false
-        });
-        log('✅ Permissão concedida!', 'success');
-        
-        // Parar o stream de teste
-        stream.getTracks().forEach(track => track.stop());
-        log('Stream de teste parado', 'info');
-        
-        // Teste 2: Listar câmeras disponíveis
-        log('Listando dispositivos de vídeo...', 'info');
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter(d => d.kind === 'videoinput');
-        log(`Encontradas ${videoDevices.length} câmera(s)`, 'success');
-        videoDevices.forEach((d, i) => {
-            log(`  Câmera ${i+1}: ${d.label || 'Sem nome'}`, 'info');
-        });
-        
-        if (videoDevices.length === 0) {
-            throw new Error('Nenhuma câmera encontrada no dispositivo');
-        }
-        
-        // Teste 3: Iniciar scanner
-        log('Criando instância do scanner...', 'info');
         scanner = new Html5Qrcode("reader");
-        log('✅ Scanner criado', 'success');
-        
-        log('Iniciando scanner com câmera traseira...', 'info');
-        setStatus('⏳ Iniciando scanner...');
-        
         await scanner.start(
             { facingMode: "environment" },
             {
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0
+                fps: 15,
+                // 🔑 SEM qrbox = lê em QUALQUER lugar da tela
+                useBarCodeDetectorIfSupported: true,
+                experimentalZoneDetection: false
             },
-            (decodedText) => {
-                log(`✅ QR Code detectado: ${decodedText}`, 'success');
-                alert('QR Code lido: ' + decodedText);
-            },
-            (errorMessage) => {
-                // Ignorar erros de scan contínuo (normal quando não há QR no frame)
-            }
+            onScanSuccess,
+            () => {}
         );
-        
-        log('✅ Scanner iniciado com sucesso!', 'success');
-        setStatus('✅ Scanner ativo');
-        
-        document.getElementById('btnIniciar').classList.add('hidden');
-        document.getElementById('telaScanner').classList.remove('hidden');
-        
-    } catch (error) {
-        log(`❌ ERRO: ${error.name} - ${error.message}`, 'error');
-        
-        let msgErro = '❌ ';
-        if (error.name === 'NotAllowedError') {
-            msgErro += 'Permissão negada! Vá nas configurações do navegador e permita o acesso à câmera.';
-            log('O usuário negou permissão ou o site não tem permissão', 'error');
-        } else if (error.name === 'NotFoundError') {
-            msgErro += 'Nenhuma câmera encontrada!';
-            log('Não há câmera disponível no dispositivo', 'error');
-        } else if (error.name === 'NotReadableError') {
-            msgErro += 'Câmera já está em uso por outro aplicativo!';
-            log('A câmera está sendo usada por outro app', 'error');
-        } else if (error.name === 'OverconstrainedError') {
-            msgErro += 'Configuração de câmera não suportada!';
-            log('As configurações solicitadas não são suportadas', 'error');
-        } else {
-            msgErro += `Erro desconhecido: ${error.message}`;
-        }
-        
-        setStatus(msgErro);
-        log('Stack trace: ' + error.stack, 'error');
+        showToast('📷 Scanner ativo! Aponte para a prova.', 'sucesso');
+    } catch (e) {
+        showToast('❌ Erro: ' + e.message, 'erro');
+        location.reload();
     }
 }
 
-// Inicializar ao carregar
-window.addEventListener('load', verificarAmbiente);
-</script>
+function pararScanner() {
+    if (scanner) {
+        scanner.stop().then(() => { scanner.clear(); location.reload(); }).catch(() => location.reload());
+    } else location.reload();
+}
 
+async function onScanSuccess(decodedText) {
+    const agora = Date.now();
+    if (processando || (agora - ultimaDeteccao < 3000)) return;
+    ultimaDeteccao = agora;
+    
+    let idProva = null, idAluno = null;
+    if (decodedText.startsWith('OMRALUNO:')) {
+        const partes = decodedText.split(':');
+        idProva = parseInt(partes[1]);
+        idAluno = parseInt(partes[2]);
+    } else if (decodedText.startsWith('OMRCARD:')) {
+        idAluno = parseInt(decodedText.replace('OMRCARD:', ''));
+    }
+    
+    if (!idAluno) return;
+    if (!idProva) { showToast('⚠️ QR sem prova. Use OMRALUNO:', 'erro'); return; }
+    
+    processando = true;
+    document.getElementById('statusScan').textContent = '✅ QR detectado! Processando...';
+    
+    try {
+        const video = document.querySelector('#reader video');
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        const imagemBase64 = canvas.toDataURL('image/jpeg', 0.95);
+        
+        if (scanner) await scanner.pause(true);
+        
+        await processarImagem(imagemBase64, idAluno, idProva);
+    } catch (e) {
+        showToast('❌ ' + e.message, 'erro');
+        voltarAoScanner();
+    }
+}
+
+async function capturarManual() {
+    if (processando) return;
+    processando = true;
+    document.getElementById('statusScan').textContent = '📸 Foto capturada!';
+    
+    try {
+        const video = document.querySelector('#reader video');
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        const imagemBase64 = canvas.toDataURL('image/jpeg', 0.95);
+        
+        // Tentar ler QR da imagem capturada com jsQR (fallback)
+        const qr = await lerQRdaImagem(imagemBase64);
+        if (!qr) {
+            showToast('❌ QR não detectado. Aproxime mais do QR Code.', 'erro');
+            voltarAoScanner();
+            return;
+        }
+        
+        if (scanner) await scanner.pause(true);
+        await processarImagem(imagemBase64, qr.idAluno, qr.idProva);
+    } catch (e) {
+        showToast('❌ ' + e.message, 'erro');
+        voltarAoScanner();
+    }
+}
+
+function lerQRdaImagem(base64) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            // Redimensionar para melhor detecção
+            const escala = Math.min(1, 1200 / Math.max(img.width, img.height));
+            canvas.width = img.width * escala;
+            canvas.height = img.height * escala;
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = window.jsQR ? jsQR(imageData.data, canvas.width, canvas.height, { inversionAttempts: "attemptBoth" }) : null;
+            if (code && code.data) {
+                const partes = code.data.split(':');
+                if (code.data.startsWith('OMRALUNO:')) resolve({ idProva: parseInt(partes[1]), idAluno: parseInt(partes[2]) });
+                else if (code.data.startsWith('OMRCARD:')) resolve({ idAluno: parseInt(partes[1]) });
+                else reject(new Error('QR inválido'));
+            } else reject(new Error('QR não encontrado na foto'));
+        };
+        img.onerror = () => reject(new Error('Erro ao carregar imagem'));
+        img.src = base64;
+    });
+}
+
+async function processarImagem(imagemBase64, idAluno, idProva) {
+    document.getElementById('telaScanner').style.display = 'none';
+    document.getElementById('telaProcessando').style.display = 'flex';
+    
+    // Buscar aluno + turma
+    const { data: aluno } = await supabase.from('alunos').select('id, nome_completo, numero_chamada, id_turma').eq('id', idAluno).single();
+    if (!aluno) throw new Error('Aluno não encontrado');
+    alunoAtual = aluno;
+    
+    const { data: turma } = await supabase.from('turmas').select('nome').eq('id', aluno.id_turma).single();
+    const nomeTurma = turma ? turma.nome : 'Turma não identificada';
+    
+    // Processar OMR
+    const response = await fetch(API_BACKEND + '/api/processar_imagem_omr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imagem: imagemBase64, id_aluno: idAluno, id_avaliacao: idProva })
+    });
+    const resultado = await response.json();
+    if (!resultado.sucesso) throw new Error(resultado.erro || 'Erro no processamento');
+    
+    resultadoAtual = resultado;
+    resultadoAtual.nomeTurma = nomeTurma;
+    resultadoAtual.idProva = idProva;
+    mostrarConfirmacao();
+}
+
+function mostrarConfirmacao() {
+    document.getElementById('telaProcessando').style.display = 'none';
+    document.getElementById('telaConfirmacao').style.display = 'block';
+    document.getElementById('confTurma').textContent = '🏫 ' + resultadoAtual.nomeTurma;
+    document.getElementById('confNumero').textContent = 'Nº ' + (alunoAtual.numero_chamada || '?');
+    document.getElementById('confNome').textContent = (alunoAtual.nome_completo || 'Aluno').toUpperCase();
+    const nota = resultadoAtual.nota_final || 0;
+    const acertos = resultadoAtual.acertos || 0;
+    const total = resultadoAtual.total_questoes || 0;
+    document.getElementById('confNota').textContent = nota.toFixed(1);
+    document.getElementById('confAcertos').textContent = acertos;
+    document.getElementById('confErros').textContent = total - acertos;
+    document.getElementById('confTotal').textContent = total;
+}
+
+async function salvarEProximo() {
+    if (!resultadoAtual || !alunoAtual) return;
+    try {
+        const response = await fetch(API_BACKEND + '/api/salvar_correcao_omr', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id_aluno: alunoAtual.id,
+                id_avaliacao: resultadoAtual.idProva,
+                detalhes_respostas: resultadoAtual.detalhes_respostas || []
+            })
+        });
+        const res = await response.json();
+        if (!res.sucesso) throw new Error(res.erro);
+        corrigidosCount++;
+        document.getElementById('contador').textContent = corrigidosCount + ' corrigidos';
+        showToast('✅ Nota ' + resultadoAtual.nota_final.toFixed(1) + ' salva!', 'sucesso');
+        voltarAoScanner();
+    } catch (e) { showToast('❌ ' + e.message, 'erro'); }
+}
+
+function tirarOutra() {
+    showToast('🔄 Aponte novamente...', 'sucesso');
+    voltarAoScanner();
+}
+
+async function voltarAoScanner() {
+    document.getElementById('telaConfirmacao').style.display = 'none';
+    document.getElementById('telaProcessando').style.display = 'none';
+    document.getElementById('telaScanner').style.display = 'flex';
+    document.getElementById('statusScan').textContent = '📷 Aponte para a próxima prova...';
+    processando = false; alunoAtual = null; resultadoAtual = null;
+    try { if (scanner) await scanner.resume(); } catch (e) {}
+}
+
+function usarFotoManual() { document.getElementById('inputManual').click(); }
+async function processarFotoManual(input) {
+    if (!input.files || !input.files[0]) return;
+    processando = true;
+    document.getElementById('telaInicio').style.display = 'none';
+    document.getElementById('telaProcessando').style.display = 'flex';
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const qr = await lerQRdaImagem(e.target.result);
+            await processarImagem(e.target.result, qr.idAluno, qr.idProva);
+        } catch (err) {
+            showToast('❌ ' + err.message, 'erro');
+            location.reload();
+        }
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+function showToast(msg, tipo) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast show ' + (tipo || '');
+    setTimeout(() => t.className = 'toast', 3000);
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 </body>
 </html>
