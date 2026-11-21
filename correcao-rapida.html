@@ -23,10 +23,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 #reader { width: 100%; height: 100%; }
 #reader video { width: 100% !important; height: 100% !important; object-fit: cover; -webkit-playsinline: true; }
 .status-scan { position: absolute; bottom: 78px; left: 0; right: 0; text-align: center; padding: 12px; background: rgba(0,0,0,0.7); color: #00e5c7; font-weight: 700; font-size: 14px; }
-.acoes-scanner { position: absolute; bottom: 0; left: 0; right: 0; padding: 12px; background: rgba(0,0,0,0.85); display: flex; gap: 10px; }
-.btn-acao { flex: 1; padding: 16px; border: none; border-radius: 12px; font-size: 15px; font-weight: 800; cursor: pointer; }
+.acoes-scanner { position: absolute; bottom: 0; left: 0; right: 0; padding: 12px; background: rgba(0,0,0,0.85); display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-acao { flex: 1; min-width: 120px; padding: 14px; border: none; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; }
 .btn-foto { background: linear-gradient(135deg, #00bfa5, #00e5c7); color: #0f1528; }
+.btn-zoom { background: linear-gradient(135deg, #ff9800, #ffab40); color: #000; }
 .btn-cancelar { background: rgba(255,255,255,0.15); color: #fff; }
+.preview-area { display: none; flex: 1; padding: 16px; max-width: 520px; margin: 0 auto; width: 100%; overflow-y: auto; }
+.preview-img { width: 100%; border-radius: 12px; border: 3px solid #00e5c7; margin-bottom: 14px; background: #000; }
 .confirmacao { display: none; flex: 1; padding: 16px; max-width: 520px; margin: 0 auto; width: 100%; overflow-y: auto; }
 .card-aluno { background: linear-gradient(135deg, rgba(0,229,199,0.15), rgba(179,136,255,0.15)); border: 2px solid #00e5c7; border-radius: 16px; padding: 16px; margin-bottom: 14px; }
 .card-aluno .label { font-size: 11px; color: #b388ff; font-weight: 800; letter-spacing: 1px; }
@@ -43,7 +46,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .card-imgs { background: #fff; border-radius: 16px; padding: 14px; margin-bottom: 14px; }
 .card-imgs h4 { color: #4a148c; margin: 0 0 8px; font-size: 14px; }
 .card-imgs img { width: 100%; border-radius: 8px; border: 2px solid #008080; margin-bottom: 10px; }
-.card-imgs .legenda { font-size: 11px; color: #666; text-align: center; margin-top: -6px; margin-bottom: 8px; }
+.card-imgs .legenda { font-size: 11px; color: #666; text-align: center; }
 .btn-grande { width: 100%; padding: 20px; border: none; border-radius: 16px; font-size: 17px; font-weight: 900; cursor: pointer; margin-bottom: 12px; }
 .btn-salvar { background: linear-gradient(135deg, #00bfa5, #00e5c7); color: #0f1528; }
 .btn-refazer { background: rgba(255,255,255,0.1); color: #fff; border: 2px solid rgba(255,255,255,0.3); }
@@ -53,7 +56,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 @keyframes spin { to { transform: rotate(360deg); } }
 .processando .progresso { font-size: 14px; color: #b388ff; margin-top: 12px; text-align: center; }
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1d2a4d; color: #fff; padding: 12px 24px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 9999; font-weight: 700; opacity: 0; transition: opacity 0.3s; text-align: center; width: 90%; max-width: 420px; }
-.toast.show { opacity: 1; } .toast.sucesso { background: linear-gradient(135deg, #00bfa5, #00e5c7); color: #0f1528; } .toast.erro { background: #ef5350; }
+.toast.show { opacity: 1; } .toast.sucesso { background: linear-gradient(135deg, #00bfa5, #00e5c7); color: #0f1528; } .toast.erro { background: #ef5350; } .toast.aviso { background: #ff9800; color: #000; }
 </style>
 </head>
 <body>
@@ -65,7 +68,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 
 <div class="tela-inicio" id="telaInicio">
     <h2>Enquadre a folha INTEIRA</h2>
-    <p>Mostre a prova inteira para a câmera (com o QR no canto).<br>Depois toque em <strong>📸 FOTOGRAFAR</strong>.<br>O sistema lê o QR da foto em alta resolução e corrige.</p>
+    <p>Mostre a prova inteira para a câmera (com o QR no canto inferior).<br>Depois toque em <strong>📸 FOTOGRAFAR</strong>.</p>
     <button class="btn-gigante" id="btnIniciarCam">📸 ABRIR CÂMERA</button>
     <button class="btn-gigante secundario" id="btnFotoManual">🖼️ USAR FOTO DA GALERIA</button>
     <div class="log-box" id="logInicio">📋 Aguardando script...</div>
@@ -74,13 +77,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <div id="telaScanner" style="display:none; flex:1; flex-direction:column;">
     <div class="scanner-area">
         <div id="reader"></div>
-        <div class="status-scan" id="statusScan">📷 Enquadre a folha inteira e toque em FOTOGRAFAR</div>
+        <div class="status-scan" id="statusScan">📷 Enquadre a folha inteira</div>
         <div class="acoes-scanner">
             <button class="btn-acao btn-foto" id="btnCapturar">📸 FOTOGRAFAR</button>
-            <button class="btn-acao btn-cancelar" id="btnCancelar">✕ Cancelar</button>
+            <button class="btn-acao btn-zoom" id="btnZoomQR">🔍 FOCO NO QR</button>
+            <button class="btn-acao btn-cancelar" id="btnCancelar">✕</button>
         </div>
     </div>
     <div class="log-box" id="logScanner" style="margin:12px 16px;"></div>
+</div>
+
+<!-- 🆕 NOVO: Preview da foto antes de processar -->
+<div class="preview-area" id="telaPreview">
+    <h3 style="color:#00e5c7; margin-bottom:12px;">👀 Confira a foto antes de processar</h3>
+    <img class="preview-img" id="previewImg" alt="Preview">
+    <p style="font-size:13px; color:#b388ff; margin-bottom:14px;">O QR Code está visível no canto inferior? Se não estiver, tire outra foto.</p>
+    <button class="btn-grande btn-salvar" id="btnConfirmarFoto">✅ PROCESSAR ESTA FOTO</button>
+    <button class="btn-grande btn-refazer" id="btnRefazerFoto">🔄 TIRAR OUTRA FOTO</button>
+    <div class="log-box" id="logPreview" style="margin-top:12px;"></div>
 </div>
 
 <div class="processando" id="telaProcessando">
@@ -114,7 +128,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
         <div class="legenda">Bolinhas verdes = detectadas como marcadas</div>
     </div>
     <button class="btn-grande btn-salvar" id="btnSalvar">✅ SALVAR E PRÓXIMO</button>
-    <button class="btn-grande btn-refazer" id="btnRepetir">🔄 FOTO RUIM / TENTAR OUTRA</button>
+    <button class="btn-grande btn-refazer" id="btnRepetir">🔄 TENTAR OUTRA FOTO</button>
     <button class="btn-grande btn-fechar" id="btnFinalizar">🏁 FINALIZAR</button>
 </div>
 
@@ -137,15 +151,16 @@ function log(msg, tipo) {
 }
 
 var API_BACKEND = 'https://omr-backend-laboratorio.onrender.com';
-var scanner = null, alunoAtual = null, resultadoAtual = null, fotoAtual = null;
+var scanner = null, alunoAtual = null, resultadoAtual = null, fotoAtual = null, idsAtuais = null;
 var corrigidosCount = 0, processando = false;
+var alunosCorrigidos = {}; // 🆕 Bloqueia re-correção na mesma sessão
 
 log('✅ Script vivo! ' + (typeof Html5Qrcode !== 'undefined' ? 'html5-qrcode OK' : '❌ html5-qrcode FALTOU') + ' | ' + (typeof jsQR !== 'undefined' ? 'jsQR OK' : '❌ jsQR FALTOU'), 'in');
 
 async function iniciarScanner() {
     document.getElementById('telaInicio').style.display = 'none';
     document.getElementById('telaScanner').style.display = 'flex';
-    document.getElementById('statusScan').textContent = '⏳ Abrindo câmera em alta resolução...';
+    document.getElementById('statusScan').textContent = '⏳ Abrindo câmera...';
     try {
         scanner = new Html5Qrcode("reader");
         await scanner.start(
@@ -153,73 +168,127 @@ async function iniciarScanner() {
             {
                 fps: 10,
                 qrbox: function (vw, vh) { var lado = Math.min(vw, vh) * 0.95; return { width: lado, height: lado }; },
-                videoConstraints: {
-                    facingMode: "environment",
-                    width: { ideal: 4000 },
-                    height: { ideal: 3000 },
-                    frameRate: { ideal: 30 }
-                }
+                videoConstraints: { facingMode: "environment", width: { ideal: 4000 }, height: { ideal: 3000 } }
             },
-            function () {},
-            function () {}
+            function () {}, function () {}
         );
-        var v = document.querySelector('#reader video');
-        log('✅ Câmera ativa. Resolução: ' + (v.videoWidth || '?') + 'x' + (v.videoHeight || '?'), 'ok');
-        document.getElementById('statusScan').textContent = '📷 Enquadre a folha inteira e toque em FOTOGRAFAR';
+        // Espera a câmera estabilizar para ler resolução real
+        setTimeout(function () {
+            var v = document.querySelector('#reader video');
+            if (v && v.videoWidth) log('✅ Câmera: ' + v.videoWidth + 'x' + v.videoHeight, 'ok');
+        }, 1500);
+        document.getElementById('statusScan').textContent = '📷 Enquadre a folha inteira (QR no canto inferior)';
     } catch (e) {
         log('❌ ' + e.message, 'er');
-        document.getElementById('statusScan').textContent = '❌ ' + e.message;
         showToast('❌ ' + e.message, 'erro');
     }
 }
 
+// ========================================================================
+// 🆕 NOVO: FOCO NO QR (zoom digital no canto inferior direito)
+// ========================================================================
+async function focarNoQR() {
+    if (processando) return;
+    var video = document.querySelector('#reader video');
+    if (!video || !video.videoWidth) { showToast('❌ Câmera não pronta', 'erro'); return; }
+    
+    var W = video.videoWidth, H = video.videoHeight;
+    var canvas = document.createElement('canvas');
+    // Recorta o canto inferior direito (onde o QR está) - 30% da largura e altura
+    var cropW = Math.floor(W * 0.35);
+    var cropH = Math.floor(H * 0.30);
+    var cropX = W - cropW - 20; // 20px de margem
+    var cropY = H - cropH - 20;
+    
+    canvas.width = cropW;
+    canvas.height = cropH;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+    
+    var base64 = canvas.toDataURL('image/jpeg', 0.98);
+    fotoAtual = base64;
+    log('🔍 Zoom no QR: recorte ' + cropW + 'x' + cropH + ' de (' + cropX + ',' + cropY + ')', 'ok');
+    
+    mostrarPreview(base64, true);
+}
+
 async function capturarEProcessar() {
     if (processando) return;
-    processando = true;
     var video = document.querySelector('#reader video');
-    if (!video || !video.videoWidth) {
-        showToast('❌ Câmera não está pronta', 'erro');
-        processando = false;
-        return;
-    }
-
+    if (!video || !video.videoWidth) { showToast('❌ Câmera não pronta', 'erro'); return; }
+    
     var canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext('2d').drawImage(video, 0, 0);
-    var base64 = canvas.toDataURL('image/jpeg', 0.95);
+    var base64 = canvas.toDataURL('image/jpeg', 0.98);
     fotoAtual = base64;
     log('📸 Foto capturada: ' + canvas.width + 'x' + canvas.height, 'ok');
+    
+    mostrarPreview(base64, false);
+}
 
+// 🆕 NOVO: Mostra preview antes de processar
+function mostrarPreview(base64, isZoom) {
     document.getElementById('telaScanner').style.display = 'none';
+    document.getElementById('telaPreview').style.display = 'block';
+    document.getElementById('previewImg').src = base64;
+    document.getElementById('btnConfirmarFoto').textContent = isZoom ? '✅ PROCESSAR (FOCO NO QR)' : '✅ PROCESSAR ESTA FOTO';
+    log('👀 Preview mostrado. Confira se o QR está visível.', 'in');
+}
+
+function confirmarFoto() {
+    if (!fotoAtual) return;
+    processarFoto(fotoAtual);
+}
+
+function refazerFoto() {
+    fotoAtual = null;
+    idsAtuais = null;
+    document.getElementById('telaPreview').style.display = 'none';
+    document.getElementById('telaScanner').style.display = 'flex';
+    document.getElementById('statusScan').textContent = '📷 Enquadre a folha inteira';
+    try { if (scanner) scanner.resume(); } catch (e) {}
+}
+
+// ========================================================================
+// 🧠 PROCESSAMENTO DA FOTO (com busca de QR robusta)
+// ========================================================================
+async function processarFoto(base64) {
+    if (processando) return;
+    processando = true;
+    
+    document.getElementById('telaPreview').style.display = 'none';
     document.getElementById('telaProcessando').style.display = 'flex';
     document.getElementById('txtProcessando').textContent = 'Lendo QR da foto...';
-    document.getElementById('txtProgresso').textContent = 'Analisando imagem em alta resolução...';
-
+    document.getElementById('txtProgresso').textContent = 'Buscando em múltiplas regiões e rotações...';
+    
     try {
-        if (scanner) await scanner.pause(true);
-
-        var qr = await lerQRdaFoto(base64);
+        // 🆕 Busca robusta: tenta no full + regiões + rotações
+        var qr = await lerQRdaFotoRobusto(base64);
         if (!qr) {
-            throw new Error('QR não encontrado na foto. Segure firme, enquadre a folha inteira (com o QR no canto) e fotografe de novo.');
+            throw new Error('QR não encontrado. Dicas: 1) Boa iluminação 2) QR visível no canto 3) Segure firme 4) Use "FOCO NO QR" se disponível.');
         }
-        log('✅ QR lido: ' + JSON.stringify(qr), 'ok');
-
-        document.getElementById('txtProcessando').textContent = 'Buscando aluno...';
-        document.getElementById('txtProgresso').textContent = 'Conectando ao servidor...';
+        log('✅ QR lido: aluno=' + qr.idAluno + ' prova=' + qr.idProva, 'ok');
+        idsAtuais = qr;
         
+        // 🆕 Verifica se já foi corrigido nesta sessão
+        if (alunosCorrigidos[qr.idAluno]) {
+            throw new Error('⚠️ Este aluno (ID ' + qr.idAluno + ') já foi corrigido nesta sessão! Nota anterior: ' + alunosCorrigidos[qr.idAluno].toFixed(1));
+        }
+        
+        document.getElementById('txtProcessando').textContent = 'Buscando aluno...';
         var r = await fetch(API_BACKEND + '/api/dados_correcao_rapida/' + qr.idAluno);
         var d = await r.json();
         if (!d.sucesso || !d.aluno) throw new Error(d.erro || ('Aluno ' + qr.idAluno + ' não encontrado'));
         alunoAtual = d.aluno;
-        log('✅ Aluno: ' + alunoAtual.nome_completo + ' | Turma: ' + d.nome_turma, 'ok');
+        log('✅ ' + alunoAtual.nome_completo + ' | ' + d.nome_turma, 'ok');
 
         var idProva = qr.idProva || d.id_prova;
-        if (!idProva) throw new Error('Prova não identificada pelo QR');
+        if (!idProva) throw new Error('Prova não identificada');
 
         document.getElementById('txtProcessando').textContent = 'Corrigindo bolinhas...';
-        document.getElementById('txtProgresso').textContent = 'Enviando imagem ao servidor OMR...';
-        log('🤖 Enviando foto ao OMR (prova ' + idProva + ')...', 'in');
+        document.getElementById('txtProgresso').textContent = 'Enviando ao servidor OMR...';
         
         var response = await fetch(API_BACKEND + '/api/processar_imagem_omr', {
             method: 'POST',
@@ -227,71 +296,112 @@ async function capturarEProcessar() {
             body: JSON.stringify({ imagem: base64, id_aluno: qr.idAluno, id_avaliacao: idProva })
         });
         
-        log('📡 Resposta do backend: status ' + response.status, 'in');
-        
         if (!response.ok) {
-            var erroTexto = await response.text();
-            throw new Error('Backend retornou erro ' + response.status + ': ' + erroTexto.substring(0, 200));
+            var txt = await response.text();
+            throw new Error('Backend erro ' + response.status + ': ' + txt.substring(0, 150));
         }
         
         var resultado = await response.json();
-        log('📦 Backend retornou: ' + JSON.stringify(resultado).substring(0, 300), 'in');
-        
-        if (!resultado || !resultado.sucesso) {
-            throw new Error((resultado && resultado.erro) || 'Erro no processamento OMR (resultado inválido)');
-        }
-        
-        if (!resultado.nota_final && resultado.nota_final !== 0) {
-            throw new Error('Backend retornou sucesso mas sem nota_final. Dados: ' + JSON.stringify(resultado).substring(0, 200));
-        }
+        if (!resultado || !resultado.sucesso) throw new Error((resultado && resultado.erro) || 'Erro OMR');
+        if (resultado.nota_final === undefined && resultado.nota_final !== 0) throw new Error('Resposta inválida do backend');
 
         resultadoAtual = resultado;
         resultadoAtual.nomeTurma = d.nome_turma || 'Turma';
         resultadoAtual.idProva = idProva;
-        log('✅ OMR pronto. Nota: ' + resultado.nota_final, 'ok');
+        log('✅ Nota: ' + resultado.nota_final + ' | Acertos: ' + resultado.acertos, 'ok');
         mostrarConfirmacao();
     } catch (e) {
         log('❌ ' + e.message, 'er');
         showToast('❌ ' + e.message, 'erro');
-        voltarAoScanner();
+        processando = false;
+        refazerFoto();
     }
 }
 
-function lerQRdaFoto(base64) {
+// 🆕 NOVO: Busca robusta de QR em múltiplas regiões + rotações
+async function lerQRdaFotoRobusto(base64) {
     return new Promise(function (resolve) {
         var img = new Image();
         img.onload = function () {
-            var tentativas = [
-                { e: 1.0, c: false }, { e: 0.7, c: false }, { e: 0.5, c: false },
-                { e: 1.0, c: true }, { e: 0.7, c: true }, { e: 0.5, c: true }, { e: 0.3, c: false }
+            var W = img.width, H = img.height;
+            
+            // Estratégia: tentar em múltiplas regiões e rotações
+            // Regiões: imagem inteira, canto inferior direito (QR típico), metade inferior
+            var regioes = [
+                { x: 0, y: 0, w: W, h: H, nome: 'full' },
+                { x: Math.floor(W * 0.5), y: Math.floor(H * 0.6), w: Math.floor(W * 0.5), h: Math.floor(H * 0.4), nome: 'canto-inf-dir' },
+                { x: 0, y: Math.floor(H * 0.5), w: W, h: Math.floor(H * 0.5), nome: 'metade-inf' },
+                { x: Math.floor(W * 0.6), y: Math.floor(H * 0.5), w: Math.floor(W * 0.4), h: Math.floor(H * 0.5), nome: 'quadrante-inf-dir' }
             ];
+            
+            var escalas = [1.0, 0.7, 0.5, 0.4, 0.3];
+            var rotacoes = [0]; // Adicionar 90, 180, 270 se necessário
+            
             var canvas = document.createElement('canvas');
             var ctx = canvas.getContext('2d', { willReadFrequently: true });
-            for (var i = 0; i < tentativas.length; i++) {
-                var t = tentativas[i];
-                canvas.width = Math.floor(img.width * t.e);
-                canvas.height = Math.floor(img.height * t.e);
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                var data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                if (t.c) {
-                    var px = data.data, f = 1.8;
-                    for (var k = 0; k < px.length; k += 4) {
-                        var avg = (px[k] + px[k + 1] + px[k + 2]) / 3;
-                        var nv = Math.max(0, Math.min(255, (avg - 128) * f + 128));
-                        px[k] = px[k + 1] = px[k + 2] = nv;
+            var tempCanvas = document.createElement('canvas');
+            var tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
+            
+            for (var r = 0; r < regioes.length; r++) {
+                var reg = regioes[r];
+                for (var e = 0; e < escalas.length; e++) {
+                    var escala = escalas[e];
+                    var cw = Math.floor(reg.w * escala);
+                    var ch = Math.floor(reg.h * escala);
+                    
+                    canvas.width = cw;
+                    canvas.height = ch;
+                    ctx.drawImage(img, reg.x, reg.y, reg.w, reg.h, 0, 0, cw, ch);
+                    
+                    // Tenta sem contraste
+                    var data = ctx.getImageData(0, 0, cw, ch);
+                    var code = jsQR(data.data, cw, ch, { inversionAttempts: "attemptBoth" });
+                    if (code && code.data) {
+                        var ids = extrairIds(code.data);
+                        if (ids) { log('QR em ' + reg.nome + ' escala ' + escala, 'ok'); resolve(ids); return; }
+                    }
+                    
+                    // Tenta com contraste alto
+                    aplicarContraste(data.data, 1.8);
+                    code = jsQR(data.data, cw, ch, { inversionAttempts: "attemptBoth" });
+                    if (code && code.data) {
+                        var ids = extrairIds(code.data);
+                        if (ids) { log('QR em ' + reg.nome + ' escala ' + escala + ' c/contraste', 'ok'); resolve(ids); return; }
                     }
                 }
-                var code = jsQR(data.data, canvas.width, canvas.height, { inversionAttempts: "attemptBoth" });
-                if (code && code.data) {
-                    var ids = extrairIds(code.data);
-                    if (ids) { log('QR na tentativa ' + (i + 1) + ' (escala ' + t.e + ')', 'ok'); resolve(ids); return; }
+            }
+            
+            // Se nada funcionou, tenta rotações da imagem inteira
+            for (var rot = 1; rot <= 3; rot++) {
+                tempCanvas.width = H;
+                tempCanvas.height = W;
+                tempCtx.save();
+                tempCtx.translate(H/2, W/2);
+                tempCtx.rotate(rot * Math.PI / 2);
+                tempCtx.drawImage(img, -W/2, -H/2);
+                tempCtx.restore();
+                
+                var tData = tempCtx.getImageData(0, 0, H, W);
+                var tCode = jsQR(tData.data, H, W, { inversionAttempts: "attemptBoth" });
+                if (tCode && tCode.data) {
+                    var ids = extrairIds(tCode.data);
+                    if (ids) { log('QR com rotação ' + (rot*90) + '°', 'ok'); resolve(ids); return; }
                 }
             }
+            
             resolve(null);
         };
         img.onerror = function () { resolve(null); };
         img.src = base64;
     });
+}
+
+function aplicarContraste(data, fator) {
+    for (var i = 0; i < data.length; i += 4) {
+        var avg = (data[i] + data[i+1] + data[i+2]) / 3;
+        var nv = Math.max(0, Math.min(255, (avg - 128) * fator + 128));
+        data[i] = data[i+1] = data[i+2] = nv;
+    }
 }
 
 function extrairIds(texto) {
@@ -304,35 +414,10 @@ async function processarFotoManual(input) {
     if (!input.files || !input.files[0]) return;
     processando = true;
     document.getElementById('telaInicio').style.display = 'none';
-    document.getElementById('telaProcessando').style.display = 'flex';
-    document.getElementById('txtProcessando').textContent = 'Lendo QR da foto...';
     var reader = new FileReader();
     reader.onload = async function (e) {
         fotoAtual = e.target.result;
-        try {
-            var qr = await lerQRdaFoto(e.target.result);
-            if (!qr) throw new Error('QR não encontrado na foto.');
-            var r = await fetch(API_BACKEND + '/api/dados_correcao_rapida/' + qr.idAluno);
-            var d = await r.json();
-            if (!d.sucesso || !d.aluno) throw new Error(d.erro || 'Aluno não encontrado');
-            alunoAtual = d.aluno;
-            var idProva = qr.idProva || d.id_prova;
-            if (!idProva) throw new Error('Prova não identificada');
-            document.getElementById('txtProcessando').textContent = 'Corrigindo bolinhas...';
-            var response = await fetch(API_BACKEND + '/api/processar_imagem_omr', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ imagem: e.target.result, id_aluno: qr.idAluno, id_avaliacao: idProva })
-            });
-            var resultado = await response.json();
-            if (!resultado || !resultado.sucesso) throw new Error((resultado && resultado.erro) || 'Erro OMR');
-            resultadoAtual = resultado;
-            resultadoAtual.nomeTurma = d.nome_turma || 'Turma';
-            resultadoAtual.idProva = idProva;
-            mostrarConfirmacao();
-        } catch (err) {
-            showToast('❌ ' + err.message, 'erro');
-            setTimeout(function () { location.reload(); }, 2500);
-        }
+        mostrarPreview(e.target.result, false);
     };
     reader.readAsDataURL(input.files[0]);
     input.value = '';
@@ -356,7 +441,6 @@ function mostrarConfirmacao() {
         card.style.display = 'block';
     } else {
         card.style.display = 'none';
-        log('⚠️ Backend não retornou imagem_processada', 'in');
     }
 }
 
@@ -373,34 +457,41 @@ async function salvarEProximo() {
         });
         var res = await response.json();
         if (!res.sucesso) throw new Error(res.erro || 'Falha ao salvar');
+        
+        // 🆕 Registra aluno como corrigido
+        alunosCorrigidos[alunoAtual.id] = resultadoAtual.nota_final;
         corrigidosCount++;
         document.getElementById('contador').textContent = corrigidosCount + ' corrigidos';
-        showToast('✅ Nota ' + resultadoAtual.nota_final.toFixed(1) + ' salva!', 'sucesso');
+        showToast('✅ ' + alunoAtual.nome_completo.split(' ')[0] + ': ' + resultadoAtual.nota_final.toFixed(1), 'sucesso');
+        
         voltarAoScanner();
     } catch (e) { showToast('❌ ' + e.message, 'erro'); }
 }
 
-function tirarOutra() { voltarAoScanner(); }
+function tirarOutra() { refazerFoto(); }
 
 async function voltarAoScanner() {
     document.getElementById('telaConfirmacao').style.display = 'none';
     document.getElementById('telaProcessando').style.display = 'none';
     document.getElementById('telaScanner').style.display = 'flex';
-    document.getElementById('statusScan').textContent = '📷 Enquadre a folha inteira e toque em FOTOGRAFAR';
-    processando = false; alunoAtual = null; resultadoAtual = null;
+    document.getElementById('statusScan').textContent = '📷 Enquadre a folha inteira';
+    processando = false; alunoAtual = null; resultadoAtual = null; fotoAtual = null; idsAtuais = null;
     try { if (scanner) await scanner.resume(); } catch (e) {}
 }
 
 function showToast(msg, tipo) {
     var t = document.getElementById('toast');
     t.textContent = msg; t.className = 'toast show ' + (tipo || '');
-    setTimeout(function () { t.className = 'toast'; }, 3500);
+    setTimeout(function () { t.className = 'toast'; }, 4000);
 }
 
 document.getElementById('btnIniciarCam').addEventListener('click', iniciarScanner);
 document.getElementById('btnFotoManual').addEventListener('click', function () { document.getElementById('inputManual').click(); });
 document.getElementById('inputManual').addEventListener('change', function () { processarFotoManual(this); });
 document.getElementById('btnCapturar').addEventListener('click', capturarEProcessar);
+document.getElementById('btnZoomQR').addEventListener('click', focarNoQR); // 🆕
+document.getElementById('btnConfirmarFoto').addEventListener('click', confirmarFoto); // 🆕
+document.getElementById('btnRefazerFoto').addEventListener('click', refazerFoto); // 🆕
 document.getElementById('btnCancelar').addEventListener('click', function () { location.reload(); });
 document.getElementById('btnSalvar').addEventListener('click', salvarEProximo);
 document.getElementById('btnRepetir').addEventListener('click', tirarOutra);
