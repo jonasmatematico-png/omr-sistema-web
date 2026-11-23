@@ -127,7 +127,7 @@
     <div class="card-intro">
         <h3 style="color: #4f46e5; margin: 0 0 12px 0; font-size: 18px;">🤖 Corretor Inteligente para Provas Escritas</h3>
         <p style="color: #6b7280; margin: 0 0 16px 0; font-size: 14px; line-height: 1.5;">
-            Esta ferramenta usa Inteligência Artificial (Gemini) para corrigir provas dissertativas automaticamente. 
+            Esta ferramenta usa Inteligência Artificial (Groq) para corrigir provas dissertativas automaticamente. 
             Basta fotografar as respostas manuscritas do aluno!
         </p>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: left;">
@@ -136,7 +136,7 @@
                 <small style="color: #6b7280;">Fotografe várias folhas</small>
             </div>
             <div style="background: #f0fdfa; padding: 10px; border-radius: 8px; border-left: 3px solid #008080;">
-                <strong style="font-size: 13px; color: #008080;">🤖 IA Gemini</strong><br>
+                <strong style="font-size: 13px; color: #008080;">🤖 IA Groq</strong><br>
                 <small style="color: #6b7280;">Correção automática</small>
             </div>
             <div style="background: #f0fdfa; padding: 10px; border-radius: 8px; border-left: 3px solid #008080;">
@@ -567,7 +567,7 @@
                 console.log('🗜️ Imagem ' + (i+1) + ': ' + Math.round(comprimida.length / 1024) + 'KB');
             }
             
-            const API_URL = 'https://omr-sistema-api.onrender.com';
+            const API_URL = 'https://omr-backend-laboratorio.onrender.com';
             
             // 2. Montar prompt
             const prompt = montarPromptIA(dadosCorrecao.criterios);
@@ -581,11 +581,11 @@
                 };
             });
             
-            console.log('📤 Enviando para Gemini...');
+            console.log('📤 Enviando para Groq...');
             console.log('📄 Prompt:', prompt.substring(0, 100) + '...');
             console.log('🖼️ Imagens:', imagensPayload.length);
             
-            // 4. CHAMAR GEMINI
+            // 4. CHAMAR GROQ
             const response = await fetch(API_URL + '/api/corrigir_dissertativa', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -856,7 +856,7 @@
 
     async function salvarCriterios() {
         try {
-            const API_URL = 'https://omr-sistema-api.onrender.com';
+            const API_URL = 'https://omr-backend-laboratorio.onrender.com';
             const atualizacoes = [];
             
             criteriosCache.forEach((q, index) => {
@@ -953,7 +953,7 @@
         btnAprovar.disabled = true;
         
         try {
-            const API_URL = 'https://omr-sistema-api.onrender.com';
+            const API_URL = 'https://omr-backend-laboratorio.onrender.com';
             
             const response = await fetch(API_URL + '/api/salvar_correcao', {
                 method: 'POST',
@@ -1023,9 +1023,8 @@
         btnRevisao.disabled = true;
 
         try {
-            const API_URL = 'https://omr-sistema-api.onrender.com';
+            const API_URL = 'https://omr-backend-laboratorio.onrender.com';
             
-            // 1. PRIMEIRO: Buscar critérios do banco
             console.log('📥 Buscando critérios da prova ' + dadosQR.id_prova);
             
             const response = await fetch(API_URL + '/api/corrigir_por_foto_qr', {
@@ -1040,31 +1039,32 @@
             });
 
             const data = await response.json();
-            console.log(' Resposta do backend (critérios):', data);
+            console.log('📦 Resposta do backend (critérios):', data);
 
             if (!data.sucesso) {
-                throw new Error('Erro ao buscar critérios: ' + data.erro);
+                throw new Error('Erro ao buscar critérios: ' + (data.erro || 'desconhecido'));
             }
 
-            // 2. GUARDAR os dados
             dadosCorrecao = data;
+            criteriosCache = data.criterios || [];
             dadosAluno = {
                 nome_completo: data.nome_aluno,
                 numero_chamada: data.numero_chamada || '-',
                 nome_turma: data.nome_turma || '-'
             };
             
-            // 3. Verificar se tem critérios
             if (!data.criterios || data.criterios.length === 0) {
                 throw new Error('Prova sem critérios cadastrados no banco!');
             }
 
-            // 4. AGORA SIM: Enviar para o Gemini
+            // Envia para a IA (Groq)
             await enviarParaBackend();
             
         } catch (error) {
             console.error('❌ Erro em irParaRevisao:', error);
             alert('❌ Erro: ' + error.message);
+        } finally {
+            // 🔓 DESTRAVA O BOTÃO SEMPRE, dê certo ou não
             btnRevisao.textContent = '✅ Revisar e Enviar';
             btnRevisao.disabled = false;
         }
